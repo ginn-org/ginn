@@ -1,0 +1,13 @@
+[submodule "eigen"]
+	path = eigen
+	url = ../eigen.git
+	branch = master
+[submodule "fmt"]
+	path = fmt
+	url = ../fmt.git
+[submodule "cppitertools"]
+	path = cppitertools
+	url = ../cppitertools
+[submodule "Catch2"]
+	path = Catch2
+	url = ../Catch2
