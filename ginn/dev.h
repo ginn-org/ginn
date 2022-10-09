@@ -16,6 +16,7 @@
 #define GINN_DEV_H
 
 #include <ginn/def.h>
+#include <iostream>
 
 #ifdef GINN_ENABLE_GPU
 #define EIGEN_USE_GPU
@@ -77,7 +78,7 @@ class Device {
 
   void copy(const Device& other, void* data, void* other_data, size_t size);
 
-  virtual ~Device() = default;
+  virtual ~Device() { std::cout << "Device::dtor" << std::endl; };
 };
 
 // For nodes that don't allocate anything and not use any device

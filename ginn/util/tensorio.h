@@ -17,6 +17,7 @@
 
 #include <ginn/tensor.h>
 #include <ginn/util/fmt.h>
+#include <ginn/util/traits.h>
 
 namespace ginn {
 
@@ -24,7 +25,12 @@ template <typename Scalar>
 unsigned short max_width(const Tensor<Scalar>& t) {
   unsigned short w = 0;
   for (Scalar x : t) {
-    std::string s = fmt::format("{: .6}", x);
+    std::string s;
+    if constexpr (ginn::is_floating_point_v<Scalar>) {
+      s = fmt::format("{: .6}", x);
+    } else {
+      s = fmt::format("{: }", x);
+    }
     w = std::max<unsigned short>(w, s.size());
   }
   return w;
@@ -44,7 +50,11 @@ void print_helper(std::ostream& os,
     Size j = start + i * stride;
     if (i > 0) { os << (remaining_rank < rank or rank == 1 ? ", " : ",\n "); }
     if (remaining_rank == 1) {
-      os << fmt::format("{: " + w + ".6}", t.v()[j]);
+      if constexpr (ginn::is_floating_point_v<Scalar>) {
+        os << fmt::format("{: " + w + ".6}", t.v()[j]);
+      } else {
+        os << fmt::format("{: " + w + "}", t.v()[j]);
+      }
     } else {
       print_helper(os,
                    t,

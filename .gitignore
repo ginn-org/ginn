@@ -16,5 +16,5 @@ data/
 .idea/
 .vscode/
 .ccls-cache/
-.kubeconfig
 .DS_Store
+__pycache__

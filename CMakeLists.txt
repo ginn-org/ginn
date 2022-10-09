@@ -28,6 +28,7 @@ include_directories("${PROJECT_SOURCE_DIR}/eigen/")
 include_directories("${PROJECT_SOURCE_DIR}/extern/")
 include_directories("${PROJECT_SOURCE_DIR}/fmt/include/")
 include_directories("${PROJECT_SOURCE_DIR}/Catch2/single_include/catch2/")
+include_directories("${PROJECT_SOURCE_DIR}/pybind11/include/")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror")
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
@@ -36,3 +37,6 @@ endif()
 
 add_subdirectory("test" test)
 add_subdirectory("examples" examples)
+
+add_subdirectory(pybind11)
+add_subdirectory("ginn-py" ginn-py)
