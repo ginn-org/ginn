@@ -10,4 +10,4 @@
 	url = ../cppitertools
 [submodule "Catch2"]
 	path = Catch2
-	url = ../Catch2
+	url = ../../catchorg/Catch2/
