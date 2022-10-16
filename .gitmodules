@@ -1,6 +1,6 @@
 [submodule "eigen"]
 	path = eigen
-	url = git@gitlab.com:libeigen/eigen.git
+	url = https://gitlab.com/libeigen/eigen.git
 	branch = master
 [submodule "fmt"]
 	path = fmt
