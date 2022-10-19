@@ -39,7 +39,7 @@
 
 using namespace ginn;
 
-auto& Dev = cpu();
+auto Dev = cpu();
 
 // clang-format off
 

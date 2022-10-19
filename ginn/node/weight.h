@@ -60,7 +60,7 @@ class WeightNode : public Node<Scalar> {
   std::mutex& access() { return *access_; }
 
   // Create
-  WeightNode(Device& dev = cpu(), const Shape& shape = {0})
+  WeightNode(DevPtr dev = cpu(), const Shape& shape = {0})
       : id_(next_id()),
         dfx_(dev),
         fx_(std::make_shared<Tensor<Scalar>>(dev, shape)),
@@ -84,7 +84,7 @@ class WeightNode : public Node<Scalar> {
   void reset_forwarded() override {}
 
   // TODO: Is the following safe with tied copies? Probably not
-  void move_to(Device& to) {
+  void move_to(DevPtr to) {
     fx_->move_to(to);
     dfx_.move_to(to);
   }
@@ -134,11 +134,11 @@ template <typename Scalar>
 using ConstWeightPtr = Ptr<const WeightNode<Scalar>>;
 
 template <typename Scalar = Real>
-auto Weight(Device& dev = cpu(), const Shape& s = {0}) {
+auto Weight(DevPtr dev = cpu(), const Shape& s = {0}) {
   return make_ref<WeightNode<Scalar>>(dev, s);
 }
 template <typename Scalar = Real>
-auto Weight(Device& dev, std::initializer_list<Size> shape) {
+auto Weight(DevPtr dev, std::initializer_list<Size> shape) {
   return Weight<Scalar>(dev, Shape(shape));
 }
 template <typename Scalar>
@@ -147,14 +147,14 @@ auto Weight(const WeightNode<Scalar>& other) {
 }
 
 template <typename Scalar = Real>
-auto FixedWeight(Device& dev = cpu(), const Shape& s = {0}) {
+auto FixedWeight(DevPtr dev = cpu(), const Shape& s = {0}) {
   auto w = Weight<Scalar>(dev, s);
   w->has_grad_ = false;
   return w;
 }
 
 template <typename Scalar = Real>
-auto FixedWeight(Device& dev, std::initializer_list<Size> shape) {
+auto FixedWeight(DevPtr dev, std::initializer_list<Size> shape) {
   auto w = Weight<Scalar>(dev, Shape(shape));
   w->has_grad(false);
   return w;

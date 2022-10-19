@@ -50,7 +50,7 @@ class MaxPool2dNode : public BaseDataNode<Scalar> {
       auto output = value().template view<4>();
       auto d_output = grad().template view<4>();
 
-      if (dev().type() == CPU) {
+      if (dev()->type() == CPU) {
         eigen::MaxPool2dBackwardLoop(d_input,
                                      input,
                                      output,
@@ -122,7 +122,7 @@ class MaxPool1dNode : public BaseDataNode<Scalar> {
       auto g = grad().reshaped({s[0], s[1], 1, s[2]});
       auto inp_g = in_->grad().reshaped({is[0], is[1], 1, is[2]});
 
-      if (dev().type() == CPU) {
+      if (dev()->type() == CPU) {
         auto inp_g_ = inp_g.template view<4>();
         eigen::MaxPool2dBackwardLoop(inp_g_,
                                      inp.template view<4>(),

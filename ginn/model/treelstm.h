@@ -51,7 +51,7 @@ class TreeLstm {
 
  public:
   TreeLstm() = default;
-  TreeLstm(Device& dev,
+  TreeLstm(DevPtr dev,
            Size labels,
            Size dim,
            Size xdim,
@@ -59,7 +59,7 @@ class TreeLstm {
     init(dev, labels, dim, xdim, reduce);
   }
 
-  Device& dev() const {
+  DevPtr dev() const {
     GINN_ASSERT(Wi, "Uninitialized TreeLstm does not have a device!");
     return Wi->dev();
   }
@@ -94,7 +94,7 @@ class TreeLstm {
     return ws;
   }
 
-  void init(Device& dev, Size a_labels, Size dim, Size xdim, Reduce a_reduce) {
+  void init(DevPtr dev, Size a_labels, Size dim, Size xdim, Reduce a_reduce) {
     labels = a_labels;
     reduce = a_reduce;
     Ui.resize(labels);

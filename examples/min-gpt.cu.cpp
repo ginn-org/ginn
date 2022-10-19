@@ -172,7 +172,7 @@ struct CausalSelfAttentionLayerNode
   /// pointers easily to the underlying type.
 
   CausalSelfAttentionLayerNode() = default;
-  CausalSelfAttentionLayerNode(Device& dev, const Config& params)
+  CausalSelfAttentionLayerNode(DevPtr dev, const Config& params)
       : n_head(params.n_head), hidden_dim(params.hidden_dim) {
     GINN_ASSERT(hidden_dim % n_head == 0,
                 "Hidden dims must be a multiple of number of heads!");
@@ -250,7 +250,7 @@ struct BlockLayerNode : CombinedLayerNode<NodePtr<Real>(NodePtr<Real>)> {
   /// Then we compose `mlp` as successive applications of affine, gelu, another
   /// affine, and dropout layers.
   BlockLayerNode() = default;
-  BlockLayerNode(Device& dev, const Config& params)
+  BlockLayerNode(DevPtr dev, const Config& params)
       : ln1(LayerNormLayer<Real>(dev, params.hidden_dim)),
         ln2(LayerNormLayer<Real>(dev, params.hidden_dim)),
         attn(CausalSelfAttentionLayer(dev, params)),
@@ -297,7 +297,7 @@ struct GptLayerNode : CombinedLayerNode<NodePtr<Real>(NodePtr<Real>)> {
   std::vector<ConstLayerBasePtr> children() const override { return {blocks}; }
 
   GptLayerNode() = default;
-  GptLayerNode(Device& dev, const Config& params) {
+  GptLayerNode(DevPtr dev, const Config& params) {
     blocks = DropoutLayer<Real>(params.embd_drop_p);
     for (Size i = 0; i < params.n_layer; i++) {
       blocks = blocks | BlockLayer(dev, params);
@@ -341,7 +341,7 @@ struct GptModel {
   /// Weights themselves are initialized using Xavier initialization. Being more
   /// clever about initialization (e.g. zero biases or centering layer-norm
   /// multiplier at one) is left for future work.
-  GptModel(Device& dev, Config params, IndexMap<char> cmap, Size len)
+  GptModel(DevPtr dev, Config params, IndexMap<char> cmap, Size len)
       : chars(std::move(cmap)), pos_embedding_table(len) {
     for (auto c : chars.keys()) {
       embedding_table[c] = Weight(dev, {params.hidden_dim});
@@ -523,9 +523,9 @@ struct GptModel {
 int main() {
   using namespace ginn;
 #ifdef GINN_ENABLE_GPU
-  Device& dev = gpu();
+  DevPtr dev = gpu();
 #else
-  Device& dev = cpu();
+  DevPtr dev = cpu();
 #endif
 
   srand(124);
@@ -647,7 +647,7 @@ int main() {
 
 TEST_CASE("Gradcheck") {
   using namespace ginn;
-  Device& dev = cpu();
+  DevPtr dev = cpu();
 
   // Don't forget to enable GINN_DOUBLE_PRECISION
   std::string data = "First Citizen:\n"

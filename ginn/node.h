@@ -127,7 +127,7 @@ class BaseNode {
 
   virtual ~BaseNode() = default;
 
-  virtual Device& dev() const = 0;
+  virtual DevPtr dev() const = 0;
   virtual Shape shape() const = 0;
   Shape shape2() const { return Tensor<>::reduce(shape(), 2); }
   Size rows() const { return shape2()[0]; }
@@ -169,7 +169,7 @@ class Node : public BaseNode {
     return const_cast<Tensor<Scalar>&>(const_cast<const Node&>(*this).grad());
   }
 
-  Device& dev() const override { return value().dev(); }
+  DevPtr dev() const override { return value().dev(); }
   Shape shape() const override { return value().shape(); }
 
   void init_grad() override {

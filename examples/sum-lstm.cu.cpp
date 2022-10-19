@@ -33,9 +33,9 @@
 using namespace ginn;
 
 #ifdef GINN_ENABLE_GPU
-Device& Dev = gpu();
+DevPtr Dev = gpu();
 #else
-Device& Dev = cpu();
+DevPtr Dev = cpu();
 #endif
 
 using Instance = std::pair<std::string, std::string>;
@@ -162,9 +162,9 @@ int main(int argc, char** argv) {
   init::Xavier<Real>().init(weights);
   update::Adam<Real> updater(1e-4);
 #ifdef GINN_ENABLE_GPU
-  PreallocGpu device(mem);
+  auto device = PreallocGpu(mem);
 #else
-  PreallocCpu device(mem);
+  auto device = PreallocCpu(mem);
 #endif
 
   auto pass = [&](const Instances& x,

@@ -21,9 +21,5 @@ PYBIND11_MODULE(ginn, m) {
   m2.def("dummy", &dummy, "A function");
 
   bind_dev(m);
-
-  bind_tensor<Real>(m);
-  bind_tensor<Int>(m);
-  bind_tensor<Half>(m);
-  bind_tensor<bool>(m);
+  bind_tensor(m);
 }

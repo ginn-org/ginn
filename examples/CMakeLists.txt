@@ -62,7 +62,12 @@ else()
   endif()
 endif()
 
-set(EXAMPLE_OPTS -Ofast -march=native -mtune=native)
+if(APPLE)
+  set(EXAMPLE_OPTS -Ofast)
+else()
+  set(EXAMPLE_OPTS -Ofast -march=native -mtune=native)
+endif()
+
 if (GINN_ENABLE_GPU)
   set(GPU_EXAMPLE_OPTS ${GPU_OPTIM_OPTS})
 endif()

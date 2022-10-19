@@ -39,10 +39,10 @@ void barrier() {
 
 void compare_gelus() {
 #ifndef GINN_ENABLE_GPU
-  Device& dev = cpu();
+  DevPtr dev = cpu();
   size_t num_repeat = 1e2;
 #else
-  Device& dev = gpu();
+  DevPtr dev = gpu();
   size_t num_repeat = 1e5;
 #endif
   Tensor<Real> sink(dev, Shape{});
@@ -90,7 +90,7 @@ void compare_gelus() {
 
 void compare_matmuls() {
 #ifdef GINN_ENABLE_GPU
-  Device& dev = gpu();
+  DevPtr dev = gpu();
   Tensor<Real> sink(dev, Shape{});
   sink.set_zero();
   size_t num_repeat = 1e3;
@@ -167,7 +167,7 @@ void compare_cpu_matmuls() {
 /*
 void compare_batched_matmuls() {
 #ifdef GINN_ENABLE_GPU
-  Device& dev = gpu();
+  DevPtr dev = gpu();
   Tensor<Real> sink(dev, Shape{});
   sink.set_zero();
   size_t num_repeat = 1e3;
@@ -211,7 +211,7 @@ void compare_batched_matmuls() {
 
 void affine() {
 #ifdef GINN_ENABLE_GPU
-  Device& dev = gpu();
+  DevPtr dev = gpu();
   Tensor<Real> sink(dev, Shape{});
   sink.set_zero();
   Tensor<Real> dummy(sink);
@@ -219,7 +219,7 @@ void affine() {
       sink, dummy, dummy); // first prod is always slow. JIT? Cublas init?
   size_t num_repeat = 1e3;
 #else
-  Device& dev = cpu();
+  DevPtr dev = cpu();
   size_t num_repeat = 3;
 #endif
   barrier();
@@ -277,7 +277,7 @@ void multi_gpu() {
 
       for (int i = 0; i < 3; i++) {
         int j = std::min(1, i);
-        Device& dev = gpu(j);
+        DevPtr dev = gpu(j);
         sink.emplace_back(dev, Shape{});
         x.push_back(Random(dev, Shape{hdim, batches}));
         W.push_back(Random(dev, Shape{hdim, hdim}));

@@ -167,7 +167,7 @@ inline void gpu_prod(Tensor<Scalar>& c,
   GINN_ASSERT(a_outer == c.rows());
   GINN_ASSERT(b_outer == c.cols());
 
-  gpu_gemm<Scalar>(cublas_handle(c.dev().id().idx),
+  gpu_gemm<Scalar>(cublas_handle(c.dev()->id().idx),
                    a.data(),
                    b.data(),
                    c.data(),
@@ -220,7 +220,7 @@ inline void gpu_batched_prod(Tensor<Scalar>& c,
   GINN_ASSERT(a_outer == c_rows);
   GINN_ASSERT(b_outer == c_cols);
 
-  gpu_batched_gemm<Scalar>(cublas_handle(c.dev().id().idx),
+  gpu_batched_gemm<Scalar>(cublas_handle(c.dev()->id().idx),
                            a.data(),
                            b.data(),
                            c.data(),

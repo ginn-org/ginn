@@ -124,11 +124,11 @@ int main(int argc, char** argv) {
   // });
 
 #ifdef GINN_ENABLE_GPU
-  Device& Dev = gpu();
-  PreallocGpu device(mem);
+  DevPtr Dev = gpu();
+  auto device = PreallocGpu(mem);
 #else
-  Device& Dev = cpu();
-  PreallocCpu device(mem);
+  DevPtr Dev = cpu();
+  auto device = PreallocCpu(mem);
 #endif
 
   std::unordered_set<std::string> wvocab;

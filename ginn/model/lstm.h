@@ -36,9 +36,9 @@ class Lstm {
   // clang-format on
 
   Lstm() = default;
-  Lstm(Device& dev, Size dim, Size xdim) { init(dev, dim, xdim); }
+  Lstm(DevPtr dev, Size dim, Size xdim) { init(dev, dim, xdim); }
 
-  Device& dev() const {
+  DevPtr dev() const {
     GINN_ASSERT(Wix, "Uninitialized Lstm does not have a device!");
     return Wix->dev();
   }
@@ -53,7 +53,7 @@ class Lstm {
   };
   // clang-format on
 
-  void init(Device& dev, Size dim, Size xdim) {
+  void init(DevPtr dev, Size dim, Size xdim) {
     for (auto& w : {&Wix, &Wfx, &Wcx, &Wox}) {
       *w = Weight<Scalar>(dev, {dim, xdim});
     }

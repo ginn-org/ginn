@@ -26,9 +26,9 @@
 #include <unordered_set>
 #include <vector>
 
-#include <Eigen/Dense>
 #include <ginn/def.h>
 #include <ginn/except.h>
+#include <Eigen/Dense>
 
 namespace ginn {
 
@@ -246,7 +246,7 @@ std::vector<T> operator+=(std::vector<T>& left, const std::vector<T>& right) {
 template <int Rank, typename T>
 struct NestedInitListImpl {
   using type =
-      std::initializer_list<typename NestedInitListImpl<Rank - 1, T>::type>;
+      std::vector<typename NestedInitListImpl<Rank - 1, T>::type>;
 };
 
 template <typename T>

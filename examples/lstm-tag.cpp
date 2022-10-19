@@ -33,7 +33,7 @@
 
 using namespace ginn;
 
-Device& Dev = cpu();
+DevPtr Dev = cpu();
 
 using Architecture = ginn::SequenceTagger;
 using Token = std::tuple<std::string /*word*/, std::string /*label*/>;

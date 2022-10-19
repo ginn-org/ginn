@@ -27,18 +27,18 @@ class ProdNode : public BaseDataNode<Scalar> {
 
   void forward_() override {
     value().resize(Shape{a_->value().rows(), b_->value().cols()});
-    if (dev().type() == CPU) {
+    if (dev()->type() == CPU) {
       value().m() = a_->value().m() * b_->value().m();
     }
 #ifdef GINN_ENABLE_GPU
-    else if (dev().type() == GPU) {
+    else if (dev()->type() == GPU) {
       internal::gpu_prod(value(), a_->value(), b_->value());
     }
 #endif
   }
 
   void backward_() override {
-    if (dev().type() == CPU) {
+    if (dev()->type() == CPU) {
       if (b_->has_grad()) {
         b_->grad().m().noalias() += a_->value().m().transpose() * grad().m();
       }
@@ -46,7 +46,7 @@ class ProdNode : public BaseDataNode<Scalar> {
         a_->grad().m().noalias() += grad().m() * b_->value().m().transpose();
       }
 #ifdef GINN_ENABLE_GPU
-    } else if (dev().type() == GPU) {
+    } else if (dev()->type() == GPU) {
       if (b_->has_grad()) {
         internal::gpu_prod(b_->grad(),
                            a_->value(),
@@ -105,7 +105,7 @@ class BatchedProdNode : public BaseDataNode<Scalar> {
     s[0] = rows;
     value().resize(s);
 
-    if (dev().type() == CPU) {
+    if (dev()->type() == CPU) {
       auto batches = b_->value().cols() / cols;
 
       for (Size i = 0; i < batches; i++) { // trivial serial loop over batch
@@ -116,7 +116,7 @@ class BatchedProdNode : public BaseDataNode<Scalar> {
         vi.m() = ai.m() * bi.m();
       }
 #ifdef GINN_ENABLE_GPU
-    } else if (dev().type() == GPU) {
+    } else if (dev()->type() == GPU) {
       internal::gpu_batched_prod(value(), a_->value(), b_->value());
 #endif
     } else {
@@ -126,7 +126,7 @@ class BatchedProdNode : public BaseDataNode<Scalar> {
 
   void backward_() override {
     auto sa = a_->shape(), sb = b_->shape();
-    if (dev().type() == CPU) {
+    if (dev()->type() == CPU) {
       if (a_->has_grad() or b_->has_grad()) {
         auto batches = b_->value().cols() / sb[1];
         for (Size i = 0; i < batches; i++) { // trivial serial loop over batch
@@ -147,7 +147,7 @@ class BatchedProdNode : public BaseDataNode<Scalar> {
         }
       }
 #ifdef GINN_ENABLE_GPU
-    } else if (dev().type() == GPU) {
+    } else if (dev()->type() == GPU) {
       if (a_->has_grad()) {
         internal::gpu_batched_prod(a_->grad(),
                                    grad(),

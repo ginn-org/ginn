@@ -38,7 +38,7 @@
 
 using namespace ginn;
 
-Device& dev() {
+DevPtr dev() {
 #ifdef GINN_ENABLE_GPU
   if (gpus() > 0) { return gpu(); }
 #endif

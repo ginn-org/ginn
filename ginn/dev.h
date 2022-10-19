@@ -16,7 +16,6 @@
 #define GINN_DEV_H
 
 #include <ginn/def.h>
-#include <iostream>
 
 #ifdef GINN_ENABLE_GPU
 #define EIGEN_USE_GPU
@@ -33,16 +32,6 @@
 #include <ginn/except.h>
 
 namespace ginn {
-
-namespace internal {
-// Helpers for static initializations of streams and devices
-template <typename T>
-auto iota(size_t count) {
-  std::vector<T> things;
-  for (size_t i = 0; i < count; i++) { things.emplace_back(i); }
-  return things;
-}
-} // namespace internal
 
 inline int gpus() {
   int num_gpus = -1;
@@ -78,8 +67,10 @@ class Device {
 
   void copy(const Device& other, void* data, void* other_data, size_t size);
 
-  virtual ~Device() { std::cout << "Device::dtor" << std::endl; };
+  virtual ~Device() = default;
 };
+
+using DevPtr = std::shared_ptr<Device>;
 
 // For nodes that don't allocate anything and not use any device
 // TODO: Reevaluate if this is really needed or not.
@@ -93,12 +84,12 @@ class NullDevice : public Device {
   short precedence() const override { return -1; }
 };
 
-auto& null_dev() {
-  static NullDevice dev;
+auto null_dev() {
+  static auto dev = std::make_shared<NullDevice>();
   return dev;
 }
 
-class Cpu : public Device {
+class CpuDevice : public Device {
  public:
   void* alloc(size_t size) override { return malloc(size); }
   void* realloc(void* data, size_t size) override {
@@ -109,12 +100,14 @@ class Cpu : public Device {
   DeviceId id() const override { return {CPU, 0}; }
 };
 
+auto Cpu() { return std::make_shared<CpuDevice>(); }
+
 auto& cpu() {
-  static Cpu dev;
+  static auto dev = Cpu();
   return dev;
 }
 
-class PreallocCpu : public Device {
+class PreallocCpuDevice : public Device {
  private:
   using Byte = std::byte;
   static_assert(sizeof(Byte) == 1);
@@ -123,7 +116,7 @@ class PreallocCpu : public Device {
   Byte* offset_ = nullptr;
 
  public:
-  PreallocCpu(size_t size) : storage_(size), offset_(storage_.data()) {}
+  PreallocCpuDevice(size_t size) : storage_(size), offset_(storage_.data()) {}
 
   void* alloc(size_t size) override {
     GINN_ASSERT((offset_ + size) < (storage_.data() + storage_.size()),
@@ -141,10 +134,15 @@ class PreallocCpu : public Device {
   short precedence() const override { return 1; }
   void reset() { offset_ = storage_.data(); }
   size_t used() const { return offset_ - storage_.data(); }
+  size_t size() const { return storage_.size(); }
 };
 
+auto PreallocCpu(size_t size) {
+  return std::make_shared<PreallocCpuDevice>(size);
+}
+
 #ifdef GINN_ENABLE_GPU
-class Gpu : public Device {
+class GpuDevice : public Device {
  private:
   const size_t id_;
   CurandGenerator gen_;
@@ -178,7 +176,7 @@ class Gpu : public Device {
   auto& eigen_gpu_device() { return *gd_; }
   auto& gen() { return gen_; }
 
-  Gpu(size_t id = 0) : id_(id), gen_(id) {
+  GpuDevice(size_t id = 0) : id_(id), gen_(id) {
     set_device();
     GINN_CUDA_CALL(cudaDeviceSynchronize());
     stream_ = std::make_unique<cudaStream_t>();
@@ -188,19 +186,29 @@ class Gpu : public Device {
     gsd_ = std::make_unique<Eigen::GpuStreamDevice>(&*stream_, id_);
     gd_ = std::make_unique<Eigen::GpuDevice>(&*gsd_);
   }
-  Gpu(Gpu&&) = default;
-  ~Gpu() {
+  GpuDevice(GpuDevice&&) = default;
+  ~GpuDevice() {
     if (handle_) { GINN_CUBLAS_CALL(cublasDestroy(*handle_)); }
     if (stream_) { GINN_CUDA_CALL(cudaStreamDestroy(*stream_)); }
   }
 };
 
+auto Gpu(size_t id) { return std::make_shared<GpuDevice>(id); }
+
 auto& gpu(int idx = 0) {
-  static std::vector<Gpu> devs{internal::iota<Gpu>(gpus())};
+  using Ptr = std::shared_ptr<GpuDevice>;
+  auto helper = []() {
+    std::vector<Ptr> devs;
+    for (size_t i = 0; i < gpus(); i++) {
+      devs.push_back(Gpu(i));
+    }
+    return devs;
+  };
+  static std::vector<Ptr> devs = helper();
   return devs.at(idx);
 }
 
-class PreallocGpu : public Device {
+class PreallocGpuDevice : public Device {
  private:
   const size_t id_ = 0;
   thrust::device_vector<std::byte> storage_;
@@ -210,7 +218,7 @@ class PreallocGpu : public Device {
   void set_device() { GINN_CUDA_CALL(cudaSetDevice(id_)); }
 
  public:
-  PreallocGpu(size_t id, size_t size) : id_(id) {
+  PreallocGpuDevice(size_t id, size_t size) : id_(id) {
     set_device();
     GINN_CUDA_CALL(cudaDeviceSynchronize());
 
@@ -218,10 +226,10 @@ class PreallocGpu : public Device {
     storage_ = thrust::device_vector<std::byte>(size_);
     offset_ = storage_.data();
   }
-  PreallocGpu(size_t size) : PreallocGpu(0, size) {}
-  PreallocGpu(const PreallocGpu&) = delete;
-  PreallocGpu(PreallocGpu&& other) = default;
-  ~PreallocGpu() = default;
+  PreallocGpuDevice(size_t size) : PreallocGpuDevice(0, size) {}
+  PreallocGpuDevice(const PreallocGpuDevice&) = delete;
+  PreallocGpuDevice(PreallocGpuDevice&& other) = default;
+  ~PreallocGpuDevice() = default;
 
   void* alloc(size_t size) override {
     GINN_ASSERT(
@@ -241,10 +249,17 @@ class PreallocGpu : public Device {
   size_t used() const { return offset_ - storage_.data(); }
 };
 
-CurandGenerator& curand_gen(int idx = 0) { return gpu(idx).gen(); }
-cublasHandle_t& cublas_handle(int idx = 0) { return gpu(idx).handle(); }
+auto PreallocGpu(size_t id, size_t size) {
+  return std::make_shared<PreallocGpuDevice>(id, size);
+}
+auto PreallocGpu(size_t size) {
+  return std::make_shared<PreallocGpuDevice>(size);
+}
+
+CurandGenerator& curand_gen(int idx = 0) { return gpu(idx)->gen(); }
+cublasHandle_t& cublas_handle(int idx = 0) { return gpu(idx)->handle(); }
 Eigen::GpuDevice& gpu_device(int idx = 0) {
-  return gpu(idx).eigen_gpu_device();
+  return gpu(idx)->eigen_gpu_device();
 }
 
 class PeerAccess {
@@ -285,15 +300,15 @@ Device::copy(const Device& other, void* data, void* other_data, size_t size) {
     GINN_CUDA_CALL(cudaSetDevice(other.id().idx));
     GINN_CUDA_CALL(cudaMemcpy(data, other_data, size, cudaMemcpyDeviceToHost));
   } else if (type() == GPU and other.type() == CPU) {
-    auto& stream = gpu(id().idx).stream();
+    auto& stream = gpu(id().idx)->stream();
     GINN_CUDA_CALL(cudaSetDevice(id().idx));
     GINN_CUDA_CALL(cudaMemcpyAsync(
         data, other_data, size, cudaMemcpyHostToDevice, stream));
   } else if (type() == GPU and other.type() == GPU) {
     if (id().idx == other.id().idx) {
-      auto& stream = gpu(id().idx).stream();
+      auto& stream = gpu(id().idx)->stream();
       GINN_CUDA_CALL(cudaSetDevice(id().idx));
-      GINN_CUDA_CALL(cudaStreamSynchronize(gpu(other.id().idx).stream()));
+      GINN_CUDA_CALL(cudaStreamSynchronize(gpu(other.id().idx)->stream()));
       GINN_CUDA_CALL(cudaMemcpyAsync(
           data, other_data, size, cudaMemcpyDeviceToDevice, stream));
     } else { // copy across devices
@@ -301,9 +316,9 @@ Device::copy(const Device& other, void* data, void* other_data, size_t size) {
       if (acc.enabled(id().idx, other.id().idx)) {
         // Peer access to other gpu from this gpu is enabled
         // Make a direct copy across devices
-        GINN_CUDA_CALL(cudaStreamSynchronize(gpu(other.id().idx).stream()));
+        GINN_CUDA_CALL(cudaStreamSynchronize(gpu(other.id().idx)->stream()));
         GINN_CUDA_CALL(cudaSetDevice(id().idx));
-        auto& stream = gpu(id().idx).stream();
+        auto& stream = gpu(id().idx)->stream();
         GINN_CUDA_CALL(
             cudaMemcpyAsync(data, other_data, size, cudaMemcpyDefault, stream));
         // TODO: random deadlock here if i dont synchronize :< why?
@@ -312,11 +327,11 @@ Device::copy(const Device& other, void* data, void* other_data, size_t size) {
         // Naive copy through host
         std::vector<std::byte> tmp(size);
         GINN_CUDA_CALL(cudaSetDevice(other.id().idx));
-        GINN_CUDA_CALL(cudaStreamSynchronize(gpu(other.id().idx).stream()));
+        GINN_CUDA_CALL(cudaStreamSynchronize(gpu(other.id().idx)->stream()));
         GINN_CUDA_CALL(cudaMemcpy(
             (void*)tmp.data(), other_data, size, cudaMemcpyDeviceToHost));
 
-        auto& stream = gpu(id().idx).stream();
+        auto& stream = gpu(id().idx)->stream();
         GINN_CUDA_CALL(cudaSetDevice(id().idx));
         GINN_CUDA_CALL(cudaMemcpyAsync(
             data, (void*)tmp.data(), size, cudaMemcpyHostToDevice, stream));
@@ -329,12 +344,12 @@ Device::copy(const Device& other, void* data, void* other_data, size_t size) {
 }
 
 template <typename NodeType>
-static Device& best_dev(const std::vector<NodeType>& ins) {
+auto best_dev(const std::vector<NodeType>& ins) {
   // Inspect devices of all the inputs, adopt the one with the highest
   // precedence.
   GINN_ASSERT(not ins.empty());
   auto max = std::max_element(ins.begin(), ins.end(), [&](auto& i, auto& j) {
-    return i->dev().precedence() < j->dev().precedence();
+    return i->dev()->precedence() < j->dev()->precedence();
   });
   return (*max)->dev();
 }

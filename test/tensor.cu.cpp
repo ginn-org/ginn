@@ -57,13 +57,13 @@ using namespace ginn::literals;
                                                                                \
     SECTION("Device") {                                                        \
       TENSOR_CTOR(t, init_dev);                                                \
-      CHECK(t.dev().type() == DEV_TYPE);                                       \
+      CHECK(t.dev()->type() == DEV_TYPE);                                       \
       CHECK(t.size() == 0);                                                    \
     }                                                                          \
                                                                                \
     SECTION("Shape") {                                                         \
       TENSOR_CTOR(t, init_dev, {2, 1, 3});                                     \
-      CHECK(t.dev().type() == DEV_TYPE);                                       \
+      CHECK(t.dev()->type() == DEV_TYPE);                                       \
       CHECK(t.size() == 6);                                                    \
       CHECK(t.shape().size() == 3);                                            \
     }                                                                          \
@@ -82,7 +82,7 @@ using namespace ginn::literals;
         val = Half{0.6};                                                       \
       }                                                                        \
       TENSOR_CTOR(t, init_dev, {2, 1, 3}, val);                                \
-      CHECK(t.dev().type() == DEV_TYPE);                                       \
+      CHECK(t.dev()->type() == DEV_TYPE);                                       \
       CHECK(t.size() == 6);                                                    \
       CHECK(t.shape().size() == 3);                                            \
       t.move_to(cpu());                                                        \
@@ -103,16 +103,16 @@ TEST_CTOR(CPU_ASSIGNED_TENSOR, "Gpu Cpu Assign", gpu(), CPU)
 #endif
 
 #ifdef GINN_ENABLE_GPU
-using Typelist = std::tuple<std::tuple<Tensor<Real>, Gpu>,
-                            std::tuple<Tensor<Int>, Gpu>,
-                            std::tuple<Tensor<Half>, Gpu>,
-                            std::tuple<Tensor<Real>, Cpu>,
-                            std::tuple<Tensor<Int>, Cpu>,
-                            std::tuple<Tensor<Half>, Cpu>>;
+using Typelist = std::tuple<std::tuple<Tensor<Real>, GpuDevice>,
+                            std::tuple<Tensor<Int>, GpuDevice>,
+                            std::tuple<Tensor<Half>, GpuDevice>,
+                            std::tuple<Tensor<Real>, CpuDevice>,
+                            std::tuple<Tensor<Int>, CpuDevice>,
+                            std::tuple<Tensor<Half>, CpuDevice>>;
 #else
-using Typelist = std::tuple<std::tuple<Tensor<Real>, Cpu>,
-                            std::tuple<Tensor<Int>, Cpu>,
-                            std::tuple<Tensor<Half>, Cpu>>;
+using Typelist = std::tuple<std::tuple<Tensor<Real>, CpuDevice>,
+                            std::tuple<Tensor<Int>, CpuDevice>,
+                            std::tuple<Tensor<Half>, CpuDevice>>;
 #endif
 
 TEMPLATE_LIST_TEST_CASE("Resize", "[tensor]", Typelist) {
@@ -120,7 +120,7 @@ TEMPLATE_LIST_TEST_CASE("Resize", "[tensor]", Typelist) {
   using DeviceType = typename std::tuple_element<1, TestType>::type;
   using Scalar = typename TensorType::Scalar;
 
-  DeviceType dev;
+  auto dev = std::make_shared<DeviceType>();
   TensorType t(dev);
   if constexpr (std::is_same_v<Scalar, Half>) {
     t = TensorType(dev, {2, 1, 3}, {1_h, 2_h, 3_h, 4_h, 5_h, 6_h});
@@ -159,12 +159,12 @@ TEMPLATE_LIST_TEST_CASE("Resize", "[tensor]", Typelist) {
 
 TEMPLATE_LIST_TEST_CASE("View", "[tensor]", Typelist) {
   using TensorType = typename std::tuple_element<0, TestType>::type;
-  using Device = typename std::tuple_element<1, TestType>::type;
+  using DeviceType = typename std::tuple_element<1, TestType>::type;
   using Scalar = typename TensorType::Scalar;
 
   // TODO: this is hideous
-  auto equals = [](const auto& a, const auto& b, DeviceType dev_type) -> bool {
-    if (dev_type == CPU) { return Eigen::Tensor<bool, 0>((a == b).all())(0); }
+  auto equals = [](const auto& a, const auto& b, auto dev_kind) -> bool {
+    if (dev_kind == CPU) { return Eigen::Tensor<bool, 0>((a == b).all())(0); }
 #ifdef GINN_ENABLE_GPU
     if (eigen::ndims<std::decay_t<decltype(a)>>() !=
         eigen::ndims<std::decay_t<decltype(b)>>()) {
@@ -177,7 +177,7 @@ TEMPLATE_LIST_TEST_CASE("View", "[tensor]", Typelist) {
     return false;
   };
 
-  Device dev;
+  auto dev = std::make_shared<DeviceType>();
   TensorType t(dev);
   if constexpr (std::is_same_v<Scalar, Half>) {
     t = TensorType(dev, {2, 1, 3}, {1_h, 2_h, 3_h, 4_h, 5_h, 6_h});
@@ -185,7 +185,7 @@ TEMPLATE_LIST_TEST_CASE("View", "[tensor]", Typelist) {
     t = TensorType(dev, {2, 1, 3}, {1, 2, 3, 4, 5, 6});
   }
 
-  if (dev.type() == CPU) {
+  if (dev->type() == CPU) {
     CHECK(t.v() == VectorMap<Scalar>(t.data(), 6));
     CHECK(t.m() == MatrixMap<Scalar>(t.data(), 2, 3));
   } else {
@@ -194,21 +194,21 @@ TEMPLATE_LIST_TEST_CASE("View", "[tensor]", Typelist) {
   }
 
   CHECK(equals(
-      t.template view<1>(), TensorMap<Scalar, 1>(t.data(), 6), dev.type()));
+      t.template view<1>(), TensorMap<Scalar, 1>(t.data(), 6), dev->type()));
 
-  CHECK(equals(t.t(), TensorMap<Scalar, 2>(t.data(), 2, 3), dev.type()));
+  CHECK(equals(t.t(), TensorMap<Scalar, 2>(t.data(), 2, 3), dev->type()));
 
   CHECK(equals(t.template view<3>(),
                TensorMap<Scalar, 3>(t.data(), 2, 1, 3),
-               dev.type()));
+               dev->type()));
 
   CHECK(equals(t.template view<4>(),
                TensorMap<Scalar, 4>(t.data(), 2, 1, 3, 1),
-               dev.type()));
+               dev->type()));
 
   CHECK(equals(t.template view<5>(),
                TensorMap<Scalar, 5>(t.data(), 2, 1, 3, 1, 1),
-               dev.type()));
+               dev->type()));
 }
 
 TEMPLATE_LIST_TEST_CASE("Set values", "[tensor]", Typelist) {
@@ -216,7 +216,7 @@ TEMPLATE_LIST_TEST_CASE("Set values", "[tensor]", Typelist) {
   using DeviceType = typename std::tuple_element<1, TestType>::type;
   using Scalar = typename TensorType::Scalar;
 
-  DeviceType dev;
+  auto dev = std::make_shared<DeviceType>();
   TensorType t(dev);
   if constexpr (std::is_same_v<Scalar, Half>) {
     t = TensorType(dev, {2, 1, 3}, {1_h, 2_h, 3_h, 4_h, 5_h, 6_h});
@@ -294,7 +294,7 @@ TEMPLATE_LIST_TEST_CASE("Serialize", "[tensor]", Typelist) {
   using DeviceType = typename std::tuple_element<1, TestType>::type;
   using Scalar = typename TensorType::Scalar;
 
-  DeviceType dev;
+  auto dev = std::make_shared<DeviceType>();
   TensorType t(dev), t2(dev);
   if constexpr (std::is_same_v<Scalar, Half>) {
     t = TensorType(dev, {2, 1, 3}, {1_h, 2_h, 3_h, 4_h, 5_h, 6_h});
@@ -316,7 +316,7 @@ TEMPLATE_LIST_TEST_CASE("Errors", "[tensor]", Typelist) {
   using DeviceType = typename std::tuple_element<1, TestType>::type;
   using Scalar = typename TensorType::Scalar;
 
-  DeviceType dev;
+  auto dev = std::make_shared<DeviceType>();
   TensorType t1(dev, {1, 2}), t2(dev, {1, 3}), t3(dev);
 
   SECTION("Misshaped map") {

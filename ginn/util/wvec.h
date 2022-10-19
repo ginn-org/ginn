@@ -29,7 +29,7 @@ namespace util {
 // TODO: add expected dimensionality for sanity checking
 template <typename Scalar>
 void load_wvecs(LookupTable<std::string, WeightPtr<Scalar>>& table,
-                Device& dev,
+                DevPtr dev,
                 const std::string& fname,
                 const std::unordered_set<std::string>& vocab,
                 bool fixed = false,

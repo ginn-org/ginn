@@ -32,9 +32,9 @@ class BaseDataNode : public Node<Scalar> {
  public:
   // TODO: These used to be protected but nvcc breaks. Why?
   // Protected constructors for helping derived nodes
-  BaseDataNode(Device& dev, const std::vector<BaseNodePtr>& ins)
+  BaseDataNode(DevPtr dev, const std::vector<BaseNodePtr>& ins)
       : Node<Scalar>(ins), fx_(dev), dfx_(dev) {}
-  BaseDataNode(Device& dev,
+  BaseDataNode(DevPtr dev,
                const Shape& shape,
                const std::vector<BaseNodePtr>& ins)
       : Node<Scalar>(ins), fx_(dev, shape), dfx_(dev) {}
@@ -43,13 +43,13 @@ class BaseDataNode : public Node<Scalar> {
   BaseDataNode(const std::vector<NodeType>& ins)
       : Node<Scalar>(ins), fx_(best_dev(ins)), dfx_(fx_.dev()) {}
 
-  BaseDataNode(Device& dev = cpu()) : fx_(dev), dfx_(dev) {}
+  BaseDataNode(DevPtr dev = cpu()) : fx_(dev), dfx_(dev) {}
   BaseDataNode(const Shape& shape) : fx_(cpu(), shape), dfx_(cpu()) {}
-  BaseDataNode(Device& dev, const Shape& shape) : fx_(dev, shape), dfx_(dev) {}
+  BaseDataNode(DevPtr dev, const Shape& shape) : fx_(dev, shape), dfx_(dev) {}
 
   BaseDataNode(const std::initializer_list<BaseNodePtr>& ins)
       : BaseDataNode(std::vector<BaseNodePtr>(ins)) {}
-  BaseDataNode(Device& dev, const std::initializer_list<BaseNodePtr>& ins)
+  BaseDataNode(DevPtr dev, const std::initializer_list<BaseNodePtr>& ins)
       : BaseDataNode(dev, std::vector<BaseNodePtr>(ins)) {}
 
  private:
@@ -64,7 +64,7 @@ class BaseDataNode : public Node<Scalar> {
   bool has_grad() const override { return has_grad_; }
   virtual void has_grad(bool hg) { has_grad_ = hg; }
 
-  void move_to(Device& to) {
+  void move_to(DevPtr to) {
     fx_.move_to(to);
     dfx_.move_to(to);
   }
@@ -76,13 +76,13 @@ class BaseDataNode : public Node<Scalar> {
 template <typename Scalar = Real>
 class DataNode : public BaseDataNode<Scalar> {
  public:
-  DataNode(Device& dev = cpu()) : BaseDataNode<Scalar>(dev) {
+  DataNode(DevPtr dev = cpu()) : BaseDataNode<Scalar>(dev) {
     this->forwarded = true;
   }
   DataNode(const Shape& shape) : BaseDataNode<Scalar>(shape) {
     this->forwarded = true;
   }
-  DataNode(Device& dev, const Shape& shape) : BaseDataNode<Scalar>(dev, shape) {
+  DataNode(DevPtr dev, const Shape& shape) : BaseDataNode<Scalar>(dev, shape) {
     this->forwarded = true;
   }
 
@@ -135,16 +135,16 @@ class ConstantLikeNode : public BaseDataNode<Scalar> {
 GINN_MAKE_TEMPLATE_FACTORY(Data);
 
 template <typename Scalar = Real>
-auto Data(Device& dev, std::initializer_list<Size> shape) {
+auto Data(DevPtr dev, std::initializer_list<Size> shape) {
   return Data<Scalar>(dev, Shape(shape));
 }
 template <typename Scalar = Real>
-auto FixedData(Device& dev, std::initializer_list<Size> shape) {
+auto FixedData(DevPtr dev, std::initializer_list<Size> shape) {
   return FixedData<Scalar>(dev, Shape(shape));
 }
 
 template <typename Scalar>
-auto Constant(Device& dev, const Shape& shape, Scalar val) {
+auto Constant(DevPtr dev, const Shape& shape, Scalar val) {
   auto x = FixedData<Scalar>(dev, shape);
   x->value().fill(val);
   return x;
@@ -156,7 +156,7 @@ auto ConstantLike(NodePtr<InScalar> x, Scalar val) {
 }
 
 template <typename Scalar = Real>
-auto Zero(Device& dev, const Shape& s) {
+auto Zero(DevPtr dev, const Shape& s) {
   return Constant<Scalar>(dev, s, 0);
 }
 
@@ -166,7 +166,7 @@ auto ZeroLike(NodePtr<Scalar> x) {
 }
 
 template <typename Scalar = Real>
-auto Ones(Device& dev, const Shape& s) {
+auto Ones(DevPtr dev, const Shape& s) {
   return Constant<Scalar>(dev, s, 1);
 }
 
@@ -176,7 +176,7 @@ auto OnesLike(NodePtr<Scalar> x) {
 }
 
 template <typename Scalar = Real>
-auto Random(Device& dev, const Shape& shape) {
+auto Random(DevPtr dev, const Shape& shape) {
   auto x = Data<Scalar>(dev, shape);
   x->value().set_random();
   return x;
@@ -189,7 +189,7 @@ auto Random(const Shape& shape) {
 
 // Temporary? workaround for lack of "uniform" impl for Half
 template <>
-auto Random<Half>(Device& dev, const Shape& shape) {
+auto Random<Half>(DevPtr dev, const Shape& shape) {
   return Random(dev, shape)->cast<Half>();
 }
 
@@ -199,14 +199,14 @@ auto Random<Half>(const Shape& shape) {
 }
 
 template <typename Scalar = Real>
-auto FixedRandom(Device& dev, const Shape& shape) {
+auto FixedRandom(DevPtr dev, const Shape& shape) {
   auto x = FixedData<Scalar>(dev, shape);
   x->value().set_random();
   return x;
 }
 
 template <int Rank, typename Scalar = Real>
-auto Values(Device& dev, NestedInitList<Rank, Scalar> val) {
+auto Values(DevPtr dev, NestedInitList<Rank, Scalar> val) {
   auto x = Data<Scalar>(dev, shape_of<Size, Rank, Scalar>(val));
   x->value().template set<Rank>(val);
   return x;
@@ -218,7 +218,7 @@ auto Values(NestedInitList<Rank, Scalar> val) {
 }
 
 // template <int Rank>
-// auto Values(Device& dev, Real val) {
+// auto Values(DevPtr dev, Real val) {
 //  static_assert(Rank == 0);
 //  auto x = Data(dev, {});
 //  x->value().set({val});

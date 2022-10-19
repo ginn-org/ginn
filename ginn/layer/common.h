@@ -54,7 +54,7 @@ class LstmLayerNode : public LayerNode<NodePtrs<Scalar>(NodePtrs<Scalar>)> {
 
  public:
   LstmLayerNode() = default;
-  LstmLayerNode(Device& dev,
+  LstmLayerNode(DevPtr dev,
                 Size dim,
                 Size xdim,
                 bool last = false,
@@ -62,7 +62,7 @@ class LstmLayerNode : public LayerNode<NodePtrs<Scalar>(NodePtrs<Scalar>)> {
       : drop_p_(drop_p), dim_(dim), last_(last) {
     init(dev, dim, xdim);
   }
-  void init(Device& dev, Size dim, Size xdim) {
+  void init(DevPtr dev, Size dim, Size xdim) {
     lstm_.init(dev, dim, xdim);
     h0_ = {Zero(dev, {dim, 1}), Zero(dev, {dim, 1})};
   }
@@ -123,7 +123,7 @@ class BiLstmLayerNode : public LayerNode<NodePtrs<Scalar>(NodePtrs<Scalar>)> {
 
  public:
   BiLstmLayerNode() = default;
-  BiLstmLayerNode(Device& dev,
+  BiLstmLayerNode(DevPtr dev,
                   Size dim,
                   Size xdim,
                   bool last = false,
@@ -131,7 +131,7 @@ class BiLstmLayerNode : public LayerNode<NodePtrs<Scalar>(NodePtrs<Scalar>)> {
       : drop_p_(drop_p), dim_(dim), last_(last) {
     init(dev, dim, xdim);
   }
-  void init(Device& dev, Size dim, Size xdim) {
+  void init(DevPtr dev, Size dim, Size xdim) {
     lstm_.init(dev, dim, xdim);
     rlstm_.init(dev, dim, xdim);
     h0_ = {Zero(dev, {dim, 1}), Zero(dev, {dim, 1})};
@@ -216,7 +216,7 @@ class LookupLayerNode : public LayerNode<Func> {
   using Set = std::unordered_set<InputType>;
 
  private:
-  Device* dev_ = nullptr;
+  DevPtr dev_ = nullptr;
   Size dim_;    // embedding dimension
   Real drop_p_; // word(vector)-dropout rate to randomly replace with unk
   bool lowercased_ = false; // only used for Key == std::string or char
@@ -229,16 +229,16 @@ class LookupLayerNode : public LayerNode<Func> {
   //    type!");
 
   LookupLayerNode() = default;
-  LookupLayerNode(Device& dev,
+  LookupLayerNode(DevPtr dev,
                   Size dim,
                   Real drop_p = 0.,
                   const Set& vocab = {})
-      : dev_(&dev),
+      : dev_(dev),
         dim_(dim),
         drop_p_(drop_p),
         table(
             vocab,
-            [=]() { return Weight(*dev_, {dim_}); },
+            [=]() { return Weight(dev_, {dim_}); },
             true) {}
 
   LayerPtr<Func> copy(Copy mode) override {
@@ -275,7 +275,7 @@ class AffineLayerNode : public LayerNode<NodePtr<Scalar>(NodePtr<Scalar>)> {
   AffineLayerNode() { init(cpu(), 0, 0); }
 
   template <typename Nonlin>
-  AffineLayerNode(Device& dev, Nonlin nonlin, Size dim, Size xdim)
+  AffineLayerNode(DevPtr dev, Nonlin nonlin, Size dim, Size xdim)
       : nonlin(std::make_unique<Nonlin>(nonlin)) {
     init(dev, dim, xdim);
   }
@@ -294,7 +294,7 @@ class AffineLayerNode : public LayerNode<NodePtr<Scalar>(NodePtr<Scalar>)> {
     return rval;
   }
 
-  void init(Device& dev, Size dim, Size xdim) {
+  void init(DevPtr dev, Size dim, Size xdim) {
     W = Weight(dev, {dim, xdim});
     b = Weight(dev, {dim});
   }
@@ -307,18 +307,18 @@ class AffineLayerNode : public LayerNode<NodePtr<Scalar>(NodePtr<Scalar>)> {
 };
 
 template <typename Scalar>
-auto AffineLayer(Device& dev, Size dim, Size xdim) {
+auto AffineLayer(DevPtr dev, Size dim, Size xdim) {
   return std::make_shared<AffineLayerNode<Scalar>>(
       dev, IdentityOp<Scalar>(), dim, xdim);
 }
 
 template <typename Scalar, typename Nonlin>
-auto AffineLayer(Device& dev, Size dim, Size xdim) {
+auto AffineLayer(DevPtr dev, Size dim, Size xdim) {
   return std::make_shared<AffineLayerNode<Scalar>>(dev, Nonlin(), dim, xdim);
 }
 
 template <typename Scalar>
-auto AffineLayer(Device& dev, NonlinOp<Scalar> nonlin, Size dim, Size xdim) {
+auto AffineLayer(DevPtr dev, NonlinOp<Scalar> nonlin, Size dim, Size xdim) {
   return std::make_shared<AffineLayerNode<Scalar>>(dev, nonlin, dim, xdim);
 }
 
@@ -373,13 +373,13 @@ class LayerNormLayerNode : public LayerNode<NodePtr<Scalar>(NodePtr<Scalar>)> {
     }
   }
 
-  void init(Device& dev, Size dim) {
+  void init(DevPtr dev, Size dim) {
     gamma = Weight(dev, {dim});
     beta = Weight(dev, {dim});
   }
 
   LayerNormLayerNode() = default;
-  LayerNormLayerNode(Device& dev, Size dim, bool inplace = false)
+  LayerNormLayerNode(DevPtr dev, Size dim, bool inplace = false)
       : inplace_(inplace) {
     init(dev, dim);
   }

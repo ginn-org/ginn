@@ -16,38 +16,45 @@
 #define GINN_CUDEF_H
 
 #include <ginn/except.h>
+#include <ginn/util/fmt.h>
 #include <iostream>
 #include <memory>
 
-#define GINN_CUDA_CALL(x)                                                      \
+#define GINN_CUDA_THROW(message) throw ginn::CudaError(message)
+
+#define GINN_CUDA_CALL(statement)                                              \
   do {                                                                         \
-    cudaError_t err = x;                                                       \
+    cudaError_t err = (statement);                                             \
     if (err != cudaSuccess) {                                                  \
-      std::cerr << "CUDA failure in " << #x << std::endl                       \
-                << cudaGetErrorString(err) << std::endl;                       \
-      assert(false);                                                           \
+      GINN_CUDA_THROW(fmt::format("CUDA failure in {}\n{}\nat {}:{}\n",        \
+                                  #statement,                                  \
+                                  cudaGetErrorString(err),                     \
+                                  __FILE__,                                    \
+                                  __LINE__));                                  \
     }                                                                          \
   } while (0)
 
-#define GINN_CURAND_CALL(x)                                                    \
+#define GINN_CURAND_CALL(statement)                                            \
   do {                                                                         \
-    auto err = x;                                                              \
+    auto err = (statement);                                                    \
     if (err != CURAND_STATUS_SUCCESS) {                                        \
-      std::cerr << "CURAND failure in " << #x << std::endl                     \
-                << err << std::endl                                            \
-                << __FILE__ << ":" << __LINE__ << std::endl;                   \
-      assert(false);                                                           \
+      GINN_CUDA_THROW(fmt::format("CURAND failure in {}\n{}\nat {}:{}\n",      \
+                                  #statement,                                  \
+                                  err,                                         \
+                                  __FILE__,                                    \
+                                  __LINE__));                                  \
     }                                                                          \
   } while (0)
 
-#define GINN_CUBLAS_CALL(x)                                                    \
+#define GINN_CUBLAS_CALL(statement)                                            \
   do {                                                                         \
-    cublasStatus_t stat = x;                                                   \
-    if (stat != CUBLAS_STATUS_SUCCESS) {                                       \
-      std::cerr << "CUBLAS failure in " << #x << std::endl                     \
-                << stat << std::endl                                           \
-                << "at " << __FILE__ << ":" << __LINE__ << std::endl;          \
-      assert(false);                                                           \
+    cublasStatus_t err = (statement);                                          \
+    if (err != CUBLAS_STATUS_SUCCESS) {                                        \
+      GINN_CUDA_THROW(fmt::format("CUBLAS failure in {}\n{}\nat {}:{}\n",      \
+                                  #statement,                                  \
+                                  err,                                         \
+                                  __FILE__,                                    \
+                                  __LINE__));                                  \
     }                                                                          \
   } while (0)
 

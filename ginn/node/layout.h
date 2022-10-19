@@ -34,7 +34,7 @@ class SinkNode : public BaseNode {
  public:
   using BaseNode::BaseNode;
 
-  Device& dev() const override { return null_dev(); }
+  DevPtr dev() const override { return null_dev(); }
 
   Shape shape() const override {
     GINN_THROW("Sink has no shape!");
@@ -62,7 +62,7 @@ class DimNode : public BaseNode {
   DimNode(BaseNodePtr e, Size index)
       : BaseNode(std::vector<BaseNodePtr>{e}), index_(index) {}
 
-  Device& dev() const override { return null_dev(); }
+  DevPtr dev() const override { return null_dev(); }
 
   bool has_grad() const override { return false; }
 
@@ -102,15 +102,15 @@ template <typename Scalar>
 class DeviceViewNode : public Node<Scalar> {
  private:
   NodePtr<Scalar> in_;
-  Device* dev_;
+  DevPtr dev_;
 
  public:
-  DeviceViewNode(NodePtr<Scalar> e, Device& dev)
-      : Node<Scalar>(std::vector<BaseNodePtr>{e}), in_(e), dev_(&dev) {
-    GINN_ASSERT(e->dev().id() == dev_->id(),
+  DeviceViewNode(NodePtr<Scalar> e, DevPtr dev)
+      : Node<Scalar>(std::vector<BaseNodePtr>{e}), in_(e), dev_(dev) {
+    GINN_ASSERT(e->dev()->id() == dev_->id(),
                 "Pretend-device needs to be in the same physical device!");
   }
-  Device& dev() const override { return *dev_; }
+  DevPtr dev() const override { return dev_; }
 
   const Tensor<Scalar>& value() const override { return in_->value(); }
   const Tensor<Scalar>& grad() const override { return in_->grad(); }
@@ -135,7 +135,7 @@ class DeviceTransferNode : public BaseDataNode<Scalar> {
   }
 
  public:
-  DeviceTransferNode(NodePtr<Scalar> e, Device& dev)
+  DeviceTransferNode(NodePtr<Scalar> e, DevPtr dev)
       : BaseDataNode<Scalar>(dev, {e}), in_(e) {}
 
   // TODO: is the following correct?
@@ -351,7 +351,7 @@ class StackNode : public BaseDataNode<Scalar> {
     value().resize(ns);
     Size sz = nodes_[0][0]->size();
 
-    if (dev().type() == CPU) {
+    if (dev()->type() == CPU) {
       auto view = value().reshaped({sz, m, n});
       for (Size i = 0; i < m; i++) {
         for (Size j = 0; j < n; j++) {
@@ -361,7 +361,7 @@ class StackNode : public BaseDataNode<Scalar> {
         }
       }
 #ifdef GINN_ENABLE_GPU
-    } else if (dev().type() == GPU) {
+    } else if (dev()->type() == GPU) {
       std::vector<Scalar*> ins_flat(m * n);
       for (Size i = 0; i < m; i++) {
         for (Size j = 0; j < n; j++) {
@@ -386,7 +386,7 @@ class StackNode : public BaseDataNode<Scalar> {
     Size m = nodes_.size();
     Size n = nodes_[0].size();
     Size sz = nodes_[0][0]->size();
-    if (dev().type() == CPU) {
+    if (dev()->type() == CPU) {
       auto view = grad().reshaped({sz, m, n});
       for (Size i = 0; i < m; i++) {
         for (Size j = 0; j < n; j++) {
@@ -398,7 +398,7 @@ class StackNode : public BaseDataNode<Scalar> {
         }
       }
 #ifdef GINN_ENABLE_GPU
-    } else if (dev().type() == GPU) {
+    } else if (dev()->type() == GPU) {
       std::vector<Scalar*> d_ins_flat(m * n);
       thrust::device_vector<Scalar> dummy_in(sz);
       for (Size i = 0; i < m; i++) {
@@ -857,9 +857,9 @@ class UpperTriNode : public BaseDataNode<Scalar> {
  public:
   bool has_grad() const override { return false; }
 
-  UpperTriNode(Device& dev, DimPtr size)
+  UpperTriNode(DevPtr dev, DimPtr size)
       : BaseDataNode<Scalar>(dev, {size}), size_(size) {}
-  UpperTriNode(Device& dev, Size size) : UpperTriNode(dev, Dim(size)) {}
+  UpperTriNode(DevPtr dev, Size size) : UpperTriNode(dev, Dim(size)) {}
 
   std::string name() const override { return "UpperTri"; }
 };

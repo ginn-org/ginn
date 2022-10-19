@@ -34,20 +34,20 @@ void check_expr(NodeFunc expr,
   std::unordered_map<DeviceType, Vector<Real>> values;
   std::unordered_map<DeviceType, std::vector<Vector<Real>>> grads;
   Tensor<Real> cpu_grad;
-  for (Device* dev : std::vector<Device*>{&cpu(), &gpu()}) {
+  for (auto dev : std::vector<DevPtr>{cpu(), gpu()}) {
     for (auto& x : ins) {
       if (auto x_ = dynamic_ref_cast<DataNode<Real>>(x)) {
-        x_->move_to(*dev);
-        if (randomize_inputs and dev == &cpu()) { x_->set_random(); }
+        x_->move_to(dev);
+        if (randomize_inputs and dev == cpu()) { x_->set_random(); }
       } else if (auto x_ = dynamic_ref_cast<DataNode<Int>>(x)) {
-        x_->move_to(*dev);
+        x_->move_to(dev);
       } else if (auto x_ = dynamic_ref_cast<DataNode<Half>>(x)) {
-        x_->move_to(*dev);
+        x_->move_to(dev);
       } else if (auto x_ = dynamic_ref_cast<WeightNode<Real>>(x)) {
-        x_->move_to(*dev);
-        if (randomize_inputs and dev == &cpu()) { x_->set_random(); }
+        x_->move_to(dev);
+        if (randomize_inputs and dev == cpu()) { x_->set_random(); }
       } else if (auto x_ = dynamic_ref_cast<WeightNode<Half>>(x)) {
-        x_->move_to(*dev);
+        x_->move_to(dev);
       }
     }
     bool has_grad = expr()->has_grad();

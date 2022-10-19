@@ -42,7 +42,7 @@ class TreeLstmLayerNode : public LayerNode<NodeTree<Scalar>(NodeTree<Scalar>)> {
 
  public:
   TreeLstmLayerNode() = default;
-  TreeLstmLayerNode(Device& dev,
+  TreeLstmLayerNode(DevPtr dev,
                     Size labels,
                     Size dim,
                     Size xdim,
@@ -51,7 +51,7 @@ class TreeLstmLayerNode : public LayerNode<NodeTree<Scalar>(NodeTree<Scalar>)> {
     init(dev, labels, dim, xdim, drop_p, reduce);
   }
 
-  void init(Device& dev,
+  void init(DevPtr dev,
             Size labels,
             Size dim,
             Size xdim,

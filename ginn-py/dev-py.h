@@ -28,17 +28,32 @@ inline void bind_dev(py::module_& m) {
            })
       .def(py::self == py::self);
 
-  py::class_<Device>(m, "Device")
+  py::class_<Device, std::shared_ptr<Device>>(m, "Device")
       .def("type", &Device::type)
       .def("id", &Device::id)
       .def("precedence", &Device::precedence);
 
-  py::class_<Cpu, Device>(m, "Cpu").def(py::init<>());
+  py::class_<CpuDevice, Device, std::shared_ptr<CpuDevice>>(m, "CpuDevice");
 
-  py::class_<PreallocCpu, Device>(m, "PreallocCpu")
-      .def(py::init<size_t>())
-      .def("reset", &PreallocCpu::reset)
-      .def("used", &PreallocCpu::used);
+  m.def("Cpu", &Cpu, "");
+  m.def("cpu", &cpu, "");
+
+  py::class_<PreallocCpuDevice, Device, std::shared_ptr<PreallocCpuDevice>>(
+      m, "PreallocCpuDevice")
+      .def("reset", &PreallocCpuDevice::reset)
+      .def("size", &PreallocCpuDevice::size)
+      .def("used", &PreallocCpuDevice::used);
+
+  m.def("PreallocCpu", &PreallocCpu, "");
+
+#ifdef GINN_ENABLE_GPU
+  py::class_<GpuDevice, Device, std::shared_ptr<GpuDevice>>(m, "GpuDevice");
+
+  m.def("Gpu", &Gpu, py::arg("gpu_idx") = 0);
+  m.def("gpu", &gpu, py::arg("gpu_idx") = 0);
+
+  // TODO: add PreallocGpu device
+#endif
 }
 
 } // namespace python
