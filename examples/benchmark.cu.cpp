@@ -264,13 +264,13 @@ void multi_gpu() {
   size_t num_repeats = 1e3;
 
   std::vector<Tensor<Real>> sink;
-  std::vector<PreallocGpu> pgpu;
+  std::vector<std::shared_ptr<PreallocGpuDevice>> pgpu;
 
   size_t max_hdim = 4096;
   size_t mem = max_hdim * max_hdim * 2;
-  pgpu.emplace_back(0, mem);
-  pgpu.emplace_back(1, mem);
-  pgpu.emplace_back(1, mem);
+  pgpu.push_back(PreallocGpu(0, mem));
+  pgpu.push_back(PreallocGpu(1, mem));
+  pgpu.push_back(PreallocGpu(1, mem));
   for (bool prealloc : {true, false}) {
     for (Size hdim : {512, 1024, 2048, 4096}) {
       std::vector<NodePtr<Real>> x, W, b;

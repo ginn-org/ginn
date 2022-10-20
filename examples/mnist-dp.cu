@@ -92,9 +92,9 @@ int main(int argc, char** argv) {
 
   // TODO: is this really needed?
   GINN_CUDA_CALL(cudaSetDevice(1));
-  GINN_CUDA_CALL(cudaStreamSynchronize(gpu(0).stream()));
+  GINN_CUDA_CALL(cudaStreamSynchronize(gpu(0)->stream()));
   GINN_CUDA_CALL(cudaSetDevice(0));
-  GINN_CUDA_CALL(cudaStreamSynchronize(gpu(1).stream()));
+  GINN_CUDA_CALL(cudaStreamSynchronize(gpu(1)->stream()));
 
   auto [X, Y] = mnist_reader(train_file, bs);
   auto [Xt, Yt] = mnist_reader(test_file, bs);
