@@ -254,34 +254,16 @@ class Gelu2Op : public NonlinOp<Scalar> {
   MAKE_NONLIN_COPY(Gelu2Op)
 };
 
-// When I make Erf template and pass instances to unaryExpr(), gpu builds give
-//   a cuda fail. Therefore I have two separate classes for Real and Half.
-struct Erf {
-  Real operator()(Real x) const { return ::erf(x); }
-};
-
-struct HalfErf {
-  Half operator()(Half x) const { return Half(::erf(Real(x))); }
-};
-
 template <typename Scalar>
 class GeluOp : public NonlinOp<Scalar> {
  private:
   using s = Scalar; // shorthand for math
 
-  static auto erf() {
-    if constexpr (std::is_same_v<Scalar, Half>) {
-      return HalfErf();
-    } else {
-      return Erf();
-    }
-  }
-
  public:
   bool backward_requires_input() const override { return true; }
 
   void forward(Tensor<Scalar>& y, const Tensor<Scalar>& x) const override {
-    y = s(0.5) * x.t() * (s(1) + (x.t() / s(::sqrt(2.))).unaryExpr(erf()));
+    y = s(0.5) * x.t() * (s(1) + (x.t() / s(::sqrt(2.))).erf());
   }
   void backward(Tensor<Scalar>& dx,
                 const Tensor<Scalar>& dy,
@@ -296,7 +278,7 @@ class GeluOp : public NonlinOp<Scalar> {
         dy.t() *
             //      (y.t() / x.t() + x.t() * (-x.t() * x.t() / 2_r).exp() *
             //      c_1_sqrt2pi);
-            (s(0.5) * (s(1) + (x.t() / s(::sqrt(2.))).unaryExpr(erf())) +
+            (s(0.5) * (s(1) + (x.t() / s(::sqrt(2.))).erf()) +
              x.t() * (-x.t() * x.t() / s(2)).exp() * c_1_sqrt2pi));
   }
 
