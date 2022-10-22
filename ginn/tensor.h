@@ -152,21 +152,21 @@ class Tensor {
  public:
   // Construct
   Tensor(DevPtr dev = cpu()) : dev_(std::move(dev)) {}
-  Tensor(DevPtr dev, Shape shape) : dev_(std::move(dev)), shape_(std::move(shape)) {
+  Tensor(DevPtr dev, Shape shape)
+      : dev_(std::move(dev)), shape_(std::move(shape)) {
     allocate(size());
   }
   Tensor(DevPtr dev, Shape shape, Scalar val)
-      : dev_(std::move(dev)), shape_(std::move(shape)) {
-    allocate(size());
+      : Tensor<Scalar>(std::move(dev), std::move(shape)) {
     fill(val);
   }
-  Tensor(const Shape& shape, const std::vector<Scalar>& val)
-      : dev_(cpu()), shape_(shape) {
+  Tensor(Shape shape) : Tensor<Scalar>(cpu(), std::move(shape)) {}
+  Tensor(Shape shape, const std::vector<Scalar>& val)
+      : Tensor<Scalar>(std::move(shape)) {
     GINN_ASSERT(size() == (Size)val.size(),
                 "Size of Shape (" + std::to_string(size()) +
                     ") does not match size of values (" +
                     std::to_string(val.size()) + ")!");
-    allocate(size());
     auto vmap = v();
     for (size_t i = 0; i < val.size(); i++) { vmap[i] = val[i]; }
   }
@@ -319,24 +319,28 @@ class Tensor {
 
   // View as classical (CPU) Eigen matrix
   auto m() {
-    GINN_ASSERT(dev()->type() == CPU, "m() can only be invoked on Cpu tensors!");
+    GINN_ASSERT(dev()->type() == CPU,
+                "m() can only be invoked on Cpu tensors!");
     auto dims = reduce(shape_, 2);
     return MatrixMap<Scalar>(data_, dims[0], dims[1]);
   }
   // TODO: should there be a Map type to const?
   auto m() const {
-    GINN_ASSERT(dev()->type() == CPU, "m() can only be invoked on Cpu tensors!");
+    GINN_ASSERT(dev()->type() == CPU,
+                "m() can only be invoked on Cpu tensors!");
     auto dims = reduce(shape_, 2);
     return MatrixMap<Scalar>(data_, dims[0], dims[1]);
   }
 
   auto v() {
-    GINN_ASSERT(dev()->type() == CPU, "v() can only be invoked on Cpu tensors!");
+    GINN_ASSERT(dev()->type() == CPU,
+                "v() can only be invoked on Cpu tensors!");
     auto dims = reduce(shape_, 1);
     return VectorMap<Scalar>(data_, dims[0]);
   }
   auto v() const {
-    GINN_ASSERT(dev()->type() == CPU, "v() can only be invoked on Cpu tensors!");
+    GINN_ASSERT(dev()->type() == CPU,
+                "v() can only be invoked on Cpu tensors!");
     auto dims = reduce(shape_, 1);
     return VectorMap<Scalar>(data_, dims[0]);
   }
@@ -600,11 +604,11 @@ class LhsExpr {
 #define LHSEXPR_IMPLEMENT(op)                                                  \
   template <typename RhsExpr>                                                  \
   void op(RhsExpr rhs) {                                                       \
-    if (dev->type() == CPU) {                                                   \
+    if (dev->type() == CPU) {                                                  \
       e.device(cpu_device()).op(rhs);                                          \
-    } else if (dev->type() == GPU) {                                            \
-      auto& gd = gpu_device(dev->id().idx);                                     \
-      GINN_CUDA_CALL(cudaSetDevice(dev->id().idx));                             \
+    } else if (dev->type() == GPU) {                                           \
+      auto& gd = gpu_device(dev->id().idx);                                    \
+      GINN_CUDA_CALL(cudaSetDevice(dev->id().idx));                            \
       e.device(gd).op(rhs);                                                    \
     } else {                                                                   \
       GINN_THROW("Unexpected device!");                                        \
@@ -614,7 +618,7 @@ class LhsExpr {
 #define LHSEXPR_IMPLEMENT(op)                                                  \
   template <typename RhsExpr>                                                  \
   void op(RhsExpr rhs) {                                                       \
-    if (dev->type() == CPU) {                                                   \
+    if (dev->type() == CPU) {                                                  \
       e.device(cpu_device()).op(rhs);                                          \
     } else {                                                                   \
       GINN_THROW("Unexpected device!");                                        \
@@ -664,7 +668,10 @@ class ChipExpr {
 
  public:
   ChipExpr(DevPtr dev, LhsExpr lhs, Size offset, Size dim)
-      : dev_(std::move(dev)), lhs_(std::move(lhs)), offset_(offset), dim_(dim) {}
+      : dev_(std::move(dev)),
+        lhs_(std::move(lhs)),
+        offset_(offset),
+        dim_(dim) {}
   template <typename RhsExpr>
   void operator=(RhsExpr rhs) {
     Lhs(dev_, lhs_.chip(offset_, dim_)) = rhs;

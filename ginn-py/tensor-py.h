@@ -1,6 +1,7 @@
 #ifndef GINN_PY_TENSOR_PY_H
 #define GINN_PY_TENSOR_PY_H
 
+#include <pybind11/eigen.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 
@@ -38,25 +39,35 @@ void bind_tensor_of(PyClass& m) {
 
   m.def(py::init<>())
       .def(py::init<DevPtr>(), "device"_a)
-      .def(py::init<const Shape&, const std::vector<Scalar>&>(),
+      .def(py::init<Shape>(),
+           "shape"_a)
+      .def(py::init<Shape, const std::vector<Scalar>&>(),
            "shape"_a,
            "val"_a)
-      .def(py::init<DevPtr, const Shape&>(), "device"_a, "shape"_a)
-      .def(py::init<DevPtr, const Shape&, const std::vector<Scalar>&>(),
+      .def(py::init<DevPtr, Shape>(), "device"_a, "shape"_a)
+      .def(py::init<DevPtr, Shape, std::vector<Scalar>>(),
            "device"_a,
            "shape"_a,
            "val"_a)
       .def("dev", &T::dev)
       .def("shape", &T::shape)
+      .def("size", static_cast<Size (T::*)() const>(&T::size))
       .def("list", &T::vector)
+      .def("v", static_cast<VectorMap<Scalar> (T::*)()>(&T::v))
+      .def("m", static_cast<MatrixMap<Scalar> (T::*)()>(&T::m))
       .def("real", &T::template cast<Real>)
       .def("half", &T::template cast<Half>)
-      .def("integral", &T::template cast<Int>)
-      .def("boolean", &T::template cast<bool>)
+      .def("int", &T::template cast<Int>)
+      .def("bool", &T::template cast<bool>)
+      .def("set_zero", &T::set_zero)
+      .def("set_ones", &T::set_ones)
+      .def("set_random", &T::set_random)
+      .def("set", &T::template set<0>)
       .def("set", &T::template set<1>)
       .def("set", &T::template set<2>)
       .def("set", &T::template set<3>)
       .def("set", &T::template set<4>)
+      .def("resize", &T::resize)
       .def(py::self == py::self)
       .def("__repr__", [&](const T& t) {
         std::stringstream ss;
