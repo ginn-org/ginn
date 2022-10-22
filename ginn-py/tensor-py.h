@@ -48,6 +48,7 @@ void bind_tensor_of(PyClass& m) {
            "val"_a)
       .def("dev", &T::dev)
       .def("shape", &T::shape)
+      .def("list", &T::vector)
       .def("real", &T::template cast<Real>)
       .def("half", &T::template cast<Half>)
       .def("integral", &T::template cast<Int>)

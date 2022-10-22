@@ -203,9 +203,9 @@ class Tensor {
 
   // Copy & Move assign
   // TODO: Consider operator= copying the device as well, to avoid confusion.
-  // Maybe only having the special ctor and `move_to()` as well as
-  // `maybe_copy_to()` is enough to transfer tensor across devices. This just
-  // seems confusing.
+  //   Maybe only having the special ctor and `move_to()` as well as
+  //   `maybe_copy_to()` is enough to transfer tensor across devices. This just
+  //   seems confusing.
   auto& operator=(const Tensor<Scalar>& other) {
     if (this == &other) { return *this; }
     resize(other.shape_);
@@ -352,6 +352,11 @@ class Tensor {
     GINN_ASSERT(dev()->type() == CPU,
                 "end() can only be invoked on Cpu tensors!");
     return data_ + size();
+  }
+
+  std::vector<Scalar> vector() const {
+    auto t = copy_to(cpu());
+    return std::vector<Scalar>(t.begin(), t.end());
   }
 
   // wrap a Rank-0 (single element) Tensor around a scalar entry of this tensor
