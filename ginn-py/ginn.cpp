@@ -5,6 +5,7 @@
 
 #include <ginn-py/dev-py.h>
 #include <ginn-py/tensor-py.h>
+#include <ginn-py/node-py.h>
 
 namespace py = pybind11;
 
@@ -22,4 +23,5 @@ PYBIND11_MODULE(ginn, m) {
 
   bind_dev(m);
   bind_tensor(m);
+  bind_node(m);
 }

@@ -104,8 +104,8 @@ class AddNode : public BaseDataNode<Scalar> {
       : BaseDataNode<Scalar>(ins), ins_(ins) {}
 
   template <typename... Args>
-  AddNode(const NodePtr<Scalar>& in, Args&&... args)
-      : AddNode(std::vector<NodePtr<Scalar>>{in, std::forward<Args>(args)...}) {
+  AddNode(const NodePtr<Scalar>& in, const Args&... args)
+      : AddNode(std::vector<NodePtr<Scalar>>{in, args...}) {
   }
 
   void set_ins(const std::vector<BaseNodePtr>& ins) override {

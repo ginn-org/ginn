@@ -51,10 +51,10 @@ void bind_tensor_of(PyClass& m) {
            "val"_a)
       .def("dev", &T::dev)
       .def("shape", &T::shape)
-      .def("size", static_cast<Size (T::*)() const>(&T::size))
+      .def("size", py::overload_cast<>(&T::size, py::const_))
       .def("list", &T::vector)
-      .def("v", static_cast<VectorMap<Scalar> (T::*)()>(&T::v))
-      .def("m", static_cast<MatrixMap<Scalar> (T::*)()>(&T::m))
+      .def("v", py::overload_cast<>(&T::v))
+      .def("m", py::overload_cast<>(&T::m))
       .def("real", &T::template cast<Real>)
       .def("half", &T::template cast<Half>)
       .def("int", &T::template cast<Int>)
@@ -68,6 +68,9 @@ void bind_tensor_of(PyClass& m) {
       .def("set", &T::template set<3>)
       .def("set", &T::template set<4>)
       .def("resize", &T::resize)
+      .def("copy_to", &T::copy_to, "device"_a)
+      .def("move_to", &T::move_to, "device"_a)
+      .def("maybe_copy_to", &T::maybe_copy_to, "device"_a)
       .def(py::self == py::self)
       .def("__repr__", [&](const T& t) {
         std::stringstream ss;
