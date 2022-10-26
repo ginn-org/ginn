@@ -39,11 +39,8 @@ void bind_tensor_of(PyClass& m) {
 
   m.def(py::init<>())
       .def(py::init<DevPtr>(), "device"_a)
-      .def(py::init<Shape>(),
-           "shape"_a)
-      .def(py::init<Shape, const std::vector<Scalar>&>(),
-           "shape"_a,
-           "val"_a)
+      .def(py::init<Shape>(), "shape"_a)
+      .def(py::init<Shape, const std::vector<Scalar>&>(), "shape"_a, "val"_a)
       .def(py::init<DevPtr, Shape>(), "device"_a, "shape"_a)
       .def(py::init<DevPtr, Shape, std::vector<Scalar>>(),
            "device"_a,
@@ -79,7 +76,20 @@ void bind_tensor_of(PyClass& m) {
       });
 }
 
+enum class Scalar { Real, Half, Int, Bool };
+
+py::object Tensor_(Scalar scalar, DevPtr dev) {
+  if (scalar == Scalar::Real) {
+    return py::cast(Tensor<Real>(dev));
+  } else if (scalar == Scalar::Half) {
+    return py::cast(Tensor<Half>(dev));
+  }
+  return py::cast(Tensor<Real>(dev));
+}
+
 inline void bind_tensor(py::module_& m) {
+  using namespace py::literals;
+
   // making pybind know all tensor types first, so method docs contain the
   // appropriate python types throughout.
   auto mr = declare_tensor_of<Real>(m);
@@ -91,6 +101,14 @@ inline void bind_tensor(py::module_& m) {
   bind_tensor_of<Int>(mi);
   bind_tensor_of<Half>(mh);
   bind_tensor_of<bool>(mb);
+
+  py::enum_<Scalar>(m, "Scalar")
+      .value("Real", Scalar::Real)
+      .value("Half", Scalar::Half)
+      .value("Int", Scalar::Int)
+      .value("Bool", Scalar::Bool);
+
+  m.def("Tensor", &Tensor_, "scalar"_a, "device"_a);
 }
 
 } // namespace python

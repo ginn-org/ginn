@@ -11,6 +11,7 @@
 #include <ginn/node/data.h>
 
 #include <ginn-py/tensor-py.h>
+#include <ginn-py/util-py.h>
 
 PYBIND11_DECLARE_HOLDER_TYPE(T, ginn::Ptr<T>);
 
@@ -66,10 +67,17 @@ void bind_data_of(PyClass& m) {
 }
 
 inline void bind_node(py::module_& m) {
+  using namespace pybind11::literals;
+
+  py::class_<BaseNode, Ptr<BaseNode>>(m, "BaseNode");
+  py::class_<Graph>(m, "Graph")
+      .def(py::init<Ptr<BaseNode>>())
+      .def("forward", &Graph::forward)
+      .def("reset_grad", &Graph::reset_grad)
+      .def("backward", &Graph::backward, "loss_coeff"_a);
+
   // making pybind know all node types first, so method docs contain the
   // appropriate python types throughout.
-  py::class_<BaseNode, Ptr<BaseNode>>(m, "BaseNode");
-
   auto [rnode, rdata] = declare_node_of<Real>(m);
   auto [inode, idata] = declare_node_of<Int>(m);
   auto [hnode, hdata] = declare_node_of<Half>(m);
@@ -87,14 +95,18 @@ inline void bind_node(py::module_& m) {
 
   // Not sure how to instantiate factory functions with value type args when
   // perfect forwarding was used (template Arg&&). Is using references safe?
-  m.def("RealData",
-        py::overload_cast<DevPtr&, Shape&>(&Data<Real, DevPtr&, Shape&>));
+  for_each<Real, Half, Int, bool>([&](auto scalar) {
+    using Scalar = decltype(scalar);
+    m.def(name<Scalar>("Data").c_str(),
+          py::overload_cast<DevPtr&, Shape&>(&Data<Scalar, DevPtr&, Shape&>));
+  });
 
-  py::class_<AddNode<Real>, BaseDataNode<Real>, Ptr<AddNode<Real>>>(
-      m, name<Real>("AddNode").c_str());
-
-  m.def("Add", &Add<NodePtr<Real>&, NodePtr<Real>&>);
-  m.def("Add", &Add<NodePtr<Half>&, NodePtr<Half>&>);
+  for_each<Real, Half>([&](auto scalar) {
+    using Scalar = decltype(scalar);
+    py::class_<AddNode<Scalar>, BaseDataNode<Scalar>, Ptr<AddNode<Scalar>>>(
+        m, name<Scalar>("AddNode").c_str());
+    m.def("Add", &Add<NodePtr<Scalar>&, NodePtr<Scalar>&>);
+  });
 }
 
 } // namespace python
