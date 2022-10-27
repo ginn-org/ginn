@@ -13,6 +13,17 @@ def test_ctors():
         e = Tensor(ginn.cpu(), [2])
         # f = Tensor(ginn.cpu(), [2], [1, 2]) #TODO: ditto
 
+    for scalar in ScalarTypes:
+        a = ginn.Tensor(scalar=scalar)
+        b = ginn.Tensor(scalar=scalar, shape=[2])
+        d = ginn.Tensor(device=ginn.cpu(), scalar=scalar)
+        e = ginn.Tensor(shape=[2], scalar=scalar, device=ginn.cpu())
+
+    a = ginn.Tensor()
+    b = ginn.Tensor([2])
+    d = ginn.Tensor(ginn.cpu())
+    e = ginn.Tensor(device=ginn.cpu(), shape=[2])
+
 
 def test_casting():
     for i, Tensor in enumerate(TensorTypes):
