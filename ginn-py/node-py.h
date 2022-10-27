@@ -93,19 +93,28 @@ inline void bind_node(py::module_& m) {
   bind_data_of<Half>(hdata);
   bind_data_of<bool>(bdata);
 
-  // Not sure how to instantiate factory functions with value type args when
-  // perfect forwarding was used (template Arg&&). Is using references safe?
+  // NOTE: Not sure how to instantiate factory functions with value type args
+  // when perfect forwarding was used (template Arg&&). Is using references
+  // safe?
+
+  // NOTE: Return value deduction with py::overload_cast fails with nvcc (why?),
+  // hence the explicit static cast in the following blocks.
+
   for_each<Real, Half, Int, bool>([&](auto scalar) {
     using Scalar = decltype(scalar);
     m.def(name<Scalar>("Data").c_str(),
-          py::overload_cast<DevPtr&, Shape&>(&Data<Scalar, DevPtr&, Shape&>));
+          static_cast<Ptr<DataNode<Scalar>> (*)(DevPtr&, Shape&)>(
+              &Data<Scalar, DevPtr&, Shape&>));
   });
 
   for_each<Real, Half>([&](auto scalar) {
     using Scalar = decltype(scalar);
     py::class_<AddNode<Scalar>, BaseDataNode<Scalar>, Ptr<AddNode<Scalar>>>(
         m, name<Scalar>("AddNode").c_str());
-    m.def("Add", &Add<NodePtr<Scalar>&, NodePtr<Scalar>&>);
+    m.def("Add",
+          static_cast<Ptr<AddNode<Scalar>> (*)(NodePtr<Scalar>&,
+                                               NodePtr<Scalar>&)>(
+              &Add<NodePtr<Scalar>&, NodePtr<Scalar>&>));
   });
 }
 

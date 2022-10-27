@@ -318,27 +318,27 @@ class Tensor {
   }
 
   // View as classical (CPU) Eigen matrix
-  auto m() {
+  MatrixMap<Scalar> m() {
     GINN_ASSERT(dev()->type() == CPU,
                 "m() can only be invoked on Cpu tensors!");
     auto dims = reduce(shape_, 2);
     return MatrixMap<Scalar>(data_, dims[0], dims[1]);
   }
   // TODO: should there be a Map type to const?
-  auto m() const {
+  MatrixMap<Scalar> m() const {
     GINN_ASSERT(dev()->type() == CPU,
                 "m() can only be invoked on Cpu tensors!");
     auto dims = reduce(shape_, 2);
     return MatrixMap<Scalar>(data_, dims[0], dims[1]);
   }
 
-  auto v() {
+  VectorMap<Scalar> v() {
     GINN_ASSERT(dev()->type() == CPU,
                 "v() can only be invoked on Cpu tensors!");
     auto dims = reduce(shape_, 1);
     return VectorMap<Scalar>(data_, dims[0]);
   }
-  auto v() const {
+  VectorMap<Scalar> v() const {
     GINN_ASSERT(dev()->type() == CPU,
                 "v() can only be invoked on Cpu tensors!");
     auto dims = reduce(shape_, 1);
@@ -443,6 +443,8 @@ class Tensor {
       Tensor<Real> tmp(dev(), shape());
       tmp.set_random();
       *this = tmp.cast<Scalar>();
+    } else if constexpr (std::is_same_v<Scalar, Int> or std::is_same_v<Scalar, bool>) {
+      GINN_THROW("Not yet implemented!");
     } else {
       if (dev_->type() == CPU) {
         m().setRandom();
@@ -454,7 +456,7 @@ class Tensor {
       }
 #endif
       else {
-        GINN_ASSERT(false);
+        GINN_THROW("Unexpected device type!");
       }
     }
   }

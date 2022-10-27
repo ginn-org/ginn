@@ -1,6 +1,8 @@
 #ifndef GINN_PY_TENSOR_PY_H
 #define GINN_PY_TENSOR_PY_H
 
+#include <ginn/def.h>
+
 #include <pybind11/eigen.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
@@ -12,6 +14,20 @@ namespace ginn {
 namespace python {
 
 namespace py = pybind11;
+
+// This is a helper type enum to dispatch things based on the scalar type
+// on the Python side.
+enum class Scalar_ { Real, Half, Int, Bool };
+
+template <typename Scalar>
+Scalar_ scalar_() {
+  if constexpr (std::is_same_v<Scalar, Real>) { return Scalar_::Real; }
+  if constexpr (std::is_same_v<Scalar, Half>) { return Scalar_::Half; }
+  if constexpr (std::is_same_v<Scalar, Int>) { return Scalar_::Int; }
+  if constexpr (std::is_same_v<Scalar, bool>) { return Scalar_::Bool; }
+  GINN_THROW("Unexpected scalar type!");
+  return {};
+}
 
 template <typename Scalar>
 std::string scalar_name() {
@@ -50,8 +66,8 @@ void bind_tensor_of(PyClass& m) {
       .def("shape", &T::shape)
       .def("size", py::overload_cast<>(&T::size, py::const_))
       .def("list", &T::vector)
-      .def("v", py::overload_cast<>(&T::v))
-      .def("m", py::overload_cast<>(&T::m))
+      .def("v", static_cast<VectorMap<Scalar> (T::*)()>(&T::v))
+      .def("m", static_cast<MatrixMap<Scalar> (T::*)()>(&T::m))
       .def("real", &T::template cast<Real>)
       .def("half", &T::template cast<Half>)
       .def("int", &T::template cast<Int>)
@@ -69,6 +85,8 @@ void bind_tensor_of(PyClass& m) {
       .def("move_to", &T::move_to, "device"_a)
       .def("maybe_copy_to", &T::maybe_copy_to, "device"_a)
       .def(py::self == py::self)
+      .def_property_readonly("scalar",
+                             [](const T& t) { return scalar_<Scalar>(); })
       .def("__repr__", [&](const T& t) {
         std::stringstream ss;
         ss << t;
@@ -76,12 +94,10 @@ void bind_tensor_of(PyClass& m) {
       });
 }
 
-enum class Scalar { Real, Half, Int, Bool };
-
-py::object Tensor_(Scalar scalar, DevPtr dev) {
-  if (scalar == Scalar::Real) {
+py::object Tensor_(Scalar_ scalar, DevPtr dev) {
+  if (scalar == Scalar_::Real) {
     return py::cast(Tensor<Real>(dev));
-  } else if (scalar == Scalar::Half) {
+  } else if (scalar == Scalar_::Half) {
     return py::cast(Tensor<Half>(dev));
   }
   return py::cast(Tensor<Real>(dev));
@@ -89,6 +105,12 @@ py::object Tensor_(Scalar scalar, DevPtr dev) {
 
 inline void bind_tensor(py::module_& m) {
   using namespace py::literals;
+
+  py::enum_<Scalar_>(m, "Scalar")
+      .value("Real", Scalar_::Real)
+      .value("Half", Scalar_::Half)
+      .value("Int", Scalar_::Int)
+      .value("Bool", Scalar_::Bool);
 
   // making pybind know all tensor types first, so method docs contain the
   // appropriate python types throughout.
@@ -101,12 +123,6 @@ inline void bind_tensor(py::module_& m) {
   bind_tensor_of<Int>(mi);
   bind_tensor_of<Half>(mh);
   bind_tensor_of<bool>(mb);
-
-  py::enum_<Scalar>(m, "Scalar")
-      .value("Real", Scalar::Real)
-      .value("Half", Scalar::Half)
-      .value("Int", Scalar::Int)
-      .value("Bool", Scalar::Bool);
 
   m.def("Tensor", &Tensor_, "scalar"_a, "device"_a);
 }
