@@ -94,13 +94,14 @@ void bind_tensor_of(PyClass& m) {
       });
 }
 
-py::object Tensor_(Scalar_ scalar, DevPtr dev) {
+template <typename... Args>
+py::object Tensor_(Scalar_ scalar, Args&&... args) {
   if (scalar == Scalar_::Real) {
-    return py::cast(Tensor<Real>(dev));
+    return py::cast(Tensor<Real>(std::forward<Args>(args)...));
   } else if (scalar == Scalar_::Half) {
-    return py::cast(Tensor<Half>(dev));
+    return py::cast(Tensor<Half>(std::forward<Args>(args)...));
   }
-  return py::cast(Tensor<Real>(dev));
+  return py::cast(Tensor<Real>(std::forward<Args>(args)...));
 }
 
 inline void bind_tensor(py::module_& m) {
@@ -124,7 +125,12 @@ inline void bind_tensor(py::module_& m) {
   bind_tensor_of<Half>(mh);
   bind_tensor_of<bool>(mb);
 
-  m.def("Tensor", &Tensor_, "scalar"_a, "device"_a);
+  // NOTE: Not sure how to instantiate factory functions with value type args
+  // when perfect forwarding was used (template Arg&&). Is using references
+  // safe?
+
+  m.def("Tensor", &Tensor_<DevPtr&>, "scalar"_a, "device"_a);
+  m.def("Tensor", &Tensor_<DevPtr&, Shape&>, "scalar"_a, "device"_a, "shape"_a);
 }
 
 } // namespace python
