@@ -21,7 +21,6 @@ if(GINN_ENABLE_GPU)
   set(CMAKE_CUDA_ARCHITECTURES 70)
   set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --x cu -w -Wno-deprecated-gpu-targets -DGINN_ENABLE_GPU")
   set(GPU_OPTIM_OPTS -O3 --ptxas-options=-O3 --compiler-options=-Ofast)
-  set(GPU_LINK_OPTS -lcurand -lcublas)
 endif()
 
 include_directories("${PROJECT_SOURCE_DIR}/")

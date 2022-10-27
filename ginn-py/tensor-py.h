@@ -53,45 +53,48 @@ void bind_tensor_of(PyClass& m) {
   using namespace pybind11::literals;
   using T = Tensor<Scalar>;
 
-  m.def(py::init<>())
-      .def(py::init<DevPtr>(), "device"_a)
-      .def(py::init<Shape>(), "shape"_a)
-      .def(py::init<Shape, const std::vector<Scalar>&>(), "shape"_a, "val"_a)
-      .def(py::init<DevPtr, Shape>(), "device"_a, "shape"_a)
-      .def(py::init<DevPtr, Shape, std::vector<Scalar>>(),
+  m.def(py::init<>());
+     m .def(py::init<DevPtr>(), "device"_a);
+     m .def(py::init<Shape>(), "shape"_a);
+     m .def(py::init<Shape, const std::vector<Scalar>&>(), "shape"_a, "val"_a);
+     m .def(py::init<DevPtr, Shape>(), "device"_a, "shape"_a);
+     m .def(py::init<DevPtr, Shape, std::vector<Scalar>>(),
            "device"_a,
            "shape"_a,
-           "val"_a)
-      .def("dev", &T::dev)
-      .def("shape", &T::shape)
-      .def("size", py::overload_cast<>(&T::size, py::const_))
-      .def("list", &T::vector)
-      .def("v", static_cast<VectorMap<Scalar> (T::*)()>(&T::v))
-      .def("m", static_cast<MatrixMap<Scalar> (T::*)()>(&T::m))
-      .def("real", &T::template cast<Real>)
-      .def("half", &T::template cast<Half>)
-      .def("int", &T::template cast<Int>)
-      .def("bool", &T::template cast<bool>)
-      .def("set_zero", &T::set_zero)
-      .def("set_ones", &T::set_ones)
-      .def("set_random", &T::set_random)
-      .def("set", &T::template set<0>)
-      .def("set", &T::template set<1>)
-      .def("set", &T::template set<2>)
-      .def("set", &T::template set<3>)
-      .def("set", &T::template set<4>)
-      .def("resize", &T::resize)
-      .def("copy_to", &T::copy_to, "device"_a)
-      .def("move_to", &T::move_to, "device"_a)
-      .def("maybe_copy_to", &T::maybe_copy_to, "device"_a)
-      .def(py::self == py::self)
-      .def_property_readonly("scalar",
-                             [](const T& t) { return scalar_<Scalar>(); })
-      .def("__repr__", [&](const T& t) {
+           "val"_a);
+      m.def("dev", &T::dev);
+      m.def("shape", &T::shape);
+      m.def("size", py::overload_cast<>(&T::size, py::const_));
+      m.def("list", &T::vector);
+      m.def("v", static_cast<VectorMap<Scalar> (T::*)()>(&T::v));
+      m.def("m", static_cast<MatrixMap<Scalar> (T::*)()>(&T::m));
+      m.def("real", &T::template cast<Real>);
+      m.def("half", &T::template cast<Half>);
+      m.def("int", &T::template cast<Int>);
+      m.def("bool", &T::template cast<bool>);
+      m.def("set_zero", &T::set_zero);
+      m.def("set_ones", &T::set_ones);
+      m.def("set_random", &T::set_random);
+      m.def("set", &T::template set<0>);
+      m.def("set", &T::template set<1>);
+      m.def("set", &T::template set<2>);
+      m.def("set", &T::template set<3>);
+      m.def("set", &T::template set<4>);
+      m.def("resize", &T::resize);
+      m.def("copy_to", &T::copy_to, "device"_a);
+      m.def("move_to", &T::move_to, "device"_a);
+      m.def("maybe_copy_to", &T::maybe_copy_to, "device"_a);
+      m.def_property_readonly("scalar",
+                             [](const T&) { return scalar_<Scalar>(); });
+      m.def("__repr__", [&](const T& t) {
         std::stringstream ss;
         ss << t;
         return ss.str();
       });
+      m.def("__eq__", [](const T &a, const T& b) {
+            return a == b;
+          }, py::is_operator());
+
 }
 
 template <typename... Args>

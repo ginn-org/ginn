@@ -1,7 +1,9 @@
 #ifndef GINN_PY_DEV_PY_H
 #define GINN_PY_DEV_PY_H
 
-#include <pybind11/operators.h>
+//#include <pybind11/operators.h>
+//NOTE: Using py::self way of operator binding yields template type deduction
+//errors in the particular nvcc I'm using.
 #include <pybind11/pybind11.h>
 
 #include <ginn/dev.h>
@@ -19,14 +21,17 @@ inline void bind_dev(py::module_& m) {
 
   py::class_<DeviceId>(m, "DeviceId")
       .def("__repr__",
-           [](const DeviceId& i) {
+           [](const DeviceId& i) -> std::string {
              return std::string("<DeviceId with type: ") +
                     (i.type == 0     ? "CPU"
                      : (i.type == 1) ? "GPU"
                                      : "NULL_DEV") +
                     ", idx: " + std::to_string(i.idx) + ">";
            })
-      .def(py::self == py::self);
+      .def(
+          "__eq__",
+          [](const DeviceId& a, const DeviceId& b) { return a == b; },
+          py::is_operator());
 
   py::class_<Device, std::shared_ptr<Device>>(m, "Device")
       .def("type", &Device::type)
