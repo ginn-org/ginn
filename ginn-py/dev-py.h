@@ -14,6 +14,8 @@ namespace python {
 namespace py = pybind11;
 
 inline void bind_dev(py::module_& m) {
+  using namespace py::literals;
+
   py::enum_<DeviceType>(m, "DeviceType")
       .value("CPU", CPU)
       .value("GPU", GPU)
@@ -57,8 +59,18 @@ inline void bind_dev(py::module_& m) {
   m.def("Gpu", &Gpu, py::arg("gpu_idx") = 0);
   m.def("gpu", &gpu, py::arg("gpu_idx") = 0);
 
-  // TODO: add PreallocGpu device
+  py::class_<PreallocGpuDevice, Device, std::shared_ptr<PreallocGpuDevice>>(
+      m, "PreallocGpuDevice")
+      .def("reset", &PreallocGpuDevice::reset)
+      .def("size", &PreallocGpuDevice::size)
+      .def("used", &PreallocGpuDevice::used);
+
+  m.def("PreallocGpu", py::overload_cast<size_t, size_t>(&PreallocGpu), "idx"_a, "size"_a);
+
 #endif
+
+  m.def("gpus", &gpus);
+
 }
 
 } // namespace python

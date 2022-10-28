@@ -44,7 +44,7 @@ class CudaError : public std::runtime_error {
   GINN_OVERLOAD(__VA_ARGS__, GINN_ASSERT2, GINN_ASSERT1)(__VA_ARGS__)
 
 #define GINN_ASSERT2(statement, message)                                       \
-  if (not (statement)) { throw ginn::RuntimeError(message); }
+  if (not(statement)) { throw ginn::RuntimeError(message); }
 
 #define GINN_ASSERT1(statement)                                                \
   GINN_ASSERT2(statement, "Assertion " #statement " failed!")
@@ -53,12 +53,12 @@ class CudaError : public std::runtime_error {
 
 #ifndef GINN_ENABLE_GPU
 
-//TODO: Changing Eigen assertions to throws breaks gpu kernels. See what can
-//  be done here.
+// TODO: Changing Eigen assertions to throws breaks gpu kernels. See what can
+//   be done here.
 
 #undef eigen_assert
 #define eigen_assert(statement)                                                \
-  if (not (statement)) {                                                          \
+  if (not(statement)) {                                                        \
     throw ginn::EigenError("Assertion " #statement " failed.");                \
   }
 

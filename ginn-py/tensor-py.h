@@ -102,8 +102,14 @@ py::object Tensor_(Args&&... args, Scalar_ scalar) {
     return py::cast(Tensor<Real>(std::forward<Args>(args)...));
   } else if (scalar == Scalar_::Half) {
     return py::cast(Tensor<Half>(std::forward<Args>(args)...));
+  } else if (scalar == Scalar_::Int) {
+    return py::cast(Tensor<Int>(std::forward<Args>(args)...));
+  } else if (scalar == Scalar_::Bool) {
+    return py::cast(Tensor<bool>(std::forward<Args>(args)...));
+  } else {
+    GINN_THROW("Unexpected Scalar type!");
+    return {};
   }
-  return py::cast(Tensor<Real>(std::forward<Args>(args)...));
 }
 
 inline void bind_tensor(py::module_& m) {

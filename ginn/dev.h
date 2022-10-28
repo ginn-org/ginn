@@ -36,7 +36,11 @@ namespace ginn {
 inline int gpus() {
   int num_gpus = -1;
 #ifdef GINN_ENABLE_GPU
-  GINN_CUDA_CALL(cudaGetDeviceCount(&num_gpus));
+  try {
+    GINN_CUDA_CALL(cudaGetDeviceCount(&num_gpus));
+  } catch (const CudaError&) {
+    return 0;
+  }
 #endif
   return num_gpus;
 }
@@ -247,6 +251,7 @@ class PreallocGpuDevice : public Device {
   short precedence() const override { return 1; }
   void reset() { offset_ = storage_.data(); }
   size_t used() const { return offset_ - storage_.data(); }
+  size_t size() const { return storage_.size(); }
 };
 
 auto PreallocGpu(size_t id, size_t size) {

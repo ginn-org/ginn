@@ -5,7 +5,7 @@ ScalarTypes = [ginn.Scalar.Real, ginn.Scalar.Half, ginn.Scalar.Int, ginn.Scalar.
 
 
 def test_ctors():
-    for Tensor in TensorTypes:
+    for i, Tensor in enumerate(TensorTypes):
         a = Tensor()
         b = Tensor([2])
         # c = Tensor([2], [1, 2]) #TODO: support this init for Half
@@ -13,11 +13,25 @@ def test_ctors():
         e = Tensor(ginn.cpu(), [2])
         # f = Tensor(ginn.cpu(), [2], [1, 2]) #TODO: ditto
 
-    for scalar in ScalarTypes:
+        for j, scalar in enumerate(ScalarTypes):
+            for t in [a, b, d, e]:
+                if i == j:
+                    assert t.scalar == scalar
+                else:
+                    assert t.scalar != scalar
+
+    for i, scalar in enumerate(ScalarTypes):
         a = ginn.Tensor(scalar=scalar)
         b = ginn.Tensor(scalar=scalar, shape=[2])
         d = ginn.Tensor(device=ginn.cpu(), scalar=scalar)
         e = ginn.Tensor(shape=[2], scalar=scalar, device=ginn.cpu())
+
+        for j, scalar_rhs in enumerate(ScalarTypes):
+            for t in [a, b, d, e]:
+                if i == j:
+                    assert t.scalar == scalar_rhs
+                else:
+                    assert t.scalar != scalar_rhs
 
     a = ginn.Tensor()
     b = ginn.Tensor([2])
