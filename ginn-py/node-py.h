@@ -66,6 +66,22 @@ void bind_data_of(PyClass& m) {
       .def("set_random", &T::set_random);
 }
 
+template <typename... Args>
+py::object Data_(Args&&... args, Scalar_ scalar) {
+  if (scalar == Scalar_::Real) {
+    return py::cast(Data<Real>(std::forward<Args>(args)...));
+  } else if (scalar == Scalar_::Half) {
+    return py::cast(Data<Half>(std::forward<Args>(args)...));
+  } else if (scalar == Scalar_::Int) {
+    return py::cast(Data<Int>(std::forward<Args>(args)...));
+  } else if (scalar == Scalar_::Bool) {
+    return py::cast(Data<bool>(std::forward<Args>(args)...));
+  } else {
+    GINN_THROW("Unexpected Scalar type!");
+    return {};
+  }
+}
+
 inline void bind_node(py::module_& m) {
   using namespace pybind11::literals;
 
@@ -97,24 +113,21 @@ inline void bind_node(py::module_& m) {
   // when perfect forwarding was used (template Arg&&). Is using references
   // safe?
 
-  // NOTE: Return value deduction with py::overload_cast fails with nvcc (why?),
-  // hence the explicit static cast in the following blocks.
-
   for_each<Real, Half, Int, bool>([&](auto scalar) {
     using Scalar = decltype(scalar);
     m.def(name<Scalar>("Data").c_str(),
-          static_cast<Ptr<DataNode<Scalar>> (*)(DevPtr&, Shape&)>(
-              &Data<Scalar, DevPtr&, Shape&>));
+          &Data<Scalar, DevPtr&, Shape&>,
+          "dev"_a,
+          "shape"_a);
   });
+
+  m.def("Data", &Data_<DevPtr&, Shape&>, "dev"_a, "shape"_a, "scalar"_a);
 
   for_each<Real, Half>([&](auto scalar) {
     using Scalar = decltype(scalar);
     py::class_<AddNode<Scalar>, BaseDataNode<Scalar>, Ptr<AddNode<Scalar>>>(
         m, name<Scalar>("AddNode").c_str());
-    m.def("Add",
-          static_cast<Ptr<AddNode<Scalar>> (*)(NodePtr<Scalar>&,
-                                               NodePtr<Scalar>&)>(
-              &Add<NodePtr<Scalar>&, NodePtr<Scalar>&>));
+    m.def("Add", &Add<NodePtr<Scalar>&, NodePtr<Scalar>&>);
   });
 }
 
