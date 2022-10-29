@@ -52,7 +52,10 @@ void bind_node_of(PyClass& m) {
 
   m.def("dev", &T::dev)
       .def("size", py::overload_cast<>(&T::size, py::const_))
-      .def("shape", py::overload_cast<>(&T::shape, py::const_));
+      .def("shape", py::overload_cast<>(&T::shape, py::const_))
+      .def("value", py::overload_cast<>(&T::value))
+      .def("grad", py::overload_cast<>(&T::grad))
+      .def("name", &T::name);
 }
 
 template <typename Scalar, typename PyClass>
@@ -152,6 +155,22 @@ inline void bind_node(py::module_& m) {
         "scalar"_a = Scalar_::Real);
   m.def("Random", &Random_<Shape&>, "shape"_a, "scalar"_a = Scalar_::Real);
 
+  m.def("Values",
+        static_cast<DataPtr<Real> (*)(NestedInitList<0, Real>)>(
+            &Values<0, Real>));
+  m.def("Values",
+        static_cast<DataPtr<Real> (*)(NestedInitList<1, Real>)>(
+            &Values<1, Real>));
+  m.def("Values",
+        static_cast<DataPtr<Real> (*)(NestedInitList<2, Real>)>(
+            &Values<2, Real>));
+  m.def("Values",
+        static_cast<DataPtr<Real> (*)(NestedInitList<3, Real>)>(
+            &Values<3, Real>));
+  m.def("Values",
+        static_cast<DataPtr<Real> (*)(NestedInitList<4, Real>)>(
+            &Values<4, Real>));
+
   for_each<Real, Half>([&](auto scalar) {
     using Scalar = decltype(scalar);
 
@@ -164,7 +183,32 @@ inline void bind_node(py::module_& m) {
               &Add<NodePtr<Scalar>&, NodePtr<Scalar>&>));
   });
 
-  py::class_<DimNode, BaseNode, DimPtr>(m, "DimNode");
+  for_each<Real, Half, Int>([&](auto scalar) {
+    using Scalar = decltype(scalar);
+
+    py::class_<StackNode<Scalar>, BaseDataNode<Scalar>, Ptr<StackNode<Scalar>>>(
+        m, name<Scalar>("StackNode").c_str());
+    // nvcc 11.1 forces me to use an explicit static cast here.
+    m.def(
+        "Stack",
+        static_cast<Ptr<StackNode<Scalar>> (*)(
+            const std::vector<std::vector<NodePtr<Scalar>>>&)>(&Stack<Scalar>));
+
+    py::class_<CatNode<Scalar>, BaseDataNode<Scalar>, Ptr<CatNode<Scalar>>>(
+        m, name<Scalar>("CatNode").c_str());
+    m.def("Cat",
+          static_cast<Ptr<CatNode<Scalar>> (*)(
+              const std::vector<NodePtr<Scalar>>&)>(
+              &Cat<const std::vector<NodePtr<Scalar>>&>));
+  });
+
+  py::class_<DimNode, BaseNode, DimPtr>(m, "DimNode")
+      .def("value", &DimNode::value);
+  m.def("Dim", static_cast<DimPtr (*)(Size&)>(&Dim<Size&>), "dims"_a);
+  m.def("Dim",
+        static_cast<DimPtr (*)(BaseNodePtr&, Size&)>(&Dim<BaseNodePtr&, Size&>),
+        "in"_a,
+        "dim_idx"_a);
 }
 
 } // namespace python

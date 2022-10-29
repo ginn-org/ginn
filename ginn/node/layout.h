@@ -429,9 +429,9 @@ class StackNode : public BaseDataNode<Scalar> {
   using BaseDataNode<Scalar>::grad;
   using BaseDataNode<Scalar>::dev;
 
-  StackNode(std::vector<std::vector<NodePtr<Scalar>>> nodes)
+  StackNode(const std::vector<std::vector<NodePtr<Scalar>>>& nodes)
       : BaseDataNode<Scalar>(base_cast(flatten(nodes))),
-        nodes_(std::move(nodes)) {
+        nodes_(nodes) {
     GINN_ASSERT(not nodes_.empty(), "Empty input to Stack!");
     GINN_ASSERT(not nodes_.front().empty(), "Empty input to Stack!");
     for (auto& inner : nodes_) {
