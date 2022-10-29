@@ -137,10 +137,16 @@ inline void bind_tensor(py::module_& m) {
   // when perfect forwarding was used (template Arg&&). Is using references
   // safe?
 
-  // Why is &Tensor_<> an unknown type?
-  m.def("Tensor", static_cast<py::object (*)(Scalar_)>(&Tensor_<>), "scalar"_a = Scalar_::Real);
+  // Why is &Tensor_<> an unknown type? -- might be a nvcc11.1 thing.
+  m.def("Tensor",
+        static_cast<py::object (*)(Scalar_)>(&Tensor_<>),
+        "scalar"_a = Scalar_::Real);
   m.def("Tensor", &Tensor_<DevPtr&>, "device"_a, "scalar"_a = Scalar_::Real);
-  m.def("Tensor", &Tensor_<DevPtr&, Shape&>, "device"_a, "shape"_a, "scalar"_a = Scalar_::Real);
+  m.def("Tensor",
+        &Tensor_<DevPtr&, Shape&>,
+        "device"_a,
+        "shape"_a,
+        "scalar"_a = Scalar_::Real);
   m.def("Tensor", &Tensor_<Shape&>, "shape"_a, "scalar"_a = Scalar_::Real);
 }
 

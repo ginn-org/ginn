@@ -9,6 +9,7 @@
 #include <ginn/node.h>
 #include <ginn/node/common.h>
 #include <ginn/node/data.h>
+#include <ginn/node/layout.h>
 
 #include <ginn-py/tensor-py.h>
 #include <ginn-py/util-py.h>
@@ -82,6 +83,19 @@ py::object Data_(Args&&... args, Scalar_ scalar) {
   }
 }
 
+template <typename... Args>
+py::object Random_(Args&&... args, Scalar_ scalar) {
+  if (scalar == Scalar_::Real) {
+    return py::cast(Random<Real>(std::forward<Args>(args)...));
+  } else if (scalar == Scalar_::Half) {
+    return py::cast(Random<Half>(std::forward<Args>(args)...));
+    // TODO: Int & bool here
+  } else {
+    GINN_THROW("Unexpected Scalar type!");
+    return {};
+  }
+}
+
 inline void bind_node(py::module_& m) {
   using namespace pybind11::literals;
 
@@ -115,20 +129,42 @@ inline void bind_node(py::module_& m) {
 
   for_each<Real, Half, Int, bool>([&](auto scalar) {
     using Scalar = decltype(scalar);
+    // nvcc 11.1 forces me to use an explicit static cast here.
     m.def(name<Scalar>("Data").c_str(),
-          &Data<Scalar, DevPtr&, Shape&>,
+          static_cast<DataPtr<Scalar> (*)(DevPtr&, Shape&)>(
+              &Data<Scalar, DevPtr&, Shape&>),
           "dev"_a,
           "shape"_a);
   });
 
-  m.def("Data", &Data_<DevPtr&, Shape&>, "dev"_a, "shape"_a, "scalar"_a);
+  m.def("Data", &Data_<DevPtr&>, "device"_a, "scalar"_a = Scalar_::Real);
+  m.def("Data",
+        &Data_<DevPtr&, Shape&>,
+        "device"_a,
+        "shape"_a,
+        "scalar"_a = Scalar_::Real);
+  m.def("Data", &Data_<Shape&>, "shape"_a, "scalar"_a = Scalar_::Real);
+
+  m.def("Random",
+        &Random_<DevPtr&, Shape&>,
+        "device"_a,
+        "shape"_a,
+        "scalar"_a = Scalar_::Real);
+  m.def("Random", &Random_<Shape&>, "shape"_a, "scalar"_a = Scalar_::Real);
 
   for_each<Real, Half>([&](auto scalar) {
     using Scalar = decltype(scalar);
+
     py::class_<AddNode<Scalar>, BaseDataNode<Scalar>, Ptr<AddNode<Scalar>>>(
         m, name<Scalar>("AddNode").c_str());
-    m.def("Add", &Add<NodePtr<Scalar>&, NodePtr<Scalar>&>);
+    // nvcc 11.1 forces me to use an explicit static cast here.
+    m.def("Add",
+          static_cast<Ptr<AddNode<Scalar>> (*)(NodePtr<Scalar>&,
+                                               NodePtr<Scalar>&)>(
+              &Add<NodePtr<Scalar>&, NodePtr<Scalar>&>));
   });
+
+  py::class_<DimNode, BaseNode, DimPtr>(m, "DimNode");
 }
 
 } // namespace python

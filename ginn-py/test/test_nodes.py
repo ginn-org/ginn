@@ -2,6 +2,8 @@ import ginn
 
 
 def test_dim():
+    for scalar in [ginn.Scalar.Real, ginn.Scalar.Half]:
+        x = ginn.Random(ginn.cpu(), [3, 2, 1], scalar=scalar)
     """
     TEMPLATE_TEST_CASE("Dim", "[layout]", Real, Int, Half, void) {
       BaseNodePtr x;
