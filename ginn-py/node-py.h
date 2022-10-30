@@ -1,3 +1,5 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "bugprone-unused-raii"
 #ifndef GINN_PY_NODE_PY_H
 #define GINN_PY_NODE_PY_H
 
@@ -217,11 +219,23 @@ inline void bind_node(py::module_& m) {
     m.def("Reshape",
           static_cast<Ptr<ReshapeNode<Scalar>> (*)(
               NodePtr<Scalar>&, typename ReshapeNode<Scalar>::LazyShape&)>(
-              &Reshape<NodePtr<Scalar>&, typename ReshapeNode<Scalar>::LazyShape&>));
+              &Reshape<NodePtr<Scalar>&,
+                       typename ReshapeNode<Scalar>::LazyShape&>));
     m.def("Reshape",
-          static_cast<Ptr<ReshapeNode<Scalar>> (*)(
-              NodePtr<Scalar>&, Shape&)>(
-              &Reshape<NodePtr<Scalar>&, Shape&>), "in"_a, "shape"_a);
+          static_cast<Ptr<ReshapeNode<Scalar>> (*)(NodePtr<Scalar>&, Shape&)>(
+              &Reshape<NodePtr<Scalar>&, Shape&>),
+          "in"_a,
+          "shape"_a);
+
+    py::class_<RankViewNode<Scalar>,
+               BaseDataNode<Scalar>,
+               Ptr<RankViewNode<Scalar>>>(m,
+                                          name<Scalar>("RankViewNode").c_str());
+    m.def("RankView",
+          static_cast<Ptr<RankViewNode<Scalar>> (*)(NodePtr<Scalar>&, Size&)>(
+              &RankView<NodePtr<Scalar>&, Size&>),
+          "in"_a,
+          "rank"_a);
   });
 
   py::class_<DimNode, BaseNode, DimPtr>(m, "DimNode")
@@ -237,3 +251,5 @@ inline void bind_node(py::module_& m) {
 } // namespace ginn
 
 #endif
+
+#pragma clang diagnostic pop
