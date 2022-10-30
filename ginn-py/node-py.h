@@ -200,6 +200,28 @@ inline void bind_node(py::module_& m) {
           static_cast<Ptr<CatNode<Scalar>> (*)(
               const std::vector<NodePtr<Scalar>>&)>(
               &Cat<const std::vector<NodePtr<Scalar>>&>));
+
+    py::class_<RowwiseCatNode<Scalar>,
+               BaseDataNode<Scalar>,
+               Ptr<RowwiseCatNode<Scalar>>>(
+        m, name<Scalar>("RowwiseCatNode").c_str());
+    m.def("RowwiseCat",
+          static_cast<Ptr<RowwiseCatNode<Scalar>> (*)(
+              const std::vector<NodePtr<Scalar>>&)>(
+              &RowwiseCat<const std::vector<NodePtr<Scalar>>&>));
+
+    py::class_<ReshapeNode<Scalar>,
+               BaseDataNode<Scalar>,
+               Ptr<ReshapeNode<Scalar>>>(m,
+                                         name<Scalar>("ReshapeNode").c_str());
+    m.def("Reshape",
+          static_cast<Ptr<ReshapeNode<Scalar>> (*)(
+              NodePtr<Scalar>&, typename ReshapeNode<Scalar>::LazyShape&)>(
+              &Reshape<NodePtr<Scalar>&, typename ReshapeNode<Scalar>::LazyShape&>));
+    m.def("Reshape",
+          static_cast<Ptr<ReshapeNode<Scalar>> (*)(
+              NodePtr<Scalar>&, Shape&)>(
+              &Reshape<NodePtr<Scalar>&, Shape&>), "in"_a, "shape"_a);
   });
 
   py::class_<DimNode, BaseNode, DimPtr>(m, "DimNode")

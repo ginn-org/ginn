@@ -81,8 +81,28 @@ def test_cat():
     b = ginn.Values([[3, 4], [5, 6]])
     c = ginn.Values([[7, 8], [9, 0]])
 
-    cat = ginn.Cat([a, b, c])
-
     res = ginn.Values([[1, 2], [3, 4], [5, 6], [7, 8], [9, 0]])
 
-    check(cat, res)
+    check(ginn.Cat([a, b, c]), res)
+
+
+def test_rowwise_cat():
+    a = ginn.Values([[1], [2]])
+    b = ginn.Values([[3, 4], [5, 6]])
+    c = ginn.Values([[7, 8, 9], [0, 1, 2]])
+
+    res = ginn.Values([[1, 3, 4, 7, 8, 9], [2, 5, 6, 0, 1, 2]])
+
+    check(ginn.RowwiseCat([a, b, c]), res)
+
+
+def test_reshape():
+    W = ginn.Values([[1, 2, 3, 4, 5, 6]])
+
+    col = ginn.Values([[1], [2], [3], [4], [5], [6]])
+    mat = ginn.Values([[1, 4],
+                       [2, 5],
+                       [3, 6]])
+
+    check(ginn.Reshape(W, shape=[6, 1]), col)
+    check(ginn.Reshape(W, shape=[3, 2]), mat)

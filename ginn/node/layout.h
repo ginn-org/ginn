@@ -430,8 +430,7 @@ class StackNode : public BaseDataNode<Scalar> {
   using BaseDataNode<Scalar>::dev;
 
   StackNode(const std::vector<std::vector<NodePtr<Scalar>>>& nodes)
-      : BaseDataNode<Scalar>(base_cast(flatten(nodes))),
-        nodes_(nodes) {
+      : BaseDataNode<Scalar>(base_cast(flatten(nodes))), nodes_(nodes) {
     GINN_ASSERT(not nodes_.empty(), "Empty input to Stack!");
     GINN_ASSERT(not nodes_.front().empty(), "Empty input to Stack!");
     for (auto& inner : nodes_) {
@@ -480,19 +479,20 @@ class ReshapeNode : public BaseDataNode<Scalar> {
   using BaseDataNode<Scalar>::value;
   using BaseDataNode<Scalar>::grad;
 
-  ReshapeNode(NodePtr<Scalar> in, const Shape& s)
-      : ReshapeNode(in, make_lazy_shape(s)) {}
+  ReshapeNode(NodePtr<Scalar> in, Shape s)
+      : ReshapeNode(in, make_lazy_shape(std::move(s))) {}
 
-  ReshapeNode(NodePtr<Scalar> in, const LazyShape& s)
+  ReshapeNode(NodePtr<Scalar> in, LazyShape s)
       : BaseDataNode<Scalar>(in->dev(),
-                             std::vector<BaseNodePtr>{in} + base_cast(s)),
+                             std::vector<BaseNodePtr>{in} +
+                                 base_cast(std::move(s))),
         in_(in),
         s_(s) {}
 
   bool has_grad() const override { return in_->has_grad(); }
 
   // TODO: I think the following method fails for composing consecutive
-  // Reshape nodes. Either fix or disallow.
+  //   Reshape nodes. Either fix or disallow.
   void init_grad() override {
     if (has_grad()) {
       in_->init_grad();

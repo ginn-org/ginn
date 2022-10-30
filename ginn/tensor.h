@@ -439,13 +439,12 @@ class Tensor {
 
   void set_random() {
     // TODO: making a copy here for now, get rid of this
-    if constexpr (std::is_same_v<Scalar, Half>) {
+    if constexpr (std::is_same_v<Scalar, Half> or std::is_same_v<Scalar, Int> or std::is_same_v<Scalar, bool>) {
+      // TODO: properly handle int and bool
       Tensor<Real> tmp(dev(), shape());
       tmp.set_random();
       *this = tmp.cast<Scalar>();
-    } else if constexpr (std::is_same_v<Scalar, Int> or std::is_same_v<Scalar, bool>) {
-      GINN_THROW("Not yet implemented!");
-    } else {
+    } else if constexpr (std::is_same_v<Scalar, Real>) {
       if (dev_->type() == CPU) {
         m().setRandom();
       }
@@ -458,6 +457,8 @@ class Tensor {
       else {
         GINN_THROW("Unexpected device type!");
       }
+    } else {
+      GINN_THROW("Unexpected Scalar type!");
     }
   }
 
