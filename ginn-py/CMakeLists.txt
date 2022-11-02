@@ -1,7 +1,10 @@
 if(GINN_ENABLE_GPU)
   set_source_files_properties(ginn.cpp PROPERTIES LANGUAGE CUDA)
+  set_source_files_properties(dev-py.cpp PROPERTIES LANGUAGE CUDA)
+  set_source_files_properties(tensor-py.cpp PROPERTIES LANGUAGE CUDA)
+  set_source_files_properties(node-py.cpp PROPERTIES LANGUAGE CUDA)
 endif()
-pybind11_add_module(ginn ginn.cpp)
+pybind11_add_module(ginn ginn.cpp dev-py.cpp tensor-py.cpp node-py.cpp)
 
 if(GINN_ENABLE_GPU)
   target_compile_options(ginn PRIVATE ${GPU_OPTIM_OPTS})

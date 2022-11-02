@@ -100,26 +100,18 @@ def test_reshape():
     W = ginn.Values([[1, 2, 3, 4, 5, 6]])
 
     col = ginn.Values([[1], [2], [3], [4], [5], [6]])
-    mat = ginn.Values([[1, 4],
-                       [2, 5],
-                       [3, 6]])
+    mat = ginn.Values([[1, 4], [2, 5], [3, 6]])
 
     check(ginn.Reshape(W, shape=[6, 1]), col)
     check(ginn.Reshape(W, shape=[3, 2]), mat)
 
 
 def test_rank_view():
-    W = ginn.Values([[1, 4],
-                     [2, 5],
-                     [3, 6]])
+    W = ginn.Values([[1, 4], [2, 5], [3, 6]])
 
     col = ginn.Values([1, 2, 3, 4, 5, 6])
-    mat = ginn.Values([[1, 4],
-                       [2, 5],
-                       [3, 6]])
-    ten = ginn.Values([[[1], [4]],
-                          [[2], [5]],
-                          [[3], [6]]])
+    mat = ginn.Values([[1, 4], [2, 5], [3, 6]])
+    ten = ginn.Values([[[1], [4]], [[2], [5]], [[3], [6]]])
 
     check(ginn.RankView(W, 1), col)
     check(ginn.RankView(W, 2), mat)

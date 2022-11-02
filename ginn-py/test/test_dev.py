@@ -20,7 +20,7 @@ def test_cpu(dev):
     assert d1.precedence() == 0
 
     d2 = (
-        ginn.PreallocCpu(100) if dev() == ginn.cpu() else ginn.PreallocGpu(100)
+        ginn.PreallocCpu(100) if dev() == ginn.cpu() else ginn.PreallocGpu(0, 100)
     )  # 100 bytes
     assert d2.size() == 100
     assert d1.id() == d2.id()

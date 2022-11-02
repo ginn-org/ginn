@@ -473,19 +473,15 @@ class ReshapeNode : public BaseDataNode<Scalar> {
 
   void forward_() override { value().map(in_->value(), make_shape(s_)); }
 
-  void backward_() override {}
-
  public:
   using BaseDataNode<Scalar>::value;
   using BaseDataNode<Scalar>::grad;
 
   ReshapeNode(NodePtr<Scalar> in, Shape s)
-      : ReshapeNode(in, make_lazy_shape(std::move(s))) {}
+      : ReshapeNode(std::move(in), make_lazy_shape(std::move(s))) {}
 
-  ReshapeNode(NodePtr<Scalar> in, LazyShape s)
-      : BaseDataNode<Scalar>(in->dev(),
-                             std::vector<BaseNodePtr>{in} +
-                                 base_cast(std::move(s))),
+  ReshapeNode(const NodePtr<Scalar>& in, const LazyShape& s)
+      : BaseDataNode<Scalar>(std::vector<BaseNodePtr>{in} + base_cast(s)),
         in_(in),
         s_(s) {}
 
@@ -568,9 +564,9 @@ class SliceNode : public BaseDataNode<Scalar> {
   using BaseDataNode<Scalar>::grad;
   using BaseDataNode<Scalar>::has_grad;
 
-  SliceNode(NodePtr<Scalar> x, Index<N> offsets, Index<N> sizes)
-      : BaseDataNode<Scalar>({std::move(x)}),
-        in_(std::move(x)),
+  SliceNode(const NodePtr<Scalar>& x, Index<N> offsets, Index<N> sizes)
+      : BaseDataNode<Scalar>({x}),
+        in_(x),
         offsets_(std::move(offsets)),
         sizes_(std::move(sizes)) {}
 

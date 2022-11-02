@@ -58,11 +58,11 @@ using TensorMap = Eigen::TensorMap<Eigen::Tensor<Scalar, N>>;
 
 namespace literals {
 
-Real operator"" _r(long double x) { return x; }
-Real operator"" _r(unsigned long long x) { return x; }
+inline Real operator"" _r(long double x) { return x; }
+inline Real operator"" _r(unsigned long long x) { return x; }
 
-Half operator"" _h(long double x) { return Half{x}; }
-Half operator"" _h(unsigned long long x) { return Half{x}; }
+inline Half operator"" _h(long double x) { return Half{x}; }
+inline Half operator"" _h(unsigned long long x) { return Half{x}; }
 
 } // namespace literals
 

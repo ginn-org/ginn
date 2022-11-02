@@ -45,7 +45,7 @@ inline int gpus() {
   return num_gpus;
 }
 
-Eigen::DefaultDevice& cpu_device() {
+inline Eigen::DefaultDevice& cpu_device() {
   static Eigen::DefaultDevice dev;
   return dev;
 };
@@ -88,7 +88,7 @@ class NullDevice : public Device {
   short precedence() const override { return -1; }
 };
 
-auto null_dev() {
+inline auto null_dev() {
   static auto dev = std::make_shared<NullDevice>();
   return dev;
 }
@@ -104,9 +104,9 @@ class CpuDevice : public Device {
   DeviceId id() const override { return {CPU, 0}; }
 };
 
-auto Cpu() { return std::make_shared<CpuDevice>(); }
+inline auto Cpu() { return std::make_shared<CpuDevice>(); }
 
-auto& cpu() {
+inline auto& cpu() {
   static auto dev = Cpu();
   return dev;
 }
@@ -141,7 +141,7 @@ class PreallocCpuDevice : public Device {
   size_t size() const { return storage_.size(); }
 };
 
-auto PreallocCpu(size_t size) {
+inline auto PreallocCpu(size_t size) {
   return std::make_shared<PreallocCpuDevice>(size);
 }
 
@@ -197,9 +197,9 @@ class GpuDevice : public Device {
   }
 };
 
-auto Gpu(size_t id) { return std::make_shared<GpuDevice>(id); }
+inline auto Gpu(size_t id) { return std::make_shared<GpuDevice>(id); }
 
-auto& gpu(int idx = 0) {
+inline auto& gpu(int idx = 0) {
   using Ptr = std::shared_ptr<GpuDevice>;
   auto helper = []() {
     std::vector<Ptr> devs;
@@ -254,16 +254,16 @@ class PreallocGpuDevice : public Device {
   size_t size() const { return storage_.size(); }
 };
 
-auto PreallocGpu(size_t id, size_t size) {
+inline auto PreallocGpu(size_t id, size_t size) {
   return std::make_shared<PreallocGpuDevice>(id, size);
 }
-auto PreallocGpu(size_t size) {
+inline auto PreallocGpu(size_t size) {
   return std::make_shared<PreallocGpuDevice>(size);
 }
 
-CurandGenerator& curand_gen(int idx = 0) { return gpu(idx)->gen(); }
-cublasHandle_t& cublas_handle(int idx = 0) { return gpu(idx)->handle(); }
-Eigen::GpuDevice& gpu_device(int idx = 0) {
+inline CurandGenerator& curand_gen(int idx = 0) { return gpu(idx)->gen(); }
+inline cublasHandle_t& cublas_handle(int idx = 0) { return gpu(idx)->handle(); }
+inline Eigen::GpuDevice& gpu_device(int idx = 0) {
   return gpu(idx)->eigen_gpu_device();
 }
 
