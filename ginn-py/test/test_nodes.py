@@ -5,7 +5,7 @@ import pytest
 def check(a: ginn.BaseNode, b: ginn.BaseNode):
     ginn.Graph(a).forward()
     ginn.Graph(b).forward()
-    assert a.value() == b.value()
+    assert a.value == b.value
 
 
 def test_dim():
@@ -20,9 +20,9 @@ def test_dim():
         ginn.Graph(d1).forward()
         ginn.Graph(d2).forward()
 
-        assert d0.value() == 3
-        assert d1.value() == 2
-        assert d2.value() == 1
+        assert d0.value == 3
+        assert d1.value == 2
+        assert d2.value == 1
 
 
 class TestStack:
@@ -116,3 +116,32 @@ def test_rank_view():
     check(ginn.RankView(W, 1), col)
     check(ginn.RankView(W, 2), mat)
     check(ginn.RankView(W, 3), ten)
+
+
+def test_slice():
+    x = ginn.Values([[1, 2], [3, 4], [5, 6], [7, 8]])
+    assert x.shape == [4, 2]
+
+    out = ginn.Values([[3, 4], [5, 6], [7, 8]])
+    assert out.shape == [3, 2]
+    check(ginn.Slice(x, [1, 0], [3, 2]), out)
+
+    out = ginn.Values([[2], [4], [6], [8]])
+    assert out.shape == [4, 1]
+    check(ginn.Slice(x, offsets=[0, 1], sizes=[4, 1]), out)
+
+    out = ginn.Values([[5], [7]])
+    assert out.shape == [2, 1]
+    check(ginn.Slice(x, [2, 0], [2, 1]), out)
+
+
+def test_chip():
+    x = ginn.Values([[1, 2],
+                     [3, 4],
+                     [5, 6],
+                     [7, 8]])
+
+    y = ginn.Values([5, 6])
+    z = ginn.Values([2, 4, 6, 8])
+    check(ginn.Chip(x, 2, 0), y)
+    check(ginn.Chip(x, 1, 1), z)

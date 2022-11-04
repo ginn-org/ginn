@@ -49,10 +49,11 @@ void bind_node_of(PyClass& m) {
 
   m.def("dev", &T::dev)
       .def("size", py::overload_cast<>(&T::size, py::const_))
-      .def("shape", py::overload_cast<>(&T::shape, py::const_))
-      .def("value", py::overload_cast<>(&T::value))
-      .def("grad", py::overload_cast<>(&T::grad))
-      .def("name", &T::name);
+      .def_property_readonly("shape", py::overload_cast<>(&T::shape, py::const_))
+      // TODO: Setters for value & grad
+      .def_property_readonly("value", py::overload_cast<>(&T::value))
+      .def_property_readonly("grad", py::overload_cast<>(&T::grad))
+      .def_property_readonly("name", &T::name);
 }
 
 template <typename Scalar, typename PyClass>
@@ -213,7 +214,8 @@ void bind_node(py::module_& m) {
                                          name<Scalar>("ReshapeNode").c_str());
     m.def("Reshape",
           static_cast<Ptr<ReshapeNode<Scalar>> (*)(
-              const NodePtr<Scalar>&, const typename ReshapeNode<Scalar>::LazyShape&)>(
+              const NodePtr<Scalar>&,
+              const typename ReshapeNode<Scalar>::LazyShape&)>(
               &Reshape<const NodePtr<Scalar>&,
                        const typename ReshapeNode<Scalar>::LazyShape&>));
     m.def("Reshape",
@@ -231,10 +233,30 @@ void bind_node(py::module_& m) {
               &RankView<NodePtr<Scalar>&, Size&>),
           "in"_a,
           "rank"_a);
+
+    py::class_<SliceNode<Scalar>, BaseDataNode<Scalar>, Ptr<SliceNode<Scalar>>>(
+        m, name<Scalar>("SliceNode").c_str());
+    m.def("Slice",
+          static_cast<Ptr<SliceNode<Scalar>> (*)(
+              const NodePtr<Scalar>&, Shape&, Shape&)>(
+              &Slice<const NodePtr<Scalar>&, Shape&, Shape&>),
+          "in"_a,
+          "offsets"_a,
+          "sizes"_a);
+
+    py::class_<ChipNode<Scalar>, BaseDataNode<Scalar>, Ptr<ChipNode<Scalar>>>(
+        m, name<Scalar>("ChipNode").c_str());
+    m.def("Chip",
+          static_cast<Ptr<ChipNode<Scalar>> (*)(
+              const NodePtr<Scalar>&, Size&, Size&)>(
+              &Chip<const NodePtr<Scalar>&, Size&, Size&>),
+          "in"_a,
+          "offset"_a,
+          "dim"_a);
   });
 
   py::class_<DimNode, BaseNode, DimPtr>(m, "DimNode")
-      .def("value", &DimNode::value);
+      .def_property_readonly("value", &DimNode::value);
   m.def("Dim", static_cast<DimPtr (*)(Size&)>(&Dim<Size&>), "dims"_a);
   m.def("Dim",
         static_cast<DimPtr (*)(BaseNodePtr&, Size&)>(&Dim<BaseNodePtr&, Size&>),

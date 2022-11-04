@@ -26,7 +26,8 @@ void bind_tensor_of(PyClass& m) {
         "shape"_a,
         "val"_a);
   m.def("dev", &T::dev);
-  m.def("shape", &T::shape);
+  //m.def("shape", &T::shape);
+  m.def_property("shape", &T::shape, &T::resize);
   m.def("size", py::overload_cast<>(&T::size, py::const_));
   m.def("list", &T::vector);
   m.def("v", static_cast<VectorMap<Scalar> (T::*)()>(&T::v));
@@ -43,7 +44,7 @@ void bind_tensor_of(PyClass& m) {
   m.def("set", &T::template set<2>);
   m.def("set", &T::template set<3>);
   m.def("set", &T::template set<4>);
-  m.def("resize", &T::resize);
+  //m.def("resize", &T::resize);
   m.def("copy_to", &T::copy_to, "device"_a);
   m.def("move_to", &T::move_to, "device"_a);
   m.def("maybe_copy_to", &T::maybe_copy_to, "device"_a);

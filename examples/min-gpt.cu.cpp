@@ -490,7 +490,7 @@ struct GptModel {
     while (s.size() < len) {
       auto y = run({s});
       auto probs = Softmax(y);
-      auto prob = Chip<3>(probs, s.size() - 1, 2);
+      auto prob = Chip(probs, s.size() - 1, 2);
       Graph(prob).forward();
       Size i = sample(prob->value());
       s += chars.reverse_lookup(i);

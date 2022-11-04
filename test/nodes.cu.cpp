@@ -263,7 +263,7 @@ TEMPLATE_TEST_CASE("Slice", "[layout]", Real, Half, Int) {
                           {5, 6},
                           {7, 8}})->cast<Scalar>();
     REQUIRE(out->shape() == Shape{3, 2});
-    check(Slice<2>(x, Index<2>{1, 0}, Index<2>{3, 2}), out);
+    check(Slice(x, Shape{1, 0}, Shape{3, 2}), out);
   }
 
   SECTION("Col subset") {
@@ -272,14 +272,14 @@ TEMPLATE_TEST_CASE("Slice", "[layout]", Real, Half, Int) {
                           {6},
                           {8}})->cast<Scalar>();
     REQUIRE(out->shape() == Shape{4, 1});
-    check(Slice<2>(x, Index<2>{0, 1}, Index<2>{4, 1}), out);
+    check(Slice(x, Shape{0, 1}, Shape{4, 1}), out);
   }
 
   SECTION("Row & col subset") {
     auto out = Values<2>({{5},
                           {7}})->cast<Scalar>();
     REQUIRE(out->shape() == Shape{2, 1});
-    check(Slice<2>(x, Index<2>{2, 0}, Index<2>{2, 1}), out);
+    check(Slice(x, Shape{2, 0}, Shape{2, 1}), out);
   }
 }
 
@@ -302,23 +302,23 @@ TEMPLATE_TEST_CASE("Chip", "[layout]", Real, Int, Half) {
   }
 
   SECTION("Forward") {
-    check(Chip<2>(x_, 2, 0), y_);
-    check(Chip<2>(x_, 1, 1), z_);
+    check(Chip(x_, 2, 0), y_);
+    check(Chip(x_, 1, 1), z_);
   }
 
   SECTION("Grad or cuda") {
     SECTION("Basic") {
-      CHECK_(Chip<2>(x_, 0, 0), {x_}, true);
-      CHECK_(Chip<2>(x_, 1, 1), {x_}, true);
-      CHECK_(Chip<2>(x_, 2, 0), {x_}, true);
+      CHECK_(Chip(x_, 0, 0), {x_}, true);
+      CHECK_(Chip(x_, 1, 1), {x_}, true);
+      CHECK_(Chip(x_, 2, 0), {x_}, true);
     }
 
     SECTION("High rank") {
       auto x = Random(Dev, {4, 2, 3})->cast<Scalar>();
-      CHECK_(Chip<3>(x, 3, 0), {x}, true);
-      CHECK_(Chip<3>(x, 0, 1), {x}, true);
-      CHECK_(Chip<3>(x, 1, 2), {x}, true);
-      CHECK_(Chip<3>(x, 2, 2), {x}, true);
+      CHECK_(Chip(x, 3, 0), {x}, true);
+      CHECK_(Chip(x, 0, 1), {x}, true);
+      CHECK_(Chip(x, 1, 2), {x}, true);
+      CHECK_(Chip(x, 2, 2), {x}, true);
     }
   }
 }
@@ -1027,15 +1027,15 @@ TEMPLATE_TEST_CASE("BatchedProd", "[prod]", Real, Half) {
     b->value() = b->value().t() - Scalar(1.);
     auto c = BatchedProd(a, b);
 
-    auto c0 = Chip<3>(c, 0, 2);
-    auto c1 = Chip<3>(c, 1, 2);
-    auto c2 = Chip<3>(c, 2, 2);
-    auto c3 = Chip<3>(c, 3, 2);
+    auto c0 = Chip(c, 0, 2);
+    auto c1 = Chip(c, 1, 2);
+    auto c2 = Chip(c, 2, 2);
+    auto c3 = Chip(c, 3, 2);
 
-    auto a0 = Chip<3>(a, 0, 2), b0 = Chip<3>(b, 0, 2);
-    auto a1 = Chip<3>(a, 1, 2), b1 = Chip<3>(b, 1, 2);
-    auto a2 = Chip<3>(a, 2, 2), b2 = Chip<3>(b, 2, 2);
-    auto a3 = Chip<3>(a, 3, 2), b3 = Chip<3>(b, 3, 2);
+    auto a0 = Chip(a, 0, 2), b0 = Chip(b, 0, 2);
+    auto a1 = Chip(a, 1, 2), b1 = Chip(b, 1, 2);
+    auto a2 = Chip(a, 2, 2), b2 = Chip(b, 2, 2);
+    auto a3 = Chip(a, 3, 2), b3 = Chip(b, 3, 2);
 
     auto c0_ = a0 * b0;
     auto c1_ = a1 * b1;
@@ -1061,7 +1061,7 @@ TEMPLATE_TEST_CASE("BatchedProd", "[prod]", Real, Half) {
     auto c = BatchedProd(a, b);
 
     auto ChipTwice = [](auto x, Size i, Size j) {
-      return Chip<3>(Chip<4>(x, j, 3), i, 2);
+      return Chip(Chip(x, j, 3), i, 2);
     };
 
     auto c00 = ChipTwice(c, 0, 0);

@@ -541,21 +541,52 @@ class RankViewNode : public BaseDataNode<Scalar> {
 
 GINN_MAKE_SCALAR_FORWARDING_FACTORY(RankView);
 
-// TODO: Get rid of template int here
-template <Size N, typename Scalar>
+template <typename Scalar>
 class SliceNode : public BaseDataNode<Scalar> {
  private:
   NodePtr<Scalar> in_;
-  Index<N> offsets_, sizes_;
+  Shape offsets_, sizes_;
+
+  template <int N>
+  void forward_helper() {
+    value() = in_->value().template view<N>().slice(ShapeToIndex<N>(offsets_),
+                                                    ShapeToIndex<N>(sizes_));
+  }
+
+  template <int N>
+  void backward_helper() {
+    in_->grad().slice(ShapeToIndex<N>(offsets_), ShapeToIndex<N>(sizes_)) +=
+        grad().template view<N>();
+  }
 
   void forward_() override {
-    value().resize(IndexToShape<N>(sizes_));
-    value() = in_->value().template view<N>().slice(offsets_, sizes_);
+    value().resize(sizes_);
+    switch (sizes_.size()) {
+    case 1: forward_helper<1>(); break;
+    case 2: forward_helper<2>(); break;
+    case 3: forward_helper<3>(); break;
+    case 4: forward_helper<4>(); break;
+    case 5: forward_helper<5>(); break;
+    case 6: forward_helper<6>(); break;
+    case 7: forward_helper<7>(); break;
+    case 8: forward_helper<8>(); break;
+    default: GINN_THROW("Unexpected number of indices in Slice!");
+    }
   }
 
   void backward_() override {
     if (in_->has_grad()) {
-      in_->grad().slice(offsets_, sizes_) += grad().template view<N>();
+      switch (sizes_.size()) {
+      case 1: backward_helper<1>(); break;
+      case 2: backward_helper<2>(); break;
+      case 3: backward_helper<3>(); break;
+      case 4: backward_helper<4>(); break;
+      case 5: backward_helper<5>(); break;
+      case 6: backward_helper<6>(); break;
+      case 7: backward_helper<7>(); break;
+      case 8: backward_helper<8>(); break;
+      default: GINN_THROW("Unexpected number of indices in Slice!");
+      }
     }
   }
 
@@ -564,41 +595,72 @@ class SliceNode : public BaseDataNode<Scalar> {
   using BaseDataNode<Scalar>::grad;
   using BaseDataNode<Scalar>::has_grad;
 
-  SliceNode(const NodePtr<Scalar>& x, Index<N> offsets, Index<N> sizes)
+  SliceNode(const NodePtr<Scalar>& x, Shape offsets, Shape sizes)
       : BaseDataNode<Scalar>({x}),
         in_(x),
         offsets_(std::move(offsets)),
-        sizes_(std::move(sizes)) {}
+        sizes_(std::move(sizes)) {
+    GINN_ASSERT(offsets_.size() == sizes_.size());
+  }
 
   std::string name() const override { return "Slice"; }
 };
 
-GINN_MAKE_RANKED_SCALAR_FORWARDING_FACTORY(Slice);
+GINN_MAKE_SCALAR_FORWARDING_FACTORY(Slice);
 
-// TODO: Get rid of template int here
-template <Size N, typename Scalar>
+template <typename Scalar>
 class ChipNode : public BaseDataNode<Scalar> {
   // TODO: If chipping from rightmost dimension, we can simply map into the
   // original input tensor instead of making a copy.
-  static_assert(N > 0);
-
  private:
   NodePtr<Scalar> in_;
   Size offset_, dim_;
 
+  template <int N>
+  void forward_helper() {
+    value() = in_->value().template view<N>().chip(offset_, dim_);
+  }
+
+  template <int N>
+  void backward_helper() {
+    in_->grad().template chip<N>(offset_, dim_) +=
+        grad().template view<N - 1>();
+  }
+
   void forward_() override {
     GINN_ASSERT(dim_ >= 0 and size_t(dim_) < in_->shape().size());
     GINN_ASSERT(offset_ >= 0 and offset_ < in_->shape()[dim_]);
+
     Shape s = in_->shape();
     s.erase(s.begin() + dim_);
     value().resize(s);
-    value() = in_->value().template view<N>().chip(offset_, dim_);
+
+    switch (in_->shape().size()) {
+    case 1: forward_helper<1>(); break;
+    case 2: forward_helper<2>(); break;
+    case 3: forward_helper<3>(); break;
+    case 4: forward_helper<4>(); break;
+    case 5: forward_helper<5>(); break;
+    case 6: forward_helper<6>(); break;
+    case 7: forward_helper<7>(); break;
+    case 8: forward_helper<8>(); break;
+    default: GINN_THROW("Unexpected input rank in Chip!");
+    }
   }
 
   void backward_() override {
     if (in_->has_grad()) {
-      in_->grad().template chip<N>(offset_, dim_) +=
-          grad().template view<N - 1>();
+      switch (in_->shape().size()) {
+      case 1: backward_helper<1>(); break;
+      case 2: backward_helper<2>(); break;
+      case 3: backward_helper<3>(); break;
+      case 4: backward_helper<4>(); break;
+      case 5: backward_helper<5>(); break;
+      case 6: backward_helper<6>(); break;
+      case 7: backward_helper<7>(); break;
+      case 8: backward_helper<8>(); break;
+      default: GINN_THROW("Unexpected number of indices in Slice!");
+      }
     }
   }
 
@@ -606,13 +668,13 @@ class ChipNode : public BaseDataNode<Scalar> {
   using BaseDataNode<Scalar>::value;
   using BaseDataNode<Scalar>::grad;
 
-  ChipNode(NodePtr<Scalar> x, Size offset, Size dim)
+  ChipNode(const NodePtr<Scalar>& x, Size offset, Size dim)
       : BaseDataNode<Scalar>({x}), in_(x), offset_(offset), dim_(dim) {}
 
   std::string name() const override { return "Chip"; }
 };
 
-GINN_MAKE_RANKED_SCALAR_FORWARDING_FACTORY(Chip);
+GINN_MAKE_SCALAR_FORWARDING_FACTORY(Chip);
 
 template <typename Scalar>
 class MapNode : public BaseDataNode<Scalar> {

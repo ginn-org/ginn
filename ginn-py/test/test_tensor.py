@@ -61,10 +61,10 @@ def test_values():
     d = ginn.RealTensor()
 
     a.set([1, 2, 3])
-    assert a.shape() == [3]
+    assert a.shape == [3]
     c.set([[1, 2, 3], [4, 5, 6]])
     d.set([[1, 2, 3], [4, 5, 6]])
-    assert c.shape() == [2, 3]
+    assert c.shape == [2, 3]
     assert a == a
     assert a == b
     assert a != c
@@ -106,20 +106,20 @@ def test_resize():
     vals = [1, 2, 3, 4, 5, 6]
     a = ginn.RealTensor(ginn.cpu(), [2, 1, 3], vals)
 
-    a.resize([6])
+    a.shape = [6]
     assert a.size() == 6
-    assert a.shape() == [6]
+    assert a.shape == [6]
     assert a.list() == vals
 
-    a.resize([3, 2])
+    a.shape = [3, 2]
     assert a.size() == 6
-    assert a.shape() == [3, 2]
+    assert a.shape == [3, 2]
     assert a.list() == vals
 
-    a.resize([4])
+    a.shape = [4]
     assert a.size() == 4
-    assert a.shape() == [4]
+    assert a.shape == [4]
 
-    a.resize([2, 2])
+    a.shape = [2, 2]
     assert a.size() == 4
-    assert a.shape() == [2, 2]
+    assert a.shape == [2, 2]
