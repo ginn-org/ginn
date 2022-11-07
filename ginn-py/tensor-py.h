@@ -10,6 +10,8 @@
 #include <ginn/tensor.h>
 #include <ginn/util/tensorio.h>
 
+#include <ginn-py/util-py.h>
+
 namespace ginn {
 namespace python {
 
@@ -27,15 +29,6 @@ Scalar_ scalar_() {
   if constexpr (std::is_same_v<Scalar, bool>) { return Scalar_::Bool; }
   GINN_THROW("Unexpected scalar type!");
   return {};
-}
-
-template <typename Scalar>
-std::string scalar_name() {
-  if constexpr (std::is_same_v<Scalar, Real>) { return "Real"; }
-  if constexpr (std::is_same_v<Scalar, Half>) { return "Half"; }
-  if constexpr (std::is_same_v<Scalar, Int>) { return "Int"; }
-  if constexpr (std::is_same_v<Scalar, bool>) { return "Bool"; }
-  return "";
 }
 
 template <typename Scalar>

@@ -1,6 +1,6 @@
 //#include <pybind11/operators.h>
-//NOTE: Using py::self way of operator binding yields template type deduction
-//errors in the particular nvcc I'm using.
+// NOTE: Using py::self way of operator binding yields template type deduction
+// errors in the particular nvcc I'm using.
 #include <pybind11/pybind11.h>
 
 #include <ginn/dev.h>
@@ -25,8 +25,8 @@ void bind_dev(py::module_& m) {
            [](const DeviceId& i) -> std::string {
              return std::string("<DeviceId with type: ") +
                     (i.type == 0     ? "CPU"
-                                     : (i.type == 1) ? "GPU"
-                                                     : "NULL_DEV") +
+                     : (i.type == 1) ? "GPU"
+                                     : "NULL_DEV") +
                     ", idx: " + std::to_string(i.idx) + ">";
            })
       .def(
@@ -64,12 +64,14 @@ void bind_dev(py::module_& m) {
       .def("size", &PreallocGpuDevice::size)
       .def("used", &PreallocGpuDevice::used);
 
-  m.def("PreallocGpu", py::overload_cast<size_t, size_t>(&PreallocGpu), "idx"_a, "size"_a);
+  m.def("PreallocGpu",
+        py::overload_cast<size_t, size_t>(&PreallocGpu),
+        "idx"_a,
+        "size"_a);
 
 #endif
 
   m.def("gpus", &gpus);
-
 }
 
 } // namespace python

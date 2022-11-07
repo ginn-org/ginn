@@ -6,8 +6,9 @@
 #include <ginn/node.h>
 #include <ginn/node/common.h>
 #include <ginn/node/data.h>
-#include <ginn/node/layout.h>
 
+#include <ginn-py/node/common-py.h>
+#include <ginn-py/node/layout-py.h>
 #include <ginn-py/tensor-py.h>
 #include <ginn-py/util-py.h>
 
@@ -17,11 +18,6 @@ namespace ginn {
 namespace python {
 
 namespace py = pybind11;
-
-template <typename Scalar>
-auto name(std::string name) {
-  return scalar_name<Scalar>() + name;
-}
 
 template <typename Scalar>
 auto declare_node_of(py::module_& m) {
@@ -49,7 +45,8 @@ void bind_node_of(PyClass& m) {
 
   m.def("dev", &T::dev)
       .def("size", py::overload_cast<>(&T::size, py::const_))
-      .def_property_readonly("shape", py::overload_cast<>(&T::shape, py::const_))
+      .def_property_readonly("shape",
+                             py::overload_cast<>(&T::shape, py::const_))
       // TODO: Setters for value & grad
       .def_property_readonly("value", py::overload_cast<>(&T::value))
       .def_property_readonly("grad", py::overload_cast<>(&T::grad))
@@ -66,6 +63,14 @@ void bind_data_of(PyClass& m) {
       .def("set_zero", &T::set_zero)
       .def("set_ones", &T::set_ones)
       .def("set_random", &T::set_random);
+  m.def("cast", [](const T& t, Scalar_ scalar) -> py::object {
+    switch (scalar) {
+    case Scalar_::Real: return py::cast(t.template cast<Real>());
+    case Scalar_::Half: return py::cast(t.template cast<Half>());
+    case Scalar_::Int: return py::cast(t.template cast<Int>());
+    case Scalar_::Bool: return py::cast(t.template cast<bool>());
+    }
+  });
 }
 
 template <typename... Args>
@@ -94,6 +99,19 @@ py::object Random_(Args&&... args, Scalar_ scalar) {
   } else {
     GINN_THROW("Unexpected Scalar type!");
     return {};
+  }
+}
+
+template <typename Scalar, typename NodeClass>
+void op_overload_helper(Scalar, NodeClass& nc) {
+  using N = const NodePtr<Scalar>&;
+  nc.def(
+      "__add__", [&](N a, N b) { return a + b; }, py::is_operator());
+  for (auto fun : {"__add__", "__radd__"}) {
+    for_each<Real, Int>([&](auto s) {
+      nc.def(
+          fun, [&](N a, decltype(s) b) { return a + b; }, py::is_operator());
+    });
   }
 }
 
@@ -153,115 +171,26 @@ void bind_node(py::module_& m) {
         "scalar"_a = Scalar_::Real);
   m.def("Random", &Random_<Shape&>, "shape"_a, "scalar"_a = Scalar_::Real);
 
-  m.def("Values",
-        static_cast<DataPtr<Real> (*)(NestedInitList<0, Real>)>(
-            &Values<0, Real>));
-  m.def("Values",
-        static_cast<DataPtr<Real> (*)(NestedInitList<1, Real>)>(
-            &Values<1, Real>));
-  m.def("Values",
-        static_cast<DataPtr<Real> (*)(NestedInitList<2, Real>)>(
-            &Values<2, Real>));
-  m.def("Values",
-        static_cast<DataPtr<Real> (*)(NestedInitList<3, Real>)>(
-            &Values<3, Real>));
-  m.def("Values",
-        static_cast<DataPtr<Real> (*)(NestedInitList<4, Real>)>(
-            &Values<4, Real>));
-
-  for_each<Real, Half>([&](auto scalar) {
-    using Scalar = decltype(scalar);
-
-    py::class_<AddNode<Scalar>, BaseDataNode<Scalar>, Ptr<AddNode<Scalar>>>(
-        m, name<Scalar>("AddNode").c_str());
-    // nvcc 11.1 forces me to use an explicit static cast here.
-    m.def("Add",
-          static_cast<Ptr<AddNode<Scalar>> (*)(NodePtr<Scalar>&,
-                                               NodePtr<Scalar>&)>(
-              &Add<NodePtr<Scalar>&, NodePtr<Scalar>&>));
+  for_range<5>([&](auto arr) {
+    constexpr size_t N = arr.size();
+    m.def("Values",
+          static_cast<DataPtr<Real> (*)(NestedInitList<N, Real>)>(
+              &Values<N, Real>),
+          "values"_a);
+    m.def("Values",
+          static_cast<DataPtr<Real> (*)(DevPtr, NestedInitList<N, Real>)>(
+              &Values<N, Real>),
+          "dev"_a,
+          "values"_a);
   });
 
-  for_each<Real, Half, Int>([&](auto scalar) {
-    using Scalar = decltype(scalar);
+  bind_common_nodes(m);
+  bind_layout_nodes(m);
 
-    py::class_<StackNode<Scalar>, BaseDataNode<Scalar>, Ptr<StackNode<Scalar>>>(
-        m, name<Scalar>("StackNode").c_str());
-    // nvcc 11.1 forces me to use an explicit static cast here.
-    m.def(
-        "Stack",
-        static_cast<Ptr<StackNode<Scalar>> (*)(
-            const std::vector<std::vector<NodePtr<Scalar>>>&)>(&Stack<Scalar>));
-
-    py::class_<CatNode<Scalar>, BaseDataNode<Scalar>, Ptr<CatNode<Scalar>>>(
-        m, name<Scalar>("CatNode").c_str());
-    m.def("Cat",
-          static_cast<Ptr<CatNode<Scalar>> (*)(
-              const std::vector<NodePtr<Scalar>>&)>(
-              &Cat<const std::vector<NodePtr<Scalar>>&>));
-
-    py::class_<RowwiseCatNode<Scalar>,
-               BaseDataNode<Scalar>,
-               Ptr<RowwiseCatNode<Scalar>>>(
-        m, name<Scalar>("RowwiseCatNode").c_str());
-    m.def("RowwiseCat",
-          static_cast<Ptr<RowwiseCatNode<Scalar>> (*)(
-              const std::vector<NodePtr<Scalar>>&)>(
-              &RowwiseCat<const std::vector<NodePtr<Scalar>>&>));
-
-    py::class_<ReshapeNode<Scalar>,
-               BaseDataNode<Scalar>,
-               Ptr<ReshapeNode<Scalar>>>(m,
-                                         name<Scalar>("ReshapeNode").c_str());
-    m.def("Reshape",
-          static_cast<Ptr<ReshapeNode<Scalar>> (*)(
-              const NodePtr<Scalar>&,
-              const typename ReshapeNode<Scalar>::LazyShape&)>(
-              &Reshape<const NodePtr<Scalar>&,
-                       const typename ReshapeNode<Scalar>::LazyShape&>));
-    m.def("Reshape",
-          static_cast<Ptr<ReshapeNode<Scalar>> (*)(NodePtr<Scalar>&, Shape&)>(
-              &Reshape<NodePtr<Scalar>&, Shape&>),
-          "in"_a,
-          "shape"_a);
-
-    py::class_<RankViewNode<Scalar>,
-               BaseDataNode<Scalar>,
-               Ptr<RankViewNode<Scalar>>>(m,
-                                          name<Scalar>("RankViewNode").c_str());
-    m.def("RankView",
-          static_cast<Ptr<RankViewNode<Scalar>> (*)(NodePtr<Scalar>&, Size&)>(
-              &RankView<NodePtr<Scalar>&, Size&>),
-          "in"_a,
-          "rank"_a);
-
-    py::class_<SliceNode<Scalar>, BaseDataNode<Scalar>, Ptr<SliceNode<Scalar>>>(
-        m, name<Scalar>("SliceNode").c_str());
-    m.def("Slice",
-          static_cast<Ptr<SliceNode<Scalar>> (*)(
-              const NodePtr<Scalar>&, Shape&, Shape&)>(
-              &Slice<const NodePtr<Scalar>&, Shape&, Shape&>),
-          "in"_a,
-          "offsets"_a,
-          "sizes"_a);
-
-    py::class_<ChipNode<Scalar>, BaseDataNode<Scalar>, Ptr<ChipNode<Scalar>>>(
-        m, name<Scalar>("ChipNode").c_str());
-    m.def("Chip",
-          static_cast<Ptr<ChipNode<Scalar>> (*)(
-              const NodePtr<Scalar>&, Size&, Size&)>(
-              &Chip<const NodePtr<Scalar>&, Size&, Size&>),
-          "in"_a,
-          "offset"_a,
-          "dim"_a);
-  });
-
-  py::class_<DimNode, BaseNode, DimPtr>(m, "DimNode")
-      .def_property_readonly("value", &DimNode::value);
-  m.def("Dim", static_cast<DimPtr (*)(Size&)>(&Dim<Size&>), "dims"_a);
-  m.def("Dim",
-        static_cast<DimPtr (*)(BaseNodePtr&, Size&)>(&Dim<BaseNodePtr&, Size&>),
-        "in"_a,
-        "dim_idx"_a);
+  // add operator overloads to base node because we cannot do free functions
+  op_overload_helper(Real(), rnode);
+  op_overload_helper(Half(), hnode);
+  op_overload_helper(Int(), inode);
 }
 
 } // namespace python

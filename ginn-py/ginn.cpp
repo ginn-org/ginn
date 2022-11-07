@@ -3,8 +3,8 @@
 #include <ginn/util/util.h>
 
 #include <ginn-py/dev-py.h>
-#include <ginn-py/tensor-py.h>
 #include <ginn-py/node-py.h>
+#include <ginn-py/tensor-py.h>
 
 namespace py = pybind11;
 

@@ -26,25 +26,29 @@ void bind_tensor_of(PyClass& m) {
         "shape"_a,
         "val"_a);
   m.def("dev", &T::dev);
-  //m.def("shape", &T::shape);
   m.def_property("shape", &T::shape, &T::resize);
   m.def("size", py::overload_cast<>(&T::size, py::const_));
   m.def("list", &T::vector);
-  m.def("v", static_cast<VectorMap<Scalar> (T::*)()>(&T::v));
-  m.def("m", static_cast<MatrixMap<Scalar> (T::*)()>(&T::m));
+  m.def("v", py::overload_cast<>(&T::v));
+  m.def("m", py::overload_cast<>(&T::m));
   m.def("real", &T::template cast<Real>);
   m.def("half", &T::template cast<Half>);
   m.def("int", &T::template cast<Int>);
   m.def("bool", &T::template cast<bool>);
+  m.def("cast", [](const T& t, Scalar_ scalar) -> py::object {
+    switch (scalar) {
+    case Scalar_::Real: return py::cast(t.template cast<Real>());
+    case Scalar_::Half: return py::cast(t.template cast<Half>());
+    case Scalar_::Int: return py::cast(t.template cast<Int>());
+    case Scalar_::Bool: return py::cast(t.template cast<bool>());
+    }
+  });
   m.def("set_zero", &T::set_zero);
   m.def("set_ones", &T::set_ones);
   m.def("set_random", &T::set_random);
-  m.def("set", &T::template set<0>);
-  m.def("set", &T::template set<1>);
-  m.def("set", &T::template set<2>);
-  m.def("set", &T::template set<3>);
-  m.def("set", &T::template set<4>);
-  //m.def("resize", &T::resize);
+
+  for_range<5>([&](auto arr) { m.def("set", &T::template set<arr.size()>); });
+
   m.def("copy_to", &T::copy_to, "device"_a);
   m.def("move_to", &T::move_to, "device"_a);
   m.def("maybe_copy_to", &T::maybe_copy_to, "device"_a);

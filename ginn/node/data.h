@@ -190,12 +190,12 @@ auto Random(const Shape& shape) {
 
 // Temporary? workaround for lack of "uniform" impl for Half
 template <>
-auto Random<Half>(DevPtr dev, const Shape& shape) {
+inline auto Random<Half>(DevPtr dev, const Shape& shape) {
   return Random(dev, shape)->cast<Half>();
 }
 
 template <>
-auto Random<Half>(const Shape& shape) {
+inline auto Random<Half>(const Shape& shape) {
   return Random(shape)->cast<Half>();
 }
 
@@ -208,7 +208,7 @@ auto FixedRandom(DevPtr dev, const Shape& shape) {
 
 template <int Rank, typename Scalar = Real>
 auto Values(DevPtr dev, NestedInitList<Rank, Scalar> val) {
-  auto x = Data<Scalar>(dev, shape_of<Size, Rank, Scalar>(val));
+  auto x = Data<Scalar>(std::move(dev), shape_of<Size, Rank, Scalar>(val));
   x->value().template set<Rank>(val);
   return x;
 }

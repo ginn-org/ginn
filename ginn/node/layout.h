@@ -793,7 +793,7 @@ class PermuteNode : public BaseDataNode<Scalar> {
   using BaseDataNode<Scalar>::value;
   using BaseDataNode<Scalar>::grad;
 
-  PermuteNode(NodePtr<Scalar> in, Shape indices)
+  PermuteNode(const NodePtr<Scalar>& in, Shape indices)
       : BaseDataNode<Scalar>({in}), in_(in), indices_(std::move(indices)) {}
 
   std::string name() const override { return "Permute"; }
@@ -906,7 +906,7 @@ class UpperTriNode : public BaseDataNode<Scalar> {
   DimPtr size_; // value() is of shape {size_, size_} (i.e. matrix)
 
   void forward_() override {
-    // TODO: directly create on device
+    // TODO: directly create on device, get rid of temporary
     Tensor<Scalar> val(cpu(), {size_->value(), size_->value()}, Scalar(1));
     val.m() = val.m().template triangularView<Eigen::Upper>();
     this->value() = val;

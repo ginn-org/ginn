@@ -42,16 +42,26 @@ def test_ctors():
 def test_casting():
     for i, Tensor in enumerate(TensorTypes):
         t = Tensor(ginn.cpu(), [2, 3])
-        tr = t.real()
-        ti = t.int()
-        th = t.half()
-        tb = t.bool()
 
         for j, Scalar in enumerate(ScalarTypes):
             if j == i:
                 assert t.scalar == Scalar
             else:
                 assert t.scalar != Scalar
+
+        assert t.real() == t.cast(ginn.Scalar.Real)
+        assert t.int() == t.cast(ginn.Scalar.Int)
+        assert t.half() == t.cast(ginn.Scalar.Half)
+        assert t.bool() == t.cast(ginn.Scalar.Bool)
+
+    t = ginn.RealTensor(ginn.cpu(), [2, 3])
+    for i, scalar in enumerate(ScalarTypes):
+        t_ = t.cast(scalar)
+        for j, other_scalar in enumerate(ScalarTypes):
+            if j == i:
+                assert t_.scalar == other_scalar
+            else:
+                assert t_.scalar != other_scalar
 
 
 def test_values():

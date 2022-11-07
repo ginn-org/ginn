@@ -1,26 +1,26 @@
 import ginn
 import pytest
 
+gpu = ginn.gpu() if ginn.gpus() > 0 else None
+
 devices = pytest.mark.parametrize(
     "dev",
     [
-        ginn.cpu,
-        pytest.param(
-            ginn.gpu, marks=pytest.mark.skipif(ginn.gpus() < 1, reason="requires gpu")
-        ),
+        ginn.cpu(),
+        pytest.param(gpu, marks=pytest.mark.skipif(gpu is None, reason="requires gpu")),
     ],
 )
 
 
 @devices
 def test_cpu(dev):
-    d1 = ginn.Cpu() if dev() == ginn.cpu() else ginn.Gpu()
+    d1 = ginn.Cpu() if dev == ginn.cpu() else ginn.Gpu()
     assert d1 == d1
     assert d1.id() == d1.id()
     assert d1.precedence() == 0
 
     d2 = (
-        ginn.PreallocCpu(100) if dev() == ginn.cpu() else ginn.PreallocGpu(0, 100)
+        ginn.PreallocCpu(100) if dev == ginn.cpu() else ginn.PreallocGpu(0, 100)
     )  # 100 bytes
     assert d2.size() == 100
     assert d1.id() == d2.id()
@@ -33,8 +33,8 @@ def test_cpu(dev):
     d2.reset()
     assert d2.used() == 0
 
-    t2 = ginn.RealTensor(dev(), [], [0])
-    t3 = ginn.RealTensor(dev(), [], [0])
+    t2 = ginn.RealTensor(dev, [], [0])
+    t3 = ginn.RealTensor(dev, [], [0])
     assert t2.dev() == t3.dev()
     assert t2.dev() != d1
 

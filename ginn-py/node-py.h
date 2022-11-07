@@ -10,6 +10,8 @@ PYBIND11_DECLARE_HOLDER_TYPE(T, ginn::Ptr<T>);
 namespace ginn {
 namespace python {
 
+namespace py = pybind11;
+
 void bind_node(py::module_& m);
 
 } // namespace python
