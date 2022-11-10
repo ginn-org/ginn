@@ -504,7 +504,30 @@ TEMPLATE_TEST_CASE("Add subtract", "[arithmetic]", Real, Half, Int) {
     CHECK_(a - b         , {a, b}, true);
   }
 
-    //TODO: Subtract scalar
+  SECTION("Subtract scalar") {
+    auto e = Values<2>({{ 0, -3},
+                        {-1, -4},
+                        {-2, -5}})->cast<Scalar>();
+    check(SubtractScalar(1, a), e);
+    check(1 - a,                e);
+    check(1.0 - a,              e);
+    CHECK_(SubtractScalar(1, a), {a});
+    CHECK_(1 - a,                {a});
+    CHECK_(1.0 - a,              {a});
+
+    auto a2 = Values<2>({{1, 4},
+                         {2, 5},
+                         {3, 6}})->cast<Scalar>();
+    auto e2 = Values<2>({{0, 3},
+                         {1, 4},
+                         {2, 5}})->cast<Scalar>();
+    check(AddScalar(a2, -1), e2);
+    check(a2 - 1,            e2);
+    check(a2 - 1.,           e2);
+    CHECK_(AddScalar(a2, -1), {a2});
+    CHECK_(a2 - 1,            {a2});
+    CHECK_(a2 - 1.,           {a2});
+  }
 
   SECTION("Unary -") {
     auto e = Values<2>({{-1, -4},
@@ -585,13 +608,6 @@ TEMPLATE_TEST_CASE("Add subtract", "[arithmetic]", Real, Half, Int) {
       }
     }
 
-    SECTION("CwiseMax") {
-      check(CwiseMax(b, c), a);
-      // Warning: CwiseMax does not have derivative at points where argmax is
-      // more than one. Gradcheck might fail if two maxes are within gradcheck eps.
-      CHECK_(CwiseMax(a, b, c), {a, b, c}, true, 1e-6);
-    }
-
     SECTION("Wrong shapes") {
       SECTION("b only column") {
         auto b = Values<1>({-1,
@@ -623,6 +639,13 @@ TEMPLATE_TEST_CASE("Add subtract", "[arithmetic]", Real, Half, Int) {
         CHECK_THROWS(Graph(CwiseProdAdd(a, b, c)).forward());
       }
     }
+  }
+
+  SECTION("CwiseMax") {
+    check(CwiseMax(b, c), a);
+    // Warning: CwiseMax does not have derivative at points where argmax is
+    // more than one. Gradcheck might fail if two maxes are within gradcheck eps.
+    CHECK_(CwiseMax(a, b, c), {a, b, c}, true, 1e-6);
   }
 }
 
@@ -885,8 +908,8 @@ TEMPLATE_TEST_CASE("LayerNorm", "[layernorm][inplace]", Real, Half) {
   using Scalar = TestType;
   auto x = Random(Dev, {3, 2})->cast<Scalar>();
   auto y = Random(Dev, {3, 2, 4})->cast<Scalar>();
-  x->value() = x->value().t() + Scalar(2);
-  y->value() = y->value().t() - Scalar(2);
+  x->value() = x->value().t() * Scalar(3) + Scalar(2);
+  y->value() = y->value().t() * Scalar(2.5) - Scalar(2);
 
   #ifdef GINN_ENABLE_GPU
   auto eps2 = std::is_same_v<Scalar, Half> ? 1e-2 : 1e-4;

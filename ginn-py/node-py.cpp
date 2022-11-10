@@ -9,6 +9,7 @@
 
 #include <ginn-py/node/common-py.h>
 #include <ginn-py/node/layout-py.h>
+#include <ginn-py/node/nonlin-py.h>
 #include <ginn-py/tensor-py.h>
 #include <ginn-py/util-py.h>
 
@@ -51,6 +52,7 @@ void bind_node_of(PyClass& m) {
       .def_property_readonly("value", py::overload_cast<>(&T::value))
       .def_property_readonly("grad", py::overload_cast<>(&T::grad))
       .def_property_readonly("name", &T::name);
+  m.def_property_readonly("scalar", [](const T&) { return scalar_<Scalar>(); });
 }
 
 template <typename Scalar, typename PyClass>
@@ -113,6 +115,22 @@ void op_overload_helper(Scalar, NodeClass& nc) {
           fun, [&](N a, decltype(s) b) { return a + b; }, py::is_operator());
     });
   }
+  for (auto fun : {"__mul__", "__rmul__"}) {
+    for_each<Real, Int>([&](auto s) {
+      nc.def(
+          fun, [&](N a, decltype(s) b) { return a * b; }, py::is_operator());
+    });
+  }
+  for_each<Real, Int>([&](auto s) {
+    nc.def(
+        "__sub__",
+        [&](N a, decltype(s) b) { return a - b; },
+        py::is_operator());
+    nc.def(
+        "__rsub__",
+        [&](N a, decltype(s) b) { return b - a; },
+        py::is_operator());
+  });
 }
 
 void bind_node(py::module_& m) {
@@ -186,6 +204,7 @@ void bind_node(py::module_& m) {
 
   bind_common_nodes(m);
   bind_layout_nodes(m);
+  bind_nonlin_nodes(m);
 
   // add operator overloads to base node because we cannot do free functions
   op_overload_helper(Real(), rnode);

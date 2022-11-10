@@ -30,14 +30,20 @@ py::object UpperTri_(Args&&... args, Scalar_ scalar) {
   }
 }
 
+template <typename Scalar, template <class> typename Node>
+using PyNode =
+    py::class_<Node<Scalar>, BaseDataNode<Scalar>, Ptr<Node<Scalar>>>;
+
 void bind_layout_nodes(py::module_& m) {
   using namespace py::literals;
 
   for_each<Real, Half, Int>([&](auto scalar) {
     using Scalar = decltype(scalar);
 
-    py::class_<StackNode<Scalar>, BaseDataNode<Scalar>, Ptr<StackNode<Scalar>>>(
-        m, name<Scalar>("StackNode").c_str());
+    // py::class_<StackNode<Scalar>, BaseDataNode<Scalar>,
+    // Ptr<StackNode<Scalar>>>(
+    //     m, name<Scalar>("StackNode").c_str());
+    PyNode<Scalar, StackNode>(m, name<Scalar>("StackNode").c_str());
     // nvcc 11.1 forces me to use an explicit static cast here.
     m.def(
         "Stack",

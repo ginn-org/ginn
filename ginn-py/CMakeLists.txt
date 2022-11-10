@@ -3,6 +3,7 @@ set(PY_SOURCES ginn.cpp
         tensor-py.cpp
         node-py.cpp
         node/common-py.cpp
+        node/nonlin-py.cpp
         node/layout-py.cpp )
 
 if(GINN_ENABLE_GPU)

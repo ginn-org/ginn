@@ -462,7 +462,9 @@ class Tensor {
     }
   }
 
-  void set(const std::vector<Scalar>& val) {
+  template <typename RhsScalar>
+  void set(const std::vector<RhsScalar>& vals) {
+    std::vector<Scalar> val(vals.begin(), vals.end());
     if (dev_->type() == CPU) {
       auto v_ = v();
       auto s = std::min((size_t)v_.size(), val.size());
@@ -484,15 +486,15 @@ class Tensor {
     set(std::vector<Scalar>{Scalar(args)...});
   }
 
-  template <int Rank>
-  void set(NestedInitList<Rank, Scalar> val) {
-    resize(shape_of<Size, Rank, Scalar>(val));
+  template <int Rank, typename RhsScalar = Scalar>
+  void set(NestedInitList<Rank, RhsScalar> val) {
+    resize(shape_of<Size, Rank, RhsScalar>(val));
     if (dev_->type() == CPU) {
-      assign<Rank, Scalar>(view<Rank>(), val);
+      assign<Rank, Scalar, RhsScalar>(view<Rank>(), val);
 #ifdef GINN_ENABLE_GPU
     } else if (dev_->type() == GPU) {
       Tensor<Scalar> tmp(cpu(), shape());
-      tmp.set<Rank>(val);
+      tmp.set<Rank, RhsScalar>(val);
       *this = tmp;
 #endif
     } else {

@@ -259,18 +259,18 @@ using NestedInitList = typename NestedInitListImpl<Rank, T>::type;
 
 // Helper for assigning a nested initializer list rhs to an indexable type lhs
 // such that lhs(i, j, ..., k) = rhs[i][j]...[k]
-template <int Rank, typename Scalar, typename T, typename... Args>
-void assign(T&& lhs, NestedInitList<Rank, Scalar> rhs, Args... args) {
+template <int Rank, typename Scalar, typename RhsScalar, typename T, typename... Args>
+void assign(T&& lhs, NestedInitList<Rank, RhsScalar> rhs, Args... args) {
   typename T::Index i = 0;
   if constexpr (Rank == 0) {
-    lhs(i) = rhs;
+    lhs(i) = Scalar(rhs);
   } else if constexpr (Rank == 1) {
     for (auto it = rhs.begin(); it != rhs.end(); it++) {
-      lhs(args..., i++) = *it;
+      lhs(args..., i++) = Scalar(*it);
     }
   } else {
     for (auto it = rhs.begin(); it != rhs.end(); it++) {
-      assign<Rank - 1, Scalar>(std::forward<T>(lhs), *it, args..., i++);
+      assign<Rank - 1, Scalar, RhsScalar>(std::forward<T>(lhs), *it, args..., i++);
     }
   }
 }

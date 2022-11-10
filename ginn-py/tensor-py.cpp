@@ -28,7 +28,11 @@ void bind_tensor_of(PyClass& m) {
   m.def("dev", &T::dev);
   m.def_property("shape", &T::shape, &T::resize);
   m.def("size", py::overload_cast<>(&T::size, py::const_));
-  m.def("list", &T::vector);
+  if constexpr (std::is_same_v<Scalar, Half>) {
+    m.def("list", [](const T& t) { return t.template cast<Real>().vector(); });
+  } else {
+    m.def("list", &T::vector);
+  }
   m.def("v", py::overload_cast<>(&T::v));
   m.def("m", py::overload_cast<>(&T::m));
   m.def("real", &T::template cast<Real>);
@@ -47,7 +51,14 @@ void bind_tensor_of(PyClass& m) {
   m.def("set_ones", &T::set_ones);
   m.def("set_random", &T::set_random);
 
-  for_range<5>([&](auto arr) { m.def("set", &T::template set<arr.size()>); });
+  if constexpr (std::is_same_v<Scalar, bool>) {
+    for_range<5>([&](auto arr) { m.def("set", &T::template set<arr.size()>); });
+  } else {
+    for_range<5>(
+        [&](auto arr) { m.def("set", &T::template set<arr.size(), Real>); });
+    for_range<5>(
+        [&](auto arr) { m.def("set", &T::template set<arr.size(), Int>); });
+  }
 
   m.def("copy_to", &T::copy_to, "device"_a);
   m.def("move_to", &T::move_to, "device"_a);

@@ -15,6 +15,8 @@ scalars3 = pytest.mark.parametrize(
     "scalar", [ginn.Scalar.Real, ginn.Scalar.Half, ginn.Scalar.Int]
 )
 
+scalars2 = pytest.mark.parametrize("scalar", [ginn.Scalar.Real, ginn.Scalar.Half])
+
 gpu = ginn.gpu() if ginn.gpus() > 0 else None
 
 devices = pytest.mark.parametrize(
@@ -26,15 +28,16 @@ devices = pytest.mark.parametrize(
 )
 
 
-def check(a: ginn.BaseNode, b: ginn.BaseNode):
+def check(a: ginn.BaseNode, b: ginn.BaseNode, eps=1e-6):
     ginn.Graph(a).forward()
     ginn.Graph(b).forward()
     a_ = a.value.maybe_copy_to(ginn.cpu())
     b_ = b.value.maybe_copy_to(ginn.cpu())
-    assert a.value == b.value
+    assert a_.shape == b_.shape
+    assert a_.list() == pytest.approx(b_.list(), rel=eps)
 
 
-@pytest.mark.parametrize("scalar", [ginn.Scalar.Real, ginn.Scalar.Half])
+@scalars2
 @devices
 def test_dim(scalar, dev):
     x = ginn.Random(dev, [3, 2, 1], scalar=scalar)
@@ -329,9 +332,7 @@ def test_add(scalar, dev):
     check(ginn.Add([a, b, c]), e)
     check(a + b + c, e)
 
-    e = ginn.Values([[1, 12],
-                     [2, 15],
-                     [3, 18]]).cast(scalar)
+    e = ginn.Values([[1, 12], [2, 15], [3, 18]]).cast(scalar)
     check(ginn.Add([a, b, a]), e)
     check(a + b + a, e)
 
@@ -341,10 +342,148 @@ def test_add(scalar, dev):
 def test_add_scalar(scalar, dev):
     a = ginn.Values(dev, [[1, 4], [2, 5], [3, 6]]).cast(scalar)
 
-    e = ginn.Values([[2, 5],
-                        [3, 6],
-                        [4, 7]]).cast(scalar)
+    e = ginn.Values([[2, 5], [3, 6], [4, 7]]).cast(scalar)
 
-    check(ginn.AddScalar(a, 1.), e)
-    check(a + 1.          , e)
-    check(1. + a          , e)
+    for s in [1, 1.0]:
+        check(ginn.AddScalar(a, s), e)
+        check(a + s, e)
+        check(s + a, e)
+
+
+@scalars3
+@devices
+def test_subtract_scalar(scalar, dev):
+    a = ginn.Values(dev, [[1, 4], [2, 5], [3, 6]]).cast(scalar)
+
+    e = ginn.Values([[0, -3], [-1, -4], [-2, -5]]).cast(scalar)
+
+    for s in [1, 1.0]:
+        check(ginn.SubtractScalar(s, a), e)
+        check(s - a, e)
+
+    e2 = ginn.Values([[0, 3], [1, 4], [2, 5]]).cast(scalar)
+    for s in [1, 1.0]:
+        check(ginn.AddScalar(a, -s), e2)
+        check(a - s, e2)
+
+
+@scalars3
+@devices
+def test_subtract_scalar(scalar, dev):
+    a = ginn.Values(dev, [[1, 4], [2, 5], [3, 6]]).cast(scalar)
+
+    pass
+
+
+@scalars3
+@devices
+def test_prod_scalar(scalar, dev):
+    a = ginn.Values(dev, [[1, 4], [2, 5], [3, 6]]).cast(scalar)
+    e = ginn.Values(dev, [[2, 8], [4, 10], [6, 12]]).cast(scalar)
+
+    for s in [2, 2.0]:
+        check(ginn.ProdScalar(a, s), e)
+        check(a * s, e)
+        check(s * a, e)
+
+
+@scalars3
+@devices
+def test_cwise_prod(scalar, dev):
+    a = ginn.Values(dev, [[1, 4], [2, 5], [3, 6]]).cast(scalar)
+    b = ginn.Values(dev, [[-1, 4], [-2, 5], [-3, 6]]).cast(scalar)
+    e = ginn.Values(dev, [[-1, 16], [-4, 25], [-9, 36]]).cast(scalar)
+
+    check(ginn.CwiseProd(a, b), e)
+
+
+class TestCwiseProdAdd:
+    @scalars3
+    @devices
+    def test_regular(self, scalar, dev):
+        a = ginn.Values(dev, [[1, 4], [2, 5], [3, 6]]).cast(scalar)
+        b = ginn.Values(dev, [[-1, 4], [-2, 5], [-3, 6]]).cast(scalar)
+        c = ginn.Values(dev, [[1, -4], [2, -5], [3, -6]]).cast(scalar)
+
+        e = ginn.Values(dev, [[0, 12], [-2, 20], [-6, 30]]).cast(scalar)
+        check(ginn.CwiseProdAdd(a, b, c), e)
+
+    @scalars3
+    @devices
+    def test_regular_w_bias(self, scalar, dev):
+        a = ginn.Values(dev, [[1, 4], [2, 5], [3, 6]]).cast(scalar)
+        b = ginn.Values(dev, [[-1, 4], [-2, 5], [-3, 6]]).cast(scalar)
+        c = ginn.Values(dev, [[1, -4], [2, -5], [3, -6]]).cast(scalar)
+
+        e = ginn.Values(dev, [[1, 16], [0, 25], [-3, 36]]).cast(scalar)
+        check(ginn.CwiseProdAdd(a, b, c, 1), e)
+        check(ginn.CwiseProdAdd(a, b, c, 1.0), e)
+
+    @scalars3
+    @devices
+    def test_broadcast(self, scalar, dev):
+        a = ginn.Values(dev, [[1, 4], [2, 5], [3, 6]]).cast(scalar)
+        b = ginn.Values(dev, [-1, -2, -3]).cast(scalar)
+        c = ginn.Values(dev, [4, 5, 6]).cast(scalar)
+
+        e = ginn.Values(dev, [[3, 0], [1, -5], [-3, -12]]).cast(scalar)
+        check(ginn.CwiseProdAdd(a, b, c), e)
+
+    @scalars3
+    @devices
+    def test_broadcast_w_bias(self, scalar, dev):
+        a = ginn.Values(dev, [[1, 4], [2, 5], [3, 6]]).cast(scalar)
+        b = ginn.Values(dev, [-1, -2, -3]).cast(scalar)
+        c = ginn.Values(dev, [4, 5, 6]).cast(scalar)
+
+        e = ginn.Values(dev, [[4, 4], [3, 0], [0, -6]]).cast(scalar)
+        check(ginn.CwiseProdAdd(a, b, c, 1), e)
+        check(ginn.CwiseProdAdd(a, b, c, 1.0), e)
+
+
+@scalars3
+@devices
+def test_cwise_max(scalar, dev):
+    a = ginn.Values(dev, [[1, 4], [2, 5], [3, 6]]).cast(scalar)
+    b = ginn.Values(dev, [[-1, 4], [-2, 5], [-3, 6]]).cast(scalar)
+    c = ginn.Values(dev, [[1, -4], [2, -5], [3, -6]]).cast(scalar)
+
+    check(ginn.CwiseMax([a, b, c]), a)
+
+
+@scalars2
+@devices
+def test_nonlin(scalar, dev):
+    W = ginn.Values(dev, [[-1, -2, -3], [4, 5, 6]]).cast(scalar)
+
+    tanhW = ginn.Values(
+        [[-0.76159415, -0.96402758, -0.99505475], [0.99932929, 0.99990920, 0.99998771]]
+    ).cast(scalar)
+    reluW = ginn.Values([[0, 0, 0], [4, 5, 6]]).cast(scalar)
+    sigmW = ginn.Values(
+        [[0.26894142, 0.11920292, 0.04742587], [0.98201379, 0.99330714, 0.99752737]]
+    ).cast(scalar)
+    smaxW = ginn.Values(
+        [
+            [0.00669285, 9.11051194e-04, 1.23394576e-04],
+            [0.99330715, 9.99088949e-01, 9.99876605e-01],
+        ]
+    ).cast(scalar)
+    absW = ginn.Values([[1, 2, 3], [4, 5, 6]]).cast(scalar)
+    logaW = ginn.Values(
+        [[0, 0.69314718, 1.09861229], [1.38629436, 1.60943791, 1.79175947]]
+    ).cast(scalar)
+
+    check(ginn.Identity(W), W)
+    check(ginn.Tanh(W), tanhW)
+    check(ginn.Relu(W), reluW)
+    check(ginn.Sigmoid(W), sigmW, eps=1e-3 if W.scalar == ginn.Scalar.Half else 1e-6)
+    check(ginn.Softmax(W), smaxW, eps=1e-3 if W.scalar == ginn.Scalar.Half else 1e-6)
+    check(ginn.Sqrt(ginn.CwiseProd(W, W)), absW)
+    with pytest.raises(RuntimeError):
+        check(ginn.Sqrt(W), W)
+    check(ginn.Log(absW), logaW)
+    with pytest.raises(RuntimeError):
+        check(ginn.Log(W), W)
+    # TODO: Gelu forward
+    # TODO: Gelu2 forward

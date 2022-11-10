@@ -41,7 +41,8 @@ def test_ctors():
 
 def test_casting():
     for i, Tensor in enumerate(TensorTypes):
-        t = Tensor(ginn.cpu(), [2, 3])
+        t = Tensor(ginn.cpu())
+        t.set([[1, 2, 3], [4, 5, 6]])
 
         for j, Scalar in enumerate(ScalarTypes):
             if j == i:
