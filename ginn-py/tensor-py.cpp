@@ -3,12 +3,14 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include <ginn-py/util-py.h>
+
 namespace ginn {
 namespace python {
 
 template <typename Scalar>
 auto declare_tensor_of(py::module_& m) {
-  return py::class_<Tensor<Scalar>>(m, tensor_name<Scalar>().c_str());
+  return py::class_<Tensor<Scalar>>(m, name<Scalar>("Tensor"));
 }
 
 template <typename Scalar, typename PyClass>

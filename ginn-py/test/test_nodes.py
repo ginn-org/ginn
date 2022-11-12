@@ -487,3 +487,24 @@ def test_nonlin(scalar, dev):
         check(ginn.Log(W), W)
     # TODO: Gelu forward
     # TODO: Gelu2 forward
+
+
+@scalars2
+@devices
+def test_nonlin_extreme(scalar, dev):
+    x = ginn.Values([[10000.], [-10000.]]).cast(scalar)
+    x2 = ginn.Values([[5.], [-float("inf")]]).cast(scalar)
+
+    assert x.shape == [2, 1]
+    assert x2.shape == [2, 1]
+
+    tanhx = ginn.Values([[1], [-1]]).cast(scalar)
+    sigmoidx = ginn.Values([[1], [0]]).cast(scalar)
+    smaxx = ginn.Values([[1], [0]]).cast(scalar)
+    smaxx2 = ginn.Values([[1], [1]]).cast(scalar)
+
+    check(ginn.Tanh(x), tanhx)
+    check(ginn.Sigmoid(x), sigmoidx)
+    check(ginn.Softmax(ginn.Reshape(x, [1, 2])), ginn.Reshape(smaxx2, [1, 2]))
+    check(ginn.Softmax(x), smaxx)
+    check(ginn.Softmax(x2), smaxx)

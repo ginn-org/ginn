@@ -25,16 +25,16 @@ auto declare_node_of(py::module_& m) {
   using namespace pybind11::literals;
 
   auto node = py::class_<Node<Scalar>, BaseNode, Ptr<Node<Scalar>>>(
-      m, name<Scalar>("Node").c_str());
+      m, name<Scalar>("Node"));
   py::class_<BaseDataNode<Scalar>, Node<Scalar>, Ptr<BaseDataNode<Scalar>>>(
-      m, name<Scalar>("BaseDataNode").c_str())
+      m, name<Scalar>("BaseDataNode"))
       .def_property(
           "has_grad",
           py::overload_cast<>(&BaseDataNode<Scalar>::has_grad, py::const_),
           py::overload_cast<bool>(&BaseDataNode<Scalar>::has_grad));
   auto data =
       py::class_<DataNode<Scalar>, BaseDataNode<Scalar>, Ptr<DataNode<Scalar>>>(
-          m, name<Scalar>("DataNode").c_str());
+          m, name<Scalar>("DataNode"));
 
   return std::make_tuple(node, data);
 }
@@ -167,7 +167,7 @@ void bind_node(py::module_& m) {
   for_each<Real, Half, Int, bool>([&](auto scalar) {
     using Scalar = decltype(scalar);
     // nvcc 11.1 forces me to use an explicit static cast here.
-    m.def(name<Scalar>("Data").c_str(),
+    m.def(name<Scalar>("Data"),
           static_cast<DataPtr<Scalar> (*)(DevPtr&, Shape&)>(
               &Data<Scalar, DevPtr&, Shape&>),
           "dev"_a,

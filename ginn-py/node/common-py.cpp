@@ -14,111 +14,57 @@ namespace python {
 
 namespace py = pybind11;
 
+template <typename PyClass, typename Rval, typename... Args>
+void factory(PyClass& m, const char* name, Rval (*fp)(Args...)) {
+  m.def(name, fp);
+}
+
 void bind_common_nodes(py::module_& m) {
   using namespace py::literals;
 
   for_each<Real, Half, Int>([&](auto scalar) {
     using Scalar = decltype(scalar);
+    using Np = NodePtr<Scalar>;
 
-    py::class_<AddNode<Scalar>, BaseDataNode<Scalar>, Ptr<AddNode<Scalar>>>(
-        m, name<Scalar>("AddNode").c_str());
+    PyNode<Scalar, AddNode>(m, name<Scalar>("AddNode"));
+
     // nvcc 11.1 forces me to use an explicit static cast here.
-    m.def("Add",
-          static_cast<Ptr<AddNode<Scalar>> (*)(NodePtr<Scalar>&,
-                                               NodePtr<Scalar>&)>(
-              &Add<NodePtr<Scalar>&, NodePtr<Scalar>&>));
-    m.def("Add",
-          static_cast<Ptr<AddNode<Scalar>> (*)(
-              const std::vector<NodePtr<Scalar>>&)>(
-              &Add<const std::vector<NodePtr<Scalar>>&>));
+    // auto fp = &Add<Np&, Np&>;
+    // m.def("Add", (fp));
+    m.def("Add", FP((&Add<Np&, Np&>)));
+    m.def("Add", FP((&Add<const std::vector<Np>&>)));
 
-    py::class_<AddScalarNode<Scalar>,
-               BaseDataNode<Scalar>,
-               Ptr<AddScalarNode<Scalar>>>(
-        m, name<Scalar>("AddScalarNode").c_str());
-    m.def("AddScalar",
-          static_cast<Ptr<AddScalarNode<Scalar>> (*)(const NodePtr<Scalar>&,
-                                                     Real&)>(
-              &AddScalar<const NodePtr<Scalar>&, Real&>));
-    m.def("AddScalar",
-          static_cast<Ptr<AddScalarNode<Scalar>> (*)(const NodePtr<Scalar>&,
-                                                     Int&)>(
-              &AddScalar<const NodePtr<Scalar>&, Int&>));
+    PyNode<Scalar, AddScalarNode>(m, name<Scalar>("AddScalarNode"));
+    m.def("AddScalar", FP((&AddScalar<const Np&, Real&>)));
+    m.def("AddScalar", FP((&AddScalar<const Np&, Int&>)));
 
-    py::class_<SubtractScalarNode<Scalar>,
-               BaseDataNode<Scalar>,
-               Ptr<SubtractScalarNode<Scalar>>>(
-        m, name<Scalar>("SubtractScalarNode").c_str());
-    m.def(
-        "SubtractScalar",
-        static_cast<Ptr<SubtractScalarNode<Scalar>> (*)(Real, NodePtr<Scalar>)>(
-            &SubtractScalar<Real, NodePtr<Scalar>>));
-    m.def(
-        "SubtractScalar",
-        static_cast<Ptr<SubtractScalarNode<Scalar>> (*)(Int, NodePtr<Scalar>)>(
-            &SubtractScalar<Int, NodePtr<Scalar>>));
+    PyNode<Scalar, SubtractScalarNode>(m, name<Scalar>("SubtractScalarNode"));
+    m.def("SubtractScalar", FP((&SubtractScalar<Real, Np>)));
+    m.def("SubtractScalar", FP((&SubtractScalar<Int, Np>)));
 
-    py::class_<ProdScalarNode<Scalar>,
-               BaseDataNode<Scalar>,
-               Ptr<ProdScalarNode<Scalar>>>(
-        m, name<Scalar>("ProdScalarNode").c_str());
-    m.def("ProdScalar",
-          static_cast<Ptr<ProdScalarNode<Scalar>> (*)(const NodePtr<Scalar>&,
-                                                      Real&)>(
-              &ProdScalar<const NodePtr<Scalar>&, Real&>));
-    m.def("ProdScalar",
-          static_cast<Ptr<ProdScalarNode<Scalar>> (*)(const NodePtr<Scalar>&,
-                                                      Int&)>(
-              &ProdScalar<const NodePtr<Scalar>&, Int&>));
+    PyNode<Scalar, ProdScalarNode>(m, name<Scalar>("ProdScalarNode"));
+    m.def("ProdScalar", FP((&ProdScalar<const Np&, Real&>)));
+    m.def("ProdScalar", FP((&ProdScalar<const Np&, Int&>)));
 
-    py::class_<CwiseProdNode<Scalar>,
-               BaseDataNode<Scalar>,
-               Ptr<CwiseProdNode<Scalar>>>(
-        m, name<Scalar>("CwiseProdNode").c_str());
-    m.def("CwiseProd",
-          static_cast<Ptr<CwiseProdNode<Scalar>> (*)(const NodePtr<Scalar>&,
-                                                     const NodePtr<Scalar>&)>(
-              &CwiseProd<const NodePtr<Scalar>&, const NodePtr<Scalar>&>));
+    PyNode<Scalar, CwiseProdNode>(m, name<Scalar>("CwiseProdNode"));
+    m.def("CwiseProd", FP((&CwiseProd<const Np&, const Np&>)));
 
-    py::class_<CwiseProdAddNode<Scalar>,
-               BaseDataNode<Scalar>,
-               Ptr<CwiseProdAddNode<Scalar>>>(
-        m, name<Scalar>("CwiseProdAddNode").c_str());
+    PyNode<Scalar, CwiseProdAddNode>(m, name<Scalar>("CwiseProdAddNode"));
     m.def("CwiseProdAdd",
-          static_cast<Ptr<CwiseProdAddNode<Scalar>> (*)(const NodePtr<Scalar>&,
-                                                        const NodePtr<Scalar>&,
-                                                        const NodePtr<Scalar>&,
-                                                        Real&)>(
-              &CwiseProdAdd<const NodePtr<Scalar>&,
-                            const NodePtr<Scalar>&,
-                            const NodePtr<Scalar>&,
-                            Real&>),
+          FP((&CwiseProdAdd<const Np&, const Np&, const Np&, Real&>)),
           "in"_a,
           "multiplicand"_a,
           "addend"_a,
           "multiplicand_bias"_a = 0.);
     m.def("CwiseProdAdd",
-          static_cast<Ptr<CwiseProdAddNode<Scalar>> (*)(const NodePtr<Scalar>&,
-                                                        const NodePtr<Scalar>&,
-                                                        const NodePtr<Scalar>&,
-                                                        Int&)>(
-              &CwiseProdAdd<const NodePtr<Scalar>&,
-                            const NodePtr<Scalar>&,
-                            const NodePtr<Scalar>&,
-                            Int&>),
+          FP((&CwiseProdAdd<const Np&, const Np&, const Np&, Int&>)),
           "in"_a,
           "multiplicand"_a,
           "addend"_a,
           "multiplicand_bias"_a);
 
-    py::class_<CwiseMaxNode<Scalar>,
-               BaseDataNode<Scalar>,
-               Ptr<CwiseMaxNode<Scalar>>>(m,
-                                          name<Scalar>("CwiseMaxNode").c_str());
-    m.def("CwiseMax",
-          static_cast<Ptr<CwiseMaxNode<Scalar>> (*)(
-              const std::vector<NodePtr<Scalar>>&)>(
-              &CwiseMax<const std::vector<NodePtr<Scalar>>&>));
+    PyNode<Scalar, CwiseMaxNode>(m, name<Scalar>("CwiseMaxNode"));
+    m.def("CwiseMax", FP((&CwiseMax<const std::vector<Np>&>)));
   });
 }
 

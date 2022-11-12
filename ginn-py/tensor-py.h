@@ -31,11 +31,6 @@ Scalar_ scalar_() {
   return {};
 }
 
-template <typename Scalar>
-std::string tensor_name() {
-  return scalar_name<Scalar>() + "Tensor";
-}
-
 template <typename... Args>
 py::object Tensor_(Args&&... args, Scalar_ scalar) {
   if (scalar == Scalar_::Real) {

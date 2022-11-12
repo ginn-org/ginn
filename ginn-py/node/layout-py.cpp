@@ -30,148 +30,82 @@ py::object UpperTri_(Args&&... args, Scalar_ scalar) {
   }
 }
 
-template <typename Scalar, template <class> typename Node>
-using PyNode =
-    py::class_<Node<Scalar>, BaseDataNode<Scalar>, Ptr<Node<Scalar>>>;
-
 void bind_layout_nodes(py::module_& m) {
   using namespace py::literals;
 
   for_each<Real, Half, Int>([&](auto scalar) {
     using Scalar = decltype(scalar);
 
-    // py::class_<StackNode<Scalar>, BaseDataNode<Scalar>,
-    // Ptr<StackNode<Scalar>>>(
-    //     m, name<Scalar>("StackNode").c_str());
-    PyNode<Scalar, StackNode>(m, name<Scalar>("StackNode").c_str());
-    // nvcc 11.1 forces me to use an explicit static cast here.
-    m.def(
-        "Stack",
-        static_cast<Ptr<StackNode<Scalar>> (*)(
-            const std::vector<std::vector<NodePtr<Scalar>>>&)>(&Stack<Scalar>));
+    PyNode<Scalar, StackNode>(m, name<Scalar>("StackNode"));
+    m.def("Stack", FP((&Stack<Scalar>)));
   });
 
   for_each<Real, Half, Int, bool>([&](auto scalar) {
     using Scalar = decltype(scalar);
 
-    py::class_<CatNode<Scalar>, BaseDataNode<Scalar>, Ptr<CatNode<Scalar>>>(
-        m, name<Scalar>("CatNode").c_str());
-    m.def("Cat",
-          static_cast<Ptr<CatNode<Scalar>> (*)(
-              const std::vector<NodePtr<Scalar>>&)>(
-              &Cat<const std::vector<NodePtr<Scalar>>&>));
+    PyNode<Scalar, CatNode>(m, name<Scalar>("CatNode"));
+    m.def("Cat", FP((&Cat<const std::vector<NodePtr<Scalar>>&>)));
 
-    py::class_<RowwiseCatNode<Scalar>,
-               BaseDataNode<Scalar>,
-               Ptr<RowwiseCatNode<Scalar>>>(
-        m, name<Scalar>("RowwiseCatNode").c_str());
-    m.def("RowwiseCat",
-          static_cast<Ptr<RowwiseCatNode<Scalar>> (*)(
-              const std::vector<NodePtr<Scalar>>&)>(
-              &RowwiseCat<const std::vector<NodePtr<Scalar>>&>));
+    PyNode<Scalar, RowwiseCatNode>(m, name<Scalar>("RowwiseCatNode"));
+    m.def("RowwiseCat", FP((&RowwiseCat<const std::vector<NodePtr<Scalar>>&>)));
 
-    py::class_<ReshapeNode<Scalar>,
-               BaseDataNode<Scalar>,
-               Ptr<ReshapeNode<Scalar>>>(m,
-                                         name<Scalar>("ReshapeNode").c_str());
+    PyNode<Scalar, ReshapeNode>(m, name<Scalar>("ReshapeNode"));
     m.def("Reshape",
-          static_cast<Ptr<ReshapeNode<Scalar>> (*)(
-              const NodePtr<Scalar>&,
-              const typename ReshapeNode<Scalar>::LazyShape&)>(
-              &Reshape<const NodePtr<Scalar>&,
-                       const typename ReshapeNode<Scalar>::LazyShape&>));
-    m.def("Reshape",
-          static_cast<Ptr<ReshapeNode<Scalar>> (*)(NodePtr<Scalar>&, Shape&)>(
-              &Reshape<NodePtr<Scalar>&, Shape&>),
-          "in"_a,
-          "shape"_a);
+          FP((&Reshape<const NodePtr<Scalar>&,
+                       const typename ReshapeNode<Scalar>::LazyShape&>)));
+    m.def(
+        "Reshape", FP((&Reshape<NodePtr<Scalar>&, Shape&>)), "in"_a, "shape"_a);
 
-    py::class_<RankViewNode<Scalar>,
-               BaseDataNode<Scalar>,
-               Ptr<RankViewNode<Scalar>>>(m,
-                                          name<Scalar>("RankViewNode").c_str());
-    m.def("RankView",
-          static_cast<Ptr<RankViewNode<Scalar>> (*)(NodePtr<Scalar>&, Size&)>(
-              &RankView<NodePtr<Scalar>&, Size&>),
-          "in"_a,
-          "rank"_a);
+    PyNode<Scalar, RankViewNode>(m, name<Scalar>("RankViewNode"));
+    m.def(
+        "RankView", FP((&RankView<NodePtr<Scalar>&, Size&>)), "in"_a, "rank"_a);
 
-    py::class_<SliceNode<Scalar>, BaseDataNode<Scalar>, Ptr<SliceNode<Scalar>>>(
-        m, name<Scalar>("SliceNode").c_str());
+    PyNode<Scalar, SliceNode>(m, name<Scalar>("SliceNode"));
     m.def("Slice",
-          static_cast<Ptr<SliceNode<Scalar>> (*)(
-              const NodePtr<Scalar>&, Shape&, Shape&)>(
-              &Slice<const NodePtr<Scalar>&, Shape&, Shape&>),
+          FP((&Slice<const NodePtr<Scalar>&, Shape&, Shape&>)),
           "in"_a,
           "offsets"_a,
           "sizes"_a);
 
-    py::class_<ChipNode<Scalar>, BaseDataNode<Scalar>, Ptr<ChipNode<Scalar>>>(
-        m, name<Scalar>("ChipNode").c_str());
+    PyNode<Scalar, ChipNode>(m, name<Scalar>("ChipNode"));
     m.def("Chip",
-          static_cast<Ptr<ChipNode<Scalar>> (*)(
-              const NodePtr<Scalar>&, Size&, Size&)>(
-              &Chip<const NodePtr<Scalar>&, Size&, Size&>),
+          FP((&Chip<const NodePtr<Scalar>&, Size&, Size&>)),
           "in"_a,
           "offset"_a,
           "dim"_a);
 
-    py::class_<PermuteNode<Scalar>,
-               BaseDataNode<Scalar>,
-               Ptr<PermuteNode<Scalar>>>(m,
-                                         name<Scalar>("PermuteNode").c_str());
+    PyNode<Scalar, PermuteNode>(m, name<Scalar>("PermuteNode"));
     m.def("Permute",
-          static_cast<Ptr<PermuteNode<Scalar>> (*)(const NodePtr<Scalar>&,
-                                                   Shape&)>(
-              &Permute<const NodePtr<Scalar>&, Shape&>),
+          FP((&Permute<const NodePtr<Scalar>&, Shape&>)),
           "in"_a,
           "indices"_a);
     m.def("Transpose",
-          static_cast<Ptr<PermuteNode<Scalar>> (*)(
-              const NodePtr<Scalar>&, Size, Size)>(
-              &Transpose<const NodePtr<Scalar>&>),
+          FP((&Transpose<const NodePtr<Scalar>&>)),
           "in"_a,
           "i"_a,
           "j"_a);
 
-    py::class_<RowBroadcastNode<Scalar>,
-               BaseDataNode<Scalar>,
-               Ptr<RowBroadcastNode<Scalar>>>(
-        m, name<Scalar>("RowBroadcastNode").c_str());
+    PyNode<Scalar, RowBroadcastNode>(m, name<Scalar>("RowBroadcastNode"));
     m.def("RowBroadcast",
-          static_cast<Ptr<RowBroadcastNode<Scalar>> (*)(const NodePtr<Scalar>&,
-                                                        DimPtr&)>(
-              &RowBroadcast<const NodePtr<Scalar>&, DimPtr&>),
+          FP((&RowBroadcast<const NodePtr<Scalar>&, DimPtr&>)),
           "in"_a,
           "size"_a);
     m.def("RowBroadcast",
-          static_cast<Ptr<RowBroadcastNode<Scalar>> (*)(const NodePtr<Scalar>&,
-                                                        Size&)>(
-              &RowBroadcast<const NodePtr<Scalar>&, Size&>),
+          FP((&RowBroadcast<const NodePtr<Scalar>&, Size&>)),
           "in"_a,
           "size"_a);
 
-    py::class_<ColBroadcastNode<Scalar>,
-               BaseDataNode<Scalar>,
-               Ptr<ColBroadcastNode<Scalar>>>(
-        m, name<Scalar>("ColBroadcastNode").c_str());
+    PyNode<Scalar, ColBroadcastNode>(m, name<Scalar>("ColBroadcastNode"));
     m.def("ColBroadcast",
-          static_cast<Ptr<ColBroadcastNode<Scalar>> (*)(const NodePtr<Scalar>&,
-                                                        DimPtr&)>(
-              &ColBroadcast<const NodePtr<Scalar>&, DimPtr&>),
+          FP((&ColBroadcast<const NodePtr<Scalar>&, DimPtr&>)),
           "in"_a,
           "size"_a);
     m.def("ColBroadcast",
-          static_cast<Ptr<ColBroadcastNode<Scalar>> (*)(const NodePtr<Scalar>&,
-                                                        Size&)>(
-              &ColBroadcast<const NodePtr<Scalar>&, Size&>),
+          FP((&ColBroadcast<const NodePtr<Scalar>&, Size&>)),
           "in"_a,
           "size"_a);
 
-    py::class_<UpperTriNode<Scalar>,
-               BaseDataNode<Scalar>,
-               Ptr<UpperTriNode<Scalar>>>(m,
-                                          name<Scalar>("UpperTriNode").c_str());
+    PyNode<Scalar, UpperTriNode>(m, name<Scalar>("UpperTriNode"));
     m.def("UpperTri",
 
           &UpperTri_<DevPtr&, DimPtr&>,
@@ -188,11 +122,8 @@ void bind_layout_nodes(py::module_& m) {
 
   py::class_<DimNode, BaseNode, DimPtr>(m, "DimNode")
       .def_property_readonly("value", &DimNode::value);
-  m.def("Dim", static_cast<DimPtr (*)(Size&)>(&Dim<Size&>), "dims"_a);
-  m.def("Dim",
-        static_cast<DimPtr (*)(BaseNodePtr&, Size&)>(&Dim<BaseNodePtr&, Size&>),
-        "in"_a,
-        "dim_idx"_a);
+  m.def("Dim", FP(&Dim<Size&>), "dims"_a);
+  m.def("Dim", FP((&Dim<BaseNodePtr&, Size&>)), "in"_a, "dim_idx"_a);
 }
 
 } // namespace python

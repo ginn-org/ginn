@@ -11,10 +11,10 @@
 
 #define GINN_PY_MAKE_UNARY_NODE_AND_FACTORY(F)                                 \
   py::class_<F##Node<Scalar>, BaseDataNode<Scalar>, Ptr<F##Node<Scalar>>>(     \
-      m, name<Scalar>(#F "Node").c_str());                                     \
+      m, name<Scalar>(#F "Node"));                                             \
   m.def(#F,                                                                    \
         static_cast<Ptr<F##Node<Scalar>> (*)(const NodePtr<Scalar>&)>(         \
-            &F<const NodePtr<Scalar>&>));
+            &F<const NodePtr<Scalar>&>))
 
 namespace ginn {
 namespace python {
