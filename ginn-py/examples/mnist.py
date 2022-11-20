@@ -1,4 +1,5 @@
 from typing import List, Tuple
+import time
 
 import ginn
 import numpy as np
@@ -11,7 +12,7 @@ def mnist_reader(
     x = np.loadtxt(fname, delimiter=",")
     y = np.transpose(x[:, 0:1])
     x = np.transpose(x[:, 1:])
-    x *= (1. / 255.)
+    x *= 1.0 / 255.0
 
     indices = np.arange(bs, x.shape[1], bs)
     xs = np.array_split(x, indices, axis=1)
@@ -37,8 +38,9 @@ def main(
     bs: int = 64,
     epochs: int = 10,
     # seed: int = 123457,
+    gpu: bool = False,
 ):
-    dev = ginn.cpu()  # TODO: make arg
+    dev = ginn.gpu() if gpu else ginn.cpu()
 
     X, Y = mnist_reader(train_file, bs, dev)
     Xt, Yt = mnist_reader(test_file, bs, dev)
@@ -83,11 +85,13 @@ def main(
         return correct / total
 
     # Main training loop
+    print("TrErr%\tTstErr%\tsecs")
     for e in range(epochs):
+        tic = time.time()
         acc = run_epoch(X, Y, train=True)
         acct = run_epoch(Xt, Yt, train=False)
-        print(f"{100*(1-acc):.3f}\t{100*(1-acct):.3f}")
-
+        toc = time.time() - tic
+        print(f"{100*(1-acc):6.3f}\t{100*(1-acct):6.3f}\t{toc:4.2f}")
 
 
 if __name__ == "__main__":
