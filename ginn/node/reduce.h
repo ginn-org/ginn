@@ -35,7 +35,7 @@ class SumNode : public BaseDataNode<Scalar> {
   }
 
  public:
-  SumNode(NodePtr<Scalar> in)
+  SumNode(const NodePtr<Scalar>& in)
       : BaseDataNode<Scalar>(in->dev(), {}, {in}), in_(in) {}
 
   void set_ins(const std::vector<BaseNodePtr>& ins) override {
@@ -117,7 +117,7 @@ class AxisSumNode : public BaseDataNode<Scalar> {
   using BaseDataNode<Scalar>::value;
   using BaseDataNode<Scalar>::grad;
 
-  AxisSumNode(NodePtr<Scalar> in, std::vector<Size> axes)
+  AxisSumNode(const NodePtr<Scalar>& in, std::vector<Size> axes)
       : BaseDataNode<Scalar>({in}), in_(in), axes_(std::move(axes)) {
     GINN_ASSERT(std::is_sorted(axes_.begin(), axes_.end()),
                 "Axes need to be specified in sorted order in AxisSum!");
@@ -136,41 +136,14 @@ auto AxisSum(NodePtrType in, std::initializer_list<Size> axes) {
 }
 
 template <typename Scalar>
-class ColSumNode : public BaseDataNode<Scalar> {
- private:
-  NodePtr<Scalar> in_;
-
-  virtual void forward_() override {
-    auto& x = in_->value();
-    GINN_ASSERT(x.shape().size() == 2);
-
-    value().resize({1, x.cols()});
-    value() = x.t().sum(Index<1>{0});
-  }
-
-  virtual void backward_() override {
-    if (in_->has_grad()) {
-      in_->grad() += grad().t().broadcast(Index<2>{in_->grad().rows(), 1});
-    }
-  }
-
- public:
-  using BaseDataNode<Scalar>::value;
-  using BaseDataNode<Scalar>::grad;
-
-  ColSumNode(NodePtr<Scalar> in) : BaseDataNode<Scalar>({in}), in_(in) {}
-
-  std::string name() const override { return "ColSum"; }
-};
-
-GINN_MAKE_SCALAR_FORWARDING_FACTORY(ColSum);
-
-template <typename Scalar>
 class MeanNode : public BaseDataNode<Scalar> {
  private:
   NodePtr<Scalar> in_;
 
-  void forward_() override { this->value() = in_->value().t().mean(); }
+  void forward_() override {
+    this->value().resize({});
+    this->value() = in_->value().t().mean();
+  }
   void backward_() override {
     if (in_->has_grad()) {
       auto size = in_->value().size();
@@ -180,8 +153,7 @@ class MeanNode : public BaseDataNode<Scalar> {
   }
 
  public:
-  MeanNode(NodePtr<Scalar> in)
-      : BaseDataNode<Scalar>(in->dev(), {}, {in}), in_(in) {}
+  MeanNode(const NodePtr<Scalar>& in) : BaseDataNode<Scalar>({in}), in_(in) {}
 
   std::string name() const override { return "Mean"; }
 };
@@ -217,7 +189,7 @@ class VarianceNode : public BaseDataNode<Scalar> {
   using BaseDataNode<Scalar>::value;
   using BaseDataNode<Scalar>::grad;
 
-  VarianceNode(NodePtr<Scalar> in)
+  VarianceNode(const NodePtr<Scalar>& in)
       : BaseDataNode<Scalar>(in->dev(), {}, {in}),
         in_(in),
         mean_(this->dev(), Shape{}) {}

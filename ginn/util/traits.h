@@ -76,7 +76,7 @@ struct innermost<std::vector<T>> {
 
 template <typename T>
 struct innermost<std::vector<T>&> {
-using type = typename innermost<T>::type;
+  using type = typename innermost<T>::type;
 };
 
 template <typename T>

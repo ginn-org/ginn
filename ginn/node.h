@@ -326,19 +326,6 @@ auto derived_cast(const Container& v) {
   }                                                                            \
   static_assert(true, "Factory maker requires a semicolon")
 
-#define GINN_MAKE_RANKED_SCALAR_FORWARDING_FACTORY(f)                          \
-  /*If first arg is a Ptr<Node<Scalar>> for a derived node type, forward its   \
-   * Scalar */                                                                 \
-  template <Size N,                                                            \
-            typename NodePtr,                                                  \
-            typename... Args,                                                  \
-            typename = std::enable_if_t<                                       \
-                std::is_base_of_v<BaseNode, typename NodePtr::element_type>>>  \
-  auto f(NodePtr arg, Args&&... args) {                                        \
-    using Scalar = typename std::decay_t<decltype(*arg)>::Scalar;              \
-    return make_ref<f##Node<N, Scalar>>(arg, std::forward<Args>(args)...);     \
-  }                                                                            \
-  static_assert(true, "Factory maker requires a semicolon")
 } // end namespace ginn
 
 #endif

@@ -439,7 +439,8 @@ class Tensor {
 
   void set_random() {
     // TODO: making a copy here for now, get rid of this
-    if constexpr (std::is_same_v<Scalar, Half> or std::is_same_v<Scalar, Int> or std::is_same_v<Scalar, bool>) {
+    if constexpr (std::is_same_v<Scalar, Half> or std::is_same_v<Scalar, Int> or
+                  std::is_same_v<Scalar, bool>) {
       // TODO: properly handle int and bool
       Tensor<Real> tmp(dev(), shape());
       tmp.set_random();

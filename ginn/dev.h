@@ -38,9 +38,7 @@ inline int gpus() {
 #ifdef GINN_ENABLE_GPU
   try {
     GINN_CUDA_CALL(cudaGetDeviceCount(&num_gpus));
-  } catch (const CudaError&) {
-    return 0;
-  }
+  } catch (const CudaError&) { return 0; }
 #endif
   return num_gpus;
 }
@@ -136,7 +134,7 @@ class PreallocCpuDevice : public Device {
   DeviceType type() const override { return CPU; }
   DeviceId id() const override { return {CPU, 0}; }
   short precedence() const override { return 1; }
-  void reset() { offset_ = storage_.data(); }
+  void clear() { offset_ = storage_.data(); }
   size_t used() const { return offset_ - storage_.data(); }
   size_t size() const { return storage_.size(); }
 };
@@ -203,9 +201,7 @@ inline auto& gpu(int idx = 0) {
   using Ptr = std::shared_ptr<GpuDevice>;
   auto helper = []() {
     std::vector<Ptr> devs;
-    for (size_t i = 0; i < gpus(); i++) {
-      devs.push_back(Gpu(i));
-    }
+    for (size_t i = 0; i < gpus(); i++) { devs.push_back(Gpu(i)); }
     return devs;
   };
   static std::vector<Ptr> devs = helper();
@@ -249,7 +245,7 @@ class PreallocGpuDevice : public Device {
   DeviceType type() const override { return GPU; }
   DeviceId id() const override { return {GPU, id_}; }
   short precedence() const override { return 1; }
-  void reset() { offset_ = storage_.data(); }
+  void clear() { offset_ = storage_.data(); }
   size_t used() const { return offset_ - storage_.data(); }
   size_t size() const { return storage_.size(); }
 };

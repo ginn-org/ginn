@@ -23,9 +23,8 @@ namespace ginn {
 template <typename Scalar>
 class SelectNode : public BaseDataNode<Scalar> {
  private:
-  // TODO: Should I change if_ to a NodePtr<Int> / NodePtr<bool> instead?
-  //   or maybe a separate template arg?
-  NodePtr<Scalar> if_, then_, else_;
+  NodePtr<bool> if_;
+  NodePtr<Scalar> then_, else_;
 
   void forward_() override {
     GINN_ASSERT(then_->shape() == Shape{} or then_->shape() == if_->shape());
@@ -37,21 +36,21 @@ class SelectNode : public BaseDataNode<Scalar> {
     value().resize(if_->shape());
     Index<2> cast{value().rows(), value().cols()};
 
-    auto if_t = if_->value().t(), then_t = then_->value().t(),
-         else_t = else_->value().t();
-    auto cmp = if_t != Scalar(0);
+    TensorMap<bool, 2> if_t = if_->value().t();
+    auto then_t = then_->value().t();
+    auto else_t = else_->value().t();
 
     // TODO: Inspect why broadcast breaks for view<1>... So arbitrary!
     if (not then_scalar and not else_scalar) {
-      value() = cmp.select(then_t, else_t);
+      value() = if_t.select(then_t, else_t);
     } else if (not then_scalar) {
       // value() = (if_v != Scalar(0.)) --> eg this one... segfault on gpu.
       //              .select(then_v, else_v.broadcast(Index<1>{n}).eval());
-      value() = cmp.select(then_t, else_t.broadcast(cast));
+      value() = if_t.select(then_t, else_t.broadcast(cast));
     } else if (not else_scalar) {
-      value() = cmp.select(then_t.broadcast(cast), else_t);
+      value() = if_t.select(then_t.broadcast(cast), else_t);
     } else {
-      value() = cmp.select(then_t.broadcast(cast), else_t.broadcast(cast));
+      value() = if_t.select(then_t.broadcast(cast), else_t.broadcast(cast));
     }
   }
 
@@ -60,7 +59,7 @@ class SelectNode : public BaseDataNode<Scalar> {
     bool else_scalar = else_->shape() == Shape{};
 
     if (then_->has_grad()) {
-      auto cmp = (if_->value().t() != Scalar(0.)).template cast<Scalar>();
+      auto cmp = if_->value().t().template cast<Scalar>();
       if (then_scalar) {
         then_->grad() += (cmp * grad().t()).sum();
       } else {
@@ -68,7 +67,7 @@ class SelectNode : public BaseDataNode<Scalar> {
       }
     }
     if (else_->has_grad()) {
-      auto cmp = (if_->value().t() == Scalar(0)).template cast<Scalar>();
+      auto cmp = (if_->value().t() == false).template cast<Scalar>();
       if (else_scalar) {
         else_->grad() += (cmp * grad().t()).sum();
       } else {
@@ -81,21 +80,25 @@ class SelectNode : public BaseDataNode<Scalar> {
   using BaseDataNode<Scalar>::value;
   using BaseDataNode<Scalar>::grad;
 
-  SelectNode(NodePtr<Scalar> if_n,
-             NodePtr<Scalar> then_n,
-             NodePtr<Scalar> else_n)
+  SelectNode(const NodePtr<bool>& if_n,
+             const NodePtr<Scalar>& then_n,
+             const NodePtr<Scalar>& else_n)
       : BaseDataNode<Scalar>({if_n, then_n, else_n}),
         if_(if_n),
         then_(then_n),
         else_(else_n) {}
 
-  SelectNode(NodePtr<Scalar> if_n, NodePtr<Scalar> then_n, Scalar else_val)
+  SelectNode(const NodePtr<bool>& if_n,
+             const NodePtr<Scalar>& then_n,
+             Scalar else_val)
       : SelectNode(if_n, then_n, Constant(if_n->dev(), {}, else_val)) {}
 
-  SelectNode(NodePtr<Scalar> if_n, Scalar then_val, NodePtr<Scalar> else_n)
+  SelectNode(const NodePtr<bool>& if_n,
+             Scalar then_val,
+             const NodePtr<Scalar>& else_n)
       : SelectNode(if_n, Constant(if_n->dev(), {}, then_val), else_n) {}
 
-  SelectNode(NodePtr<Scalar> if_n, Scalar then_val, Scalar else_val)
+  SelectNode(const NodePtr<bool>& if_n, Scalar then_val, Scalar else_val)
       : SelectNode(if_n,
                    Constant(if_n->dev(), {}, then_val),
                    Constant(if_n->dev(), {}, else_val)) {}
@@ -103,7 +106,18 @@ class SelectNode : public BaseDataNode<Scalar> {
   std::string name() const override { return "Select"; }
 };
 
-GINN_MAKE_SCALAR_FORWARDING_FACTORY(Select);
+template <typename Then, typename Else>
+auto Select(const NodePtr<bool>& if_, Then&& then_, Else&& else_) {
+  if constexpr (is_node_ptr_v<std::decay_t<Then>>) {
+    using Scalar = typename std::decay_t<Then>::element_type::Scalar;
+    return make_ref<SelectNode<Scalar>>(
+        if_, std::forward<Then>(then_), std::forward<Else>(else_));
+  } else {
+    using Scalar = typename std::decay_t<Then>;
+    return make_ref<SelectNode<Scalar>>(
+        if_, std::forward<Then>(then_), std::forward<Else>(else_));
+  }
+}
 
 // Mask is very close to a Select with a scalar, however mask is allowed to
 // broadcast.
@@ -158,7 +172,10 @@ class MaskNode : public BaseDataNode<Scalar> {
   using BaseDataNode<Scalar>::value;
   using BaseDataNode<Scalar>::grad;
 
-  MaskNode(NodePtr<Scalar> in, NodePtr<Scalar> mask, Scalar mask_val)
+  template <typename RhsScalar>
+  MaskNode(const NodePtr<Scalar>& in,
+           const NodePtr<Scalar>& mask,
+           RhsScalar mask_val)
       : BaseDataNode<Scalar>({in, mask}),
         in_(in),
         mask_(mask),

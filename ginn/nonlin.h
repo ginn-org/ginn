@@ -272,14 +272,13 @@ class GeluOp : public NonlinOp<Scalar> {
                 /*y*/,
                 bool accumulate) const override {
     const static Scalar c_1_sqrt2pi(1. / ::sqrt(2. * ::acos(-1.)));
-    add_or_assign(
-        dx,
-        accumulate,
-        dy.t() *
-            //      (y.t() / x.t() + x.t() * (-x.t() * x.t() / 2_r).exp() *
-            //      c_1_sqrt2pi);
-            (s(0.5) * (s(1) + (x.t() / s(::sqrt(2.))).erf()) +
-             x.t() * (-x.t() * x.t() / s(2)).exp() * c_1_sqrt2pi));
+    add_or_assign(dx,
+                  accumulate,
+                  dy.t() *
+                      //      (y.t() / x.t() + x.t() * (-x.t() * x.t() /
+                      //      2_r).exp() * c_1_sqrt2pi);
+                      (s(0.5) * (s(1) + (x.t() / s(::sqrt(2.))).erf()) +
+                       x.t() * (-x.t() * x.t() / s(2)).exp() * c_1_sqrt2pi));
   }
 
   MAKE_NONLIN_COPY(GeluOp)

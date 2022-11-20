@@ -45,6 +45,22 @@ auto name(std::string name) {
   return names.back().c_str();
 }
 
+// Given a template class / function such as Initer<Scalar>(), define
+//   a non-template version Initer_(..., Scalar_ s) that dispatches based on the
+//   scalar.
+#define GINN_PY_MAKE_SCALAR_DISPATCHER(F)                                      \
+  template <typename... Args>                                                  \
+  py::object F##_(Args&&... args, Scalar_ scalar) {                            \
+    if (scalar == Scalar_::Real) {                                             \
+      return py::cast(F<Real>(std::forward<Args>(args)...));                   \
+    } else if (scalar == Scalar_::Half) {                                      \
+      return py::cast(F<Half>(std::forward<Args>(args)...));                   \
+    } else {                                                                   \
+      GINN_THROW("Unexpected Scalar type!");                                   \
+      return {};                                                               \
+    }                                                                          \
+  }
+
 // Syntactic shorthand for nodes that derive from BaseDataNode, which are many
 template <typename Scalar, template <class> typename Node>
 using PyNode =

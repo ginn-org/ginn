@@ -5,7 +5,7 @@
 
 #include <ginn/node.h>
 
-PYBIND11_DECLARE_HOLDER_TYPE(T, ginn::Ptr<T>);
+PYBIND11_DECLARE_HOLDER_TYPE(T, ginn::Ptr<T>)
 
 namespace ginn {
 namespace python {

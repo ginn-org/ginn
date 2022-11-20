@@ -26,9 +26,9 @@
 #include <unordered_set>
 #include <vector>
 
+#include <Eigen/Dense>
 #include <ginn/def.h>
 #include <ginn/except.h>
-#include <Eigen/Dense>
 
 namespace ginn {
 
@@ -176,7 +176,8 @@ bool has(const std::string& whole, const Str& part) {
   return whole.find(part) != std::string::npos;
 }
 
-inline std::vector<std::string> split(const std::string& s) { // splits from whitespace
+inline std::vector<std::string>
+split(const std::string& s) { // splits from whitespace
   std::stringstream ss(s);
   std::string item;
   std::vector<std::string> elems;
@@ -245,8 +246,7 @@ std::vector<T> operator+=(std::vector<T>& left, const std::vector<T>& right) {
 
 template <int Rank, typename T>
 struct NestedInitListImpl {
-  using type =
-      std::vector<typename NestedInitListImpl<Rank - 1, T>::type>;
+  using type = std::vector<typename NestedInitListImpl<Rank - 1, T>::type>;
 };
 
 template <typename T>
@@ -259,7 +259,11 @@ using NestedInitList = typename NestedInitListImpl<Rank, T>::type;
 
 // Helper for assigning a nested initializer list rhs to an indexable type lhs
 // such that lhs(i, j, ..., k) = rhs[i][j]...[k]
-template <int Rank, typename Scalar, typename RhsScalar, typename T, typename... Args>
+template <int Rank,
+          typename Scalar,
+          typename RhsScalar,
+          typename T,
+          typename... Args>
 void assign(T&& lhs, NestedInitList<Rank, RhsScalar> rhs, Args... args) {
   typename T::Index i = 0;
   if constexpr (Rank == 0) {
@@ -270,7 +274,8 @@ void assign(T&& lhs, NestedInitList<Rank, RhsScalar> rhs, Args... args) {
     }
   } else {
     for (auto it = rhs.begin(); it != rhs.end(); it++) {
-      assign<Rank - 1, Scalar, RhsScalar>(std::forward<T>(lhs), *it, args..., i++);
+      assign<Rank - 1, Scalar, RhsScalar>(
+          std::forward<T>(lhs), *it, args..., i++);
     }
   }
 }

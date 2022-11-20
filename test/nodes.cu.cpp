@@ -819,8 +819,8 @@ TEMPLATE_TEST_CASE("Select", "[select]", Real, Half, Int) {
   using Scalar = TestType;
   auto if_ = Values<2>({{1., 0.},
                         {0., 1.},
-                        {1., 0.}})->cast<Scalar>();
-  if_->has_grad(false);
+                        {1., 0.}})->cast<bool>();
+  if_->has_grad(false); // TODO: maybe integral nodes should have this default?
   auto a = Values<2>({{1., 2.},
                       {3., 4.},
                       {5., 6.}})->cast<Scalar>();
@@ -933,20 +933,13 @@ TEMPLATE_TEST_CASE("LayerNorm", "[layernorm][inplace]", Real, Half) {
 }
 
 TEMPLATE_TEST_CASE("Sums", "[reduce]", Real, Half) {
-  // TODO: ColSum does not reduce rank of tensor but Sum does, pick one or the
-  //   other for both!
   using Scalar = TestType;
   auto W = Values<2>({{1, 2, 3},
                       {4, 5, 6}})->cast<Scalar>();
-  //auto Wsum = Values<2>({{21}});
-
-  SECTION("ColSum") {
-    auto Wcol = Values<2>({{5, 7, 9}})->cast<Scalar>();
-
-    check(ColSum(W), Wcol);
-    CHECK_(ColSum(W), {W}, true);
+  SECTION("Sum") {
+    auto Wsum = Values<0>(21)->cast<Scalar>();
+    check(Sum(W), Wsum);
   }
-  //SECTION("Sum")    { check(Sum(W),    Wsum); }
 
   SECTION("AxisSum") {
     auto V    = Values<3>({{{1, 2, 3},
@@ -1151,7 +1144,7 @@ TEMPLATE_TEST_CASE("Affine", "[affine]", Real, Half) {
 
   SECTION("Other nonlins") {
     CHECK_(Affine<TanhOp>(W, V, b), {W, V, b}, true, eps2);
-    CHECK_(Affine<ReluOp>(W, V, b), {W, V, b}, true, eps2);
+    CHECK_(Affine<ReluOp>(W * 10, V, b), {W, V, b}, true, eps2);
     CHECK_(Affine<Gelu2Op>(W, V, b), {W, V, b}, true, eps2);
     CHECK_(Affine<GeluOp>(W, V, b), {W, V, b}, true, eps2);
   }

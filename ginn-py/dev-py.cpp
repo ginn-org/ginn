@@ -35,9 +35,9 @@ void bind_dev(py::module_& m) {
           py::is_operator());
 
   py::class_<Device, std::shared_ptr<Device>>(m, "Device")
-      .def("type", &Device::type)
-      .def("id", &Device::id)
-      .def("precedence", &Device::precedence);
+      .def_property_readonly("type", &Device::type)
+      .def_property_readonly("id", &Device::id)
+      .def_property_readonly("precedence", &Device::precedence);
 
   py::class_<CpuDevice, Device, std::shared_ptr<CpuDevice>>(m, "CpuDevice");
 
@@ -46,9 +46,9 @@ void bind_dev(py::module_& m) {
 
   py::class_<PreallocCpuDevice, Device, std::shared_ptr<PreallocCpuDevice>>(
       m, "PreallocCpuDevice")
-      .def("reset", &PreallocCpuDevice::reset)
-      .def("size", &PreallocCpuDevice::size)
-      .def("used", &PreallocCpuDevice::used);
+      .def("clear", &PreallocCpuDevice::clear)
+      .def_property_readonly("size", &PreallocCpuDevice::size)
+      .def_property_readonly("used", &PreallocCpuDevice::used);
 
   m.def("PreallocCpu", &PreallocCpu, "");
 
@@ -60,9 +60,9 @@ void bind_dev(py::module_& m) {
 
   py::class_<PreallocGpuDevice, Device, std::shared_ptr<PreallocGpuDevice>>(
       m, "PreallocGpuDevice")
-      .def("reset", &PreallocGpuDevice::reset)
-      .def("size", &PreallocGpuDevice::size)
-      .def("used", &PreallocGpuDevice::used);
+      .def("clear", &PreallocGpuDevice::clear)
+      .def_property_readonly("size", &PreallocGpuDevice::size)
+      .def_property_readonly("used", &PreallocGpuDevice::used);
 
   m.def("PreallocGpu",
         py::overload_cast<size_t, size_t>(&PreallocGpu),

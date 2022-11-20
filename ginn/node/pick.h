@@ -29,7 +29,7 @@ template <typename Scalar>
 class PickNode : public BaseDataNode<Scalar> {
  protected:
   NodePtr<Scalar> in_;
-  DataPtr<Int> index_;
+  DataPtr<Int> index_; // TODO: Make this NodePtr<Int> instead
 
  public: // Cuda needs this public
 #ifdef GINN_ENABLE_GPU
@@ -151,15 +151,15 @@ class PickNode : public BaseDataNode<Scalar> {
   void backward_() override { pick_grad(in_->grad()); }
 
  public:
-  PickNode(NodePtr<Scalar> in, DataPtr<Int> index)
+  PickNode(const NodePtr<Scalar>& in, const DataPtr<Int>& index)
       : BaseDataNode<Scalar>({in, index}), in_(in), index_(index) {}
 
-  PickNode(NodePtr<Scalar> in, const std::vector<Int>& index)
+  PickNode(const NodePtr<Scalar>& in, const std::vector<Int>& index)
       : PickNode(in, Data<Int>(in->dev(), Shape{(Size)index.size()})) {
     index_->value().set(index);
   }
 
-  PickNode(NodePtr<Scalar> in, Int index)
+  PickNode(const NodePtr<Scalar>& in, Int index)
       : PickNode(in, std::vector<Int>{index}) {}
 
   std::string name() const override { return "Pick"; }
@@ -170,7 +170,7 @@ GINN_MAKE_SCALAR_FORWARDING_FACTORY(Pick);
 template <typename Scalar>
 class PickSoftmaxNode : public PickNode<Scalar> {
   // TODO: This can (possibly) be made more efficient by performing exp(x), then
-  // pick, then divide by sum(exp(x)), instead of picking at the end.
+  //   pick, then divide by sum(exp(x)), instead of picking at the end.
  protected:
   using PickNode<Scalar>::in_;
   Tensor<Scalar> smax_;
@@ -281,11 +281,21 @@ class PickNegLogSigmoidNode : public BaseDataNode<Scalar> {
   using BaseDataNode<Scalar>::value;
   using BaseDataNode<Scalar>::grad;
 
-  PickNegLogSigmoidNode(NodePtr<Scalar> in, DataPtr<Int> index)
+  PickNegLogSigmoidNode(const NodePtr<Scalar>& in, const DataPtr<Int>& index)
       : BaseDataNode<Scalar>({in, index}),
         in_(in),
         index_(index),
         sigm_(this->dev()) {}
+
+  PickNegLogSigmoidNode(const NodePtr<Scalar>& in,
+                        const std::vector<Int>& index)
+      : PickNegLogSigmoidNode(in,
+                              Data<Int>(in->dev(), Shape{(Size)index.size()})) {
+    index_->value().set(index);
+  }
+
+  PickNegLogSigmoidNode(const NodePtr<Scalar>& in, Int index)
+      : PickNegLogSigmoidNode(in, std::vector<Int>{index}) {}
 
   std::string name() const override { return "PickNegLogSigmoid"; }
 };

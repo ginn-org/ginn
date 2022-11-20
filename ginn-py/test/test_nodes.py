@@ -33,6 +33,7 @@ def check(a: ginn.BaseNode, b: ginn.BaseNode, eps=1e-6):
     ginn.Graph(b).forward()
     a_ = a.value.maybe_copy_to(ginn.cpu())
     b_ = b.value.maybe_copy_to(ginn.cpu())
+    assert a.dev == b.dev
     assert a_.shape == b_.shape
     assert a_.list() == pytest.approx(b_.list(), rel=eps)
 
@@ -332,7 +333,7 @@ def test_add(scalar, dev):
     check(ginn.Add([a, b, c]), e)
     check(a + b + c, e)
 
-    e = ginn.Values([[1, 12], [2, 15], [3, 18]]).cast(scalar)
+    e = ginn.Values(dev, [[1, 12], [2, 15], [3, 18]]).cast(scalar)
     check(ginn.Add([a, b, a]), e)
     check(a + b + a, e)
 
@@ -342,7 +343,7 @@ def test_add(scalar, dev):
 def test_add_scalar(scalar, dev):
     a = ginn.Values(dev, [[1, 4], [2, 5], [3, 6]]).cast(scalar)
 
-    e = ginn.Values([[2, 5], [3, 6], [4, 7]]).cast(scalar)
+    e = ginn.Values(dev, [[2, 5], [3, 6], [4, 7]]).cast(scalar)
 
     for s in [1, 1.0]:
         check(ginn.AddScalar(a, s), e)
@@ -355,7 +356,7 @@ def test_add_scalar(scalar, dev):
 def test_subtract_scalar(scalar, dev):
     a = ginn.Values(dev, [[1, 4], [2, 5], [3, 6]]).cast(scalar)
 
-    e = ginn.Values([[0, -3], [-1, -4], [-2, -5]]).cast(scalar)
+    e = ginn.Values(dev, [[0, -3], [-1, -4], [-2, -5]]).cast(scalar)
 
     for s in [1, 1.0]:
         check(ginn.SubtractScalar(s, a), e)
@@ -457,21 +458,24 @@ def test_nonlin(scalar, dev):
     W = ginn.Values(dev, [[-1, -2, -3], [4, 5, 6]]).cast(scalar)
 
     tanhW = ginn.Values(
-        [[-0.76159415, -0.96402758, -0.99505475], [0.99932929, 0.99990920, 0.99998771]]
+        dev,
+        [[-0.76159415, -0.96402758, -0.99505475], [0.99932929, 0.99990920, 0.99998771]],
     ).cast(scalar)
-    reluW = ginn.Values([[0, 0, 0], [4, 5, 6]]).cast(scalar)
+    reluW = ginn.Values(dev, [[0, 0, 0], [4, 5, 6]]).cast(scalar)
     sigmW = ginn.Values(
-        [[0.26894142, 0.11920292, 0.04742587], [0.98201379, 0.99330714, 0.99752737]]
+        dev,
+        [[0.26894142, 0.11920292, 0.04742587], [0.98201379, 0.99330714, 0.99752737]],
     ).cast(scalar)
     smaxW = ginn.Values(
+        dev,
         [
             [0.00669285, 9.11051194e-04, 1.23394576e-04],
             [0.99330715, 9.99088949e-01, 9.99876605e-01],
-        ]
+        ],
     ).cast(scalar)
-    absW = ginn.Values([[1, 2, 3], [4, 5, 6]]).cast(scalar)
+    absW = ginn.Values(dev, [[1, 2, 3], [4, 5, 6]]).cast(scalar)
     logaW = ginn.Values(
-        [[0, 0.69314718, 1.09861229], [1.38629436, 1.60943791, 1.79175947]]
+        dev, [[0, 0.69314718, 1.09861229], [1.38629436, 1.60943791, 1.79175947]]
     ).cast(scalar)
 
     check(ginn.Identity(W), W)
@@ -492,19 +496,295 @@ def test_nonlin(scalar, dev):
 @scalars2
 @devices
 def test_nonlin_extreme(scalar, dev):
-    x = ginn.Values([[10000.], [-10000.]]).cast(scalar)
-    x2 = ginn.Values([[5.], [-float("inf")]]).cast(scalar)
+    x = ginn.Values(dev, [[10000.0], [-10000.0]]).cast(scalar)
+    x2 = ginn.Values(dev, [[5.0], [-float("inf")]]).cast(scalar)
 
     assert x.shape == [2, 1]
     assert x2.shape == [2, 1]
 
-    tanhx = ginn.Values([[1], [-1]]).cast(scalar)
-    sigmoidx = ginn.Values([[1], [0]]).cast(scalar)
-    smaxx = ginn.Values([[1], [0]]).cast(scalar)
-    smaxx2 = ginn.Values([[1], [1]]).cast(scalar)
+    tanhx = ginn.Values(dev, [[1], [-1]]).cast(scalar)
+    sigmoidx = ginn.Values(dev, [[1], [0]]).cast(scalar)
+    smaxx = ginn.Values(dev, [[1], [0]]).cast(scalar)
+    smaxx2 = ginn.Values(dev, [[1], [1]]).cast(scalar)
 
     check(ginn.Tanh(x), tanhx)
     check(ginn.Sigmoid(x), sigmoidx)
     check(ginn.Softmax(ginn.Reshape(x, [1, 2])), ginn.Reshape(smaxx2, [1, 2]))
     check(ginn.Softmax(x), smaxx)
     check(ginn.Softmax(x2), smaxx)
+
+
+@scalars2
+@devices
+def test_pick_and_friends(scalar, dev):
+    W = ginn.Values(
+        dev, [[-0.5, 0.55, -0.45], [1.0, 2.0, -1.0], [0.0, 0.0, 0.0], [0.3, -0.33, 1.3]]
+    ).cast(scalar)
+    p = ginn.Values(dev, [[0.3, 0.55, -1.0]]).cast(scalar)
+    psm = ginn.Values(dev, [[0.23787436, 0.15987601, 0.06482681]]).cast(scalar)
+    pnlsm = ginn.Values(dev, [[1.43601264, 1.8333567, 2.73603603]]).cast(scalar)
+
+    il = [3, 0, 1]
+    it = ginn.Values(dev, [3, 0, 1]).cast(ginn.Scalar.Int)
+    it.has_grad = False
+
+    eps = 1e-3 if W.scalar == ginn.Scalar.Half else 1e-6
+
+    check(ginn.Pick(W, il), p)
+    check(ginn.Pick(W, it), p)
+    check(ginn.PickSoftmax(W, il), psm, eps=eps)
+    check(ginn.PickSoftmax(W, it), psm, eps=eps)
+    check(ginn.Pick(ginn.Softmax(W), il), psm, eps=eps)
+    check(ginn.Pick(ginn.Softmax(W), it), psm, eps=eps)
+    check(ginn.PickNegLogSoftmax(W, il), pnlsm, eps=eps)
+    check(ginn.PickNegLogSoftmax(W, it), pnlsm, eps=eps)
+    check(ginn.Pick(-ginn.Log(ginn.Softmax(W)), il), pnlsm, eps=eps)
+    check(ginn.Pick(-ginn.Log(ginn.Softmax(W)), it), pnlsm, eps=eps)
+    check(-ginn.Log(ginn.Pick(ginn.Softmax(W), il)), pnlsm, eps=eps)
+    check(-ginn.Log(ginn.Pick(ginn.Softmax(W), it)), pnlsm, eps=eps)
+
+
+@scalars2
+@devices
+def test_pick_and_friends(scalar, dev):
+    W = ginn.Values(
+        dev, [[-0.5, 0.55, -0.45], [1.0, 2.0, -1.0], [0.0, 0.0, 0.0], [0.3, -0.33, 1.3]]
+    ).cast(scalar)
+    p = ginn.Values(dev, [[0, 1, 0], [1, 0, 1], [0, 1, 0], [1, 0, 1]]).int()
+    p.has_grad = False
+    pnls = ginn.Values(
+        dev,
+        [
+            [0.47407698, 0.45549248, 0.49324895],
+            [0.31326169, 2.12692801, 1.31326169],
+            [0.69314718, 0.69314718, 0.69314718],
+            [0.55435524, 0.54169836, 0.24100845],
+        ],
+    ).cast(scalar)
+
+    eps = 2e-3 if W.scalar == ginn.Scalar.Half else 1e-6
+    check(ginn.PickNegLogSigmoid(W, p), pnls, eps=eps)
+
+
+# TODO: add "Half" to the following test once I make ginn::Half known to python
+@pytest.mark.parametrize(
+    "scalar", [ginn.Scalar.Real, ginn.Scalar.Int, ginn.Scalar.Bool]
+)
+@devices
+def test_select(scalar, dev):
+    if_ = ginn.Values(dev, [[1, 0], [0, 1], [1, 0]]).bool()
+    if_.has_grad = False  # TODO: maybe this should be default for bool?
+
+    a = ginn.Values(dev, [[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]).cast(scalar)
+    b = ginn.Values(dev, [[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]]).cast(scalar)
+
+    y1 = ginn.Values(dev, [[1.0, 0.2], [0.3, 4.0], [5.0, 0.6]]).cast(scalar)
+    y2 = ginn.Values(dev, [[1.0, 7.0], [7.0, 4.0], [5.0, 7.0]]).cast(scalar)
+    y3 = ginn.Values(dev, [[7.0, 0.2], [0.3, 7.0], [7.0, 0.6]]).cast(scalar)
+    y4 = ginn.Values(dev, [[7.0, -2], [-2, 7.0], [7.0, -2]]).cast(scalar)
+
+    def val(x):
+        if scalar == ginn.Scalar.Real:
+            return float(x)
+        elif scalar == ginn.Scalar.Int:
+            return int(x)
+        elif scalar == ginn.Scalar.Bool:
+            return bool(x)
+
+    check(ginn.Select(if_, a, b), y1)
+    check(ginn.Select(if_, a, val(7)), y2)
+    check(ginn.Select(if_, val(7), b), y3)
+    check(ginn.Select(if_, val(7), val(-2)), y4)
+
+
+@scalars
+@devices
+def test_mask(scalar, dev):
+    mask = ginn.Values(dev, [[1.0, 0.0], [0.0, 1.0], [1.0, 0.0]]).cast(scalar)
+    mask.has_grad = False
+
+    mask2 = ginn.Values(dev, [[1.0], [0.0], [1.0]]).cast(scalar)
+    mask2.has_grad = False
+
+    a = ginn.Values(dev, [[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]).cast(scalar)
+
+    y1 = ginn.Values(dev, [[1.0, -1.0], [-1.0, 4.0], [5.0, -1.0]]).cast(scalar)
+    y2 = ginn.Values(dev, [[1.0, 2.0], [7.0, 7.0], [5.0, 6.0]]).cast(scalar)
+
+    check(ginn.Mask(a, mask, -1), y1)
+    check(ginn.Mask(a, mask, -1.0), y1)
+    check(ginn.Mask(a, mask2, 7), y2)
+    check(ginn.Mask(a, mask2, 7.0), y2)
+
+
+@scalars2
+@devices
+def test_axis_sum(scalar, dev):
+    V = ginn.Values(
+        dev, [[[1, 2, 3], [4, 5, 6]], [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]]
+    ).cast(scalar)
+    V0 = ginn.Values(dev, [[1.1, 2.2, 3.3], [4.4, 5.5, 6.6]]).cast(scalar)
+    V01 = ginn.Values(dev, [5.5, 7.7, 9.9]).cast(scalar)
+    V012 = ginn.Values(dev, 23.1).cast(scalar)
+    V1 = ginn.Values(dev, [[5, 7, 9], [0.5, 0.7, 0.9]]).cast(scalar)
+    V12 = ginn.Values(dev, [21, 2.1]).cast(scalar)
+    V2 = ginn.Values(dev, [[6, 15], [0.6, 1.5]]).cast(scalar)
+    V02 = ginn.Values(dev, [6.6, 16.5]).cast(scalar)
+
+    eps = 1e-3 if scalar == ginn.Scalar.Half else 1e-6
+    check(ginn.AxisSum(V, [0]), V0, eps)
+    check(ginn.AxisSum(V, [0, 1]), V01, eps)
+    check(ginn.AxisSum(V, [0, 1, 2]), V012, eps)
+    check(ginn.AxisSum(V, [1]), V1, eps)
+    check(ginn.AxisSum(V, [1, 2]), V12, eps)
+    check(ginn.AxisSum(V, [2]), V2, eps)
+    check(ginn.AxisSum(V, [0, 2]), V02, eps)
+    with pytest.raises(RuntimeError):
+        ginn.AxisSum(V, [0, 0])
+    with pytest.raises(RuntimeError):
+        ginn.AxisSum(V, [2, 0])
+
+
+@scalars2
+@devices
+def test_reduce(scalar, dev):
+    W = ginn.Values(dev, [[1, 2, 3], [4, 5, 6]]).cast(scalar)
+
+    s = ginn.Values(dev, 21).cast(scalar)
+    μ = ginn.Values(dev, 3.5).cast(scalar)
+    σ2 = ginn.Values(dev, 35.0 / 12.0).cast(scalar)
+
+    check(ginn.Sum(W), s)
+    check(ginn.Mean(W), μ)
+    check(ginn.Variance(W), σ2)
+
+
+@scalars3
+@devices
+def test_reduce(scalar, dev):
+    a = ginn.Values(dev, [[1], [2], [3], [4], [5]]).cast(scalar)
+    b = ginn.Values(dev, [[5], [4], [3], [2], [1]]).cast(scalar)
+
+    y = ginn.Values(dev, [[1], [1], [0], [0], [0]]).bool()
+    check(ginn.LessThan(a, b), y)
+    check(a < b, y)
+
+
+@scalars2
+@devices
+def test_prod(scalar, dev):
+    W = ginn.Values(dev, [[1, 2, 3], [4, 5, 6]]).cast(scalar)
+    V = ginn.Values(dev, [[0.6, 0.5], [0.4, -0.1], [-0.2, -0.3]]).cast(scalar)
+
+    WV = ginn.Values(dev, [[0.8, -0.6], [3.2, -0.3]]).cast(scalar)
+
+    eps = 1e-2 if scalar == ginn.Scalar.Half else 1e-6
+    check(ginn.Prod(W, V), WV, eps=eps)
+    check(W * V, WV, eps)
+
+
+@scalars2
+@devices
+def test_batched_prod(scalar, dev):
+    a = ginn.Random(dev, [2, 3, 4]).cast(scalar)
+    b = ginn.Random(dev, [3, 5, 4]).cast(scalar)
+    c = ginn.BatchedProd(a, b)
+
+    c0 = ginn.Chip(c, 0, 2)
+    c1 = ginn.Chip(c, 1, 2)
+    c2 = ginn.Chip(c, 2, 2)
+    c3 = ginn.Chip(c, 3, 2)
+
+    a0, b0 = ginn.Chip(a, 0, 2), ginn.Chip(b, 0, 2)
+    a1, b1 = ginn.Chip(a, 1, 2), ginn.Chip(b, 1, 2)
+    a2, b2 = ginn.Chip(a, 2, 2), ginn.Chip(b, 2, 2)
+    a3, b3 = ginn.Chip(a, 3, 2), ginn.Chip(b, 3, 2)
+
+    c0_ = a0 * b0
+    c1_ = a1 * b1
+    c2_ = a2 * b2
+    c3_ = a3 * b3
+
+    eps = 1e-2 if scalar == ginn.Scalar.Half else 1e-6
+    check(c0, c0_, eps)
+    check(c1, c1_, eps)
+    check(c2, c2_, eps)
+    check(c3, c3_, eps)
+
+    a = ginn.Random(dev, [2, 3, 2, 2]).cast(scalar)
+    b = ginn.Random(dev, [3, 5, 2, 2]).cast(scalar)
+    c = ginn.BatchedProd(a, b)
+
+    def ChipTwice(x, i, j):
+        return ginn.Chip(ginn.Chip(x, j, 3), i, 2)
+
+    c00 = ChipTwice(c, 0, 0)
+    c01 = ChipTwice(c, 0, 1)
+    c10 = ChipTwice(c, 1, 0)
+    c11 = ChipTwice(c, 1, 1)
+
+    a00, b00 = ChipTwice(a, 0, 0), ChipTwice(b, 0, 0)
+    a01, b01 = ChipTwice(a, 0, 1), ChipTwice(b, 0, 1)
+    a10, b10 = ChipTwice(a, 1, 0), ChipTwice(b, 1, 0)
+    a11, b11 = ChipTwice(a, 1, 1), ChipTwice(b, 1, 1)
+
+    c00_ = a00 * b00
+    c01_ = a01 * b01
+    c10_ = a10 * b10
+    c11_ = a11 * b11
+
+    eps = 1e-2 if scalar == ginn.Scalar.Half else 1e-6
+    check(c00, c00_, eps)
+    check(c01, c01_, eps)
+    check(c10, c10_, eps)
+    check(c11, c11_, eps)
+
+
+@scalars2
+@devices
+def test_affine(scalar, dev):
+    W = ginn.Values(dev, [[1, 2, 3], [4, 5, 6]]).cast(scalar)
+    V = ginn.Values(dev, [[0.6], [0.4], [-0.2]]).cast(scalar)
+    b = ginn.Values(dev, [[0.01], [0.02]]).cast(scalar)
+
+    WVb = ginn.Values(dev, [[0.81], [3.22]]).cast(scalar)
+
+    eps = 2e-3 if scalar == ginn.Scalar.Half else 1e-6
+    check(ginn.Affine([W, V, b]), WVb, eps=eps)
+    check(W * V + b, WVb, eps=eps)
+
+    # TODO: add Affine with nonlins after Nonlin refactor
+
+
+@scalars2
+@devices
+def test_affine_w_broadcast(scalar, dev):
+    W = ginn.Values(dev, [[1, 2, 3], [4, 5, 6]]).cast(scalar)
+    V = ginn.Values(dev, [[6, 5], [4, -1], [-2, -3]]).cast(scalar)
+    b = ginn.Values(dev, [[0.1], [0.2]]).cast(scalar)
+
+    WVb = ginn.Values(dev, [[8.1, -5.9], [32.2, -2.8]]).cast(scalar)
+
+    eps = 2e-3 if scalar == ginn.Scalar.Half else 1e-6
+    check(ginn.Affine([W, V, b]), WVb, eps=eps)
+
+
+@scalars2
+@devices
+def test_affine_w_high_rank(scalar, dev):
+    W = ginn.Values(dev, [[1, 2, 3], [4, 5, 6]]).cast(scalar)  # 2 x 3
+    V = ginn.Values(
+        dev, [[[6, 5], [6, 5]], [[4, -1], [4, -1]], [[-2, -3], [-2, -3]]]
+    ).cast(
+        scalar
+    )  # 3 x 2 x 2
+    b = ginn.Values(dev, [[0.1], [0.2]]).cast(scalar)
+
+    WVb = ginn.Values(
+        dev, [[[8.1, -5.9], [8.1, -5.9]], [[32.2, -2.8], [32.2, -2.8]]]
+    ).cast(
+        scalar
+    )  # 2 x 2 x 2
+
+    eps = 2e-3 if scalar == ginn.Scalar.Half else 1e-6
+    check(ginn.Affine([W, V, b]), WVb, eps=eps)

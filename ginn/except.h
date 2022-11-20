@@ -44,7 +44,9 @@ class CudaError : public std::runtime_error {
   GINN_OVERLOAD(__VA_ARGS__, GINN_ASSERT2, GINN_ASSERT1)(__VA_ARGS__)
 
 #define GINN_ASSERT2(statement, message)                                       \
-  if (not(statement)) { throw ginn::RuntimeError(message); }
+  do {                                                                         \
+    if (not(statement)) { throw ginn::RuntimeError(message); }                 \
+  } while (0)
 
 #define GINN_ASSERT1(statement)                                                \
   GINN_ASSERT2(statement, "Assertion " #statement " failed!")
@@ -58,9 +60,11 @@ class CudaError : public std::runtime_error {
 
 #undef eigen_assert
 #define eigen_assert(statement)                                                \
-  if (not(statement)) {                                                        \
-    throw ginn::EigenError("Assertion " #statement " failed.");                \
-  }
+  do {                                                                         \
+    if (not(statement)) {                                                      \
+      throw ginn::EigenError("Assertion " #statement " failed.");              \
+    }                                                                          \
+  } while (0)
 
 #endif
 

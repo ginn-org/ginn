@@ -230,7 +230,7 @@ int main(int argc, char** argv) {
       updater.update(graph);
     }
 
-    device.reset();
+    device->clear();
   };
 
   std::mt19937 g(seed + 2);

@@ -118,19 +118,19 @@ def test_resize():
     a = ginn.RealTensor(ginn.cpu(), [2, 1, 3], vals)
 
     a.shape = [6]
-    assert a.size() == 6
+    assert a.size == 6
     assert a.shape == [6]
     assert a.list() == vals
 
     a.shape = [3, 2]
-    assert a.size() == 6
+    assert a.size == 6
     assert a.shape == [3, 2]
     assert a.list() == vals
 
     a.shape = [4]
-    assert a.size() == 4
+    assert a.size == 4
     assert a.shape == [4]
 
     a.shape = [2, 2]
-    assert a.size() == 4
+    assert a.size == 4
     assert a.shape == [2, 2]

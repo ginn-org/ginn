@@ -5,11 +5,21 @@
 
 #include <ginn/node.h>
 #include <ginn/node/common.h>
+#include <ginn/node/compare.h> // need for operator<(), etc
 #include <ginn/node/data.h>
+#include <ginn/node/prod.h> // need for operator*()
 
+#include <ginn-py/node/affine-py.h>
 #include <ginn-py/node/common-py.h>
+#include <ginn-py/node/compare-py.h>
 #include <ginn-py/node/layout-py.h>
 #include <ginn-py/node/nonlin-py.h>
+#include <ginn-py/node/pick-py.h>
+#include <ginn-py/node/prod-py.h>
+#include <ginn-py/node/reduce-py.h>
+#include <ginn-py/node/select-py.h>
+#include <ginn-py/node/weight-py.h>
+
 #include <ginn-py/tensor-py.h>
 #include <ginn-py/util-py.h>
 
@@ -44,8 +54,8 @@ void bind_node_of(PyClass& m) {
   using namespace pybind11::literals;
   using T = Node<Scalar>;
 
-  m.def("dev", &T::dev)
-      .def("size", py::overload_cast<>(&T::size, py::const_))
+  m.def_property_readonly("dev", &T::dev)
+      .def_property_readonly("size", py::overload_cast<>(&T::size, py::const_))
       .def_property_readonly("shape",
                              py::overload_cast<>(&T::shape, py::const_))
       // TODO: Setters for value & grad
@@ -73,6 +83,10 @@ void bind_data_of(PyClass& m) {
     case Scalar_::Bool: return py::cast(t.template cast<bool>());
     }
   });
+  m.def("real", &T::template cast<Real>);
+  m.def("half", &T::template cast<Half>);
+  m.def("int", &T::template cast<Int>);
+  m.def("bool", &T::template cast<bool>);
 }
 
 template <typename... Args>
@@ -131,6 +145,13 @@ void op_overload_helper(Scalar, NodeClass& nc) {
         [&](N a, decltype(s) b) { return b - a; },
         py::is_operator());
   });
+
+  nc.def(
+      "__neg__", [&](N a) { return 0. - a; }, py::is_operator());
+  nc.def(
+      "__lt__", [&](N a, N b) { return a < b; }, py::is_operator());
+  nc.def(
+      "__mul__", [&](N a, N b) { return a * b; }, py::is_operator());
 }
 
 void bind_node(py::module_& m) {
@@ -168,26 +189,31 @@ void bind_node(py::module_& m) {
     using Scalar = decltype(scalar);
     // nvcc 11.1 forces me to use an explicit static cast here.
     m.def(name<Scalar>("Data"),
-          static_cast<DataPtr<Scalar> (*)(DevPtr&, Shape&)>(
-              &Data<Scalar, DevPtr&, Shape&>),
+          FP((&Data<Scalar, const DevPtr&, const Shape&>)),
           "dev"_a,
           "shape"_a);
   });
 
-  m.def("Data", &Data_<DevPtr&>, "device"_a, "scalar"_a = Scalar_::Real);
+  m.def("Data", &Data_<const DevPtr&>, "device"_a, "scalar"_a = Scalar_::Real);
   m.def("Data",
-        &Data_<DevPtr&, Shape&>,
+        &Data_<const DevPtr&, const Shape&>,
         "device"_a,
         "shape"_a,
         "scalar"_a = Scalar_::Real);
-  m.def("Data", &Data_<Shape&>, "shape"_a, "scalar"_a = Scalar_::Real);
+  m.def("Data", &Data_<const Shape&>, "shape"_a, "scalar"_a = Scalar_::Real);
+  m.def("Data", [&](const Matrix<Real>& m) {
+    auto x = Data(cpu(), {m.rows(), m.cols()});
+    x->value().m() = m;
+    return x;
+  });
 
   m.def("Random",
-        &Random_<DevPtr&, Shape&>,
+        &Random_<const DevPtr&, const Shape&>,
         "device"_a,
         "shape"_a,
         "scalar"_a = Scalar_::Real);
-  m.def("Random", &Random_<Shape&>, "shape"_a, "scalar"_a = Scalar_::Real);
+  m.def(
+      "Random", &Random_<const Shape&>, "shape"_a, "scalar"_a = Scalar_::Real);
 
   for_range<5>([&](auto arr) {
     constexpr size_t N = arr.size();
@@ -202,9 +228,17 @@ void bind_node(py::module_& m) {
           "values"_a);
   });
 
+  bind_affine_nodes(m);
   bind_common_nodes(m);
+  bind_compare_nodes(m);
   bind_layout_nodes(m);
   bind_nonlin_nodes(m);
+  bind_pick_nodes(m);
+  bind_prod_nodes(m);
+  bind_reduce_nodes(m);
+  bind_select_nodes(m);
+
+  bind_weight_node(m);
 
   // add operator overloads to base node because we cannot do free functions
   op_overload_helper(Real(), rnode);

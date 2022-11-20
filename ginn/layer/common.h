@@ -229,10 +229,7 @@ class LookupLayerNode : public LayerNode<Func> {
   //    type!");
 
   LookupLayerNode() = default;
-  LookupLayerNode(DevPtr dev,
-                  Size dim,
-                  Real drop_p = 0.,
-                  const Set& vocab = {})
+  LookupLayerNode(DevPtr dev, Size dim, Real drop_p = 0., const Set& vocab = {})
       : dev_(dev),
         dim_(dim),
         drop_p_(drop_p),

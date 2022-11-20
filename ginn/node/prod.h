@@ -70,7 +70,7 @@ class ProdNode : public BaseDataNode<Scalar> {
   using BaseDataNode<Scalar>::value;
   using BaseDataNode<Scalar>::grad;
 
-  ProdNode(NodePtr<Scalar> a, NodePtr<Scalar> b)
+  ProdNode(const NodePtr<Scalar>& a, const NodePtr<Scalar>& b)
       : BaseDataNode<Scalar>({a, b}), a_(a), b_(b) {}
 
   void set_ins(const std::vector<BaseNodePtr>& ins) override {
@@ -173,7 +173,7 @@ class BatchedProdNode : public BaseDataNode<Scalar> {
   using BaseDataNode<Scalar>::value;
   using BaseDataNode<Scalar>::grad;
 
-  BatchedProdNode(NodePtr<Scalar> a, NodePtr<Scalar> b)
+  BatchedProdNode(const NodePtr<Scalar>& a, const NodePtr<Scalar>& b)
       : BaseDataNode<Scalar>({a, b}), a_(a), b_(b) {}
 
   std::string name() const override { return "BatchedProd"; }

@@ -27,9 +27,9 @@ void bind_tensor_of(PyClass& m) {
         "device"_a,
         "shape"_a,
         "val"_a);
-  m.def("dev", &T::dev);
+  m.def_property_readonly("dev", &T::dev);
   m.def_property("shape", &T::shape, &T::resize);
-  m.def("size", py::overload_cast<>(&T::size, py::const_));
+  m.def_property_readonly("size", py::overload_cast<>(&T::size, py::const_));
   if constexpr (std::is_same_v<Scalar, Half>) {
     m.def("list", [](const T& t) { return t.template cast<Real>().vector(); });
   } else {
@@ -37,6 +37,7 @@ void bind_tensor_of(PyClass& m) {
   }
   m.def("v", py::overload_cast<>(&T::v));
   m.def("m", py::overload_cast<>(&T::m));
+  m.def("item", &T::item);
   m.def("real", &T::template cast<Real>);
   m.def("half", &T::template cast<Half>);
   m.def("int", &T::template cast<Int>);
@@ -98,21 +99,21 @@ void bind_tensor(py::module_& m) {
   bind_tensor_of<Half>(mh);
   bind_tensor_of<bool>(mb);
 
-  // NOTE: Not sure how to instantiate factory functions with value type args
-  // when perfect forwarding was used (template Arg&&). Is using references
-  // safe?
-
   // Why is &Tensor_<> an unknown type? -- might be a nvcc11.1 thing.
   m.def("Tensor",
         static_cast<py::object (*)(Scalar_)>(&Tensor_<>),
         "scalar"_a = Scalar_::Real);
-  m.def("Tensor", &Tensor_<DevPtr&>, "device"_a, "scalar"_a = Scalar_::Real);
   m.def("Tensor",
-        &Tensor_<DevPtr&, Shape&>,
+        &Tensor_<const DevPtr&>,
+        "device"_a,
+        "scalar"_a = Scalar_::Real);
+  m.def("Tensor",
+        &Tensor_<const DevPtr&, const Shape&>,
         "device"_a,
         "shape"_a,
         "scalar"_a = Scalar_::Real);
-  m.def("Tensor", &Tensor_<Shape&>, "shape"_a, "scalar"_a = Scalar_::Real);
+  m.def(
+      "Tensor", &Tensor_<const Shape&>, "shape"_a, "scalar"_a = Scalar_::Real);
 }
 
 } // namespace python

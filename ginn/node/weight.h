@@ -84,7 +84,7 @@ class WeightNode : public Node<Scalar> {
   void reset_forwarded() override {}
 
   // TODO: Is the following safe with tied copies? Probably not
-  void move_to(DevPtr to) {
+  void move_to(const DevPtr& to) {
     fx_->move_to(to);
     dfx_.move_to(to);
   }
@@ -112,7 +112,11 @@ class WeightNode : public Node<Scalar> {
     return tied_copy;
   }
 
-  void fill(Real val) { value().fill(val); }
+  template <typename RhsScalar>
+  void fill(RhsScalar val) {
+    value().fill(Scalar(val));
+  }
+
   void set_zero() { value().set_zero(); }
   void set_ones() { value().set_ones(); }
   void set_random() { value().set_random(); }

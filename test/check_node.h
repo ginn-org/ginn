@@ -43,6 +43,8 @@ void check_expr(NodeFunc expr,
         x_->move_to(dev);
       } else if (auto x_ = dynamic_ref_cast<DataNode<Half>>(x)) {
         x_->move_to(dev);
+      } else if (auto x_ = dynamic_ref_cast<DataNode<bool>>(x)) {
+        x_->move_to(dev);
       } else if (auto x_ = dynamic_ref_cast<WeightNode<Real>>(x)) {
         x_->move_to(dev);
         if (randomize_inputs and dev == cpu()) { x_->set_random(); }
