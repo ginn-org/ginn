@@ -1,19 +1,19 @@
-set(PY_SOURCES ginn.cpp
-        dev-py.cpp
-        tensor-py.cpp
-        node-py.cpp
-        node/affine-py.cpp
-        node/common-py.cpp
-        node/compare-py.cpp
-        node/nonlin-py.cpp
-        node/layout-py.cpp
-        node/pick-py.cpp
-        node/prod-py.cpp
-        node/reduce-py.cpp
-        node/select-py.cpp
-        node/weight-py.cpp
-        init-py.cpp
-        update-py.cpp)
+set(PY_SOURCES ginn-py.cu.cpp
+        dev-py.cu.cpp
+        tensor-py.cu.cpp
+        node-py.cu.cpp
+        node/affine-py.cu.cpp
+        node/common-py.cu.cpp
+        node/compare-py.cu.cpp
+        node/nonlin-py.cu.cpp
+        node/layout-py.cu.cpp
+        node/pick-py.cu.cpp
+        node/prod-py.cu.cpp
+        node/reduce-py.cu.cpp
+        node/select-py.cu.cpp
+        node/weight-py.cu.cpp
+        init-py.cu.cpp
+        update-py.cu.cpp)
 
 if(GINN_ENABLE_GPU)
   foreach(src ${PY_SOURCES})
