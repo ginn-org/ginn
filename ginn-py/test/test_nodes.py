@@ -520,7 +520,7 @@ def test_nonlin_extreme(scalar, dev):
 
     check(ginn.Tanh(x), tanhx)
     # curiously, the following broke when I build with -Ofast, sigmoid is less exact -- what changed?
-    check(ginn.Sigmoid(x) + 1., sigmoidx + 1.)
+    check(ginn.Sigmoid(x) + 1.0, sigmoidx + 1.0)
     check(ginn.Softmax(ginn.Reshape(x, [1, 2])), ginn.Reshape(smaxx2, [1, 2]))
     check(ginn.Softmax(x), smaxx)
     check(ginn.Softmax(x2), smaxx)

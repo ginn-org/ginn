@@ -63,7 +63,8 @@ void bind_pick_nodes(py::module_& m) {
           FP((&PickNegLogSoftmax<const Np&, const std::vector<Int>&>)));
     m.def("PickNegLogSoftmax", FP((&PickNegLogSoftmax<const Np&, const Int&>)));
 
-    PyNode<Scalar, PickNegLogSigmoidNode>(m, name<Scalar>("PickNegLogSigmoidNode"));
+    PyNode<Scalar, PickNegLogSigmoidNode>(
+        m, name<Scalar>("PickNegLogSigmoidNode"));
     m.def("PickNegLogSigmoid",
           FP((&PickNegLogSigmoid<const Np&, const DataPtr<Int>&>)));
     m.def("PickNegLogSigmoid",
