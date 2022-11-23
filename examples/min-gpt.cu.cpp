@@ -1,3 +1,5 @@
+/// # minGPT
+
 // Copyright 2022 Bloomberg Finance L.P.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +14,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/// # minGPT
-///
 /// This example defines a minimal GPT implementation used to train a character
 /// level language model. It uses
 /// [Karpathy's
