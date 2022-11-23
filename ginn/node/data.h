@@ -78,13 +78,13 @@ class DataNode : public BaseDataNode<Scalar> {
     this->forwarded = true;
   }
   DataNode(DevPtr dev, Shape shape)
-      : BaseDataNode<Scalar>(dev, std::move(shape)) {
+      : BaseDataNode<Scalar>(std::move(dev), std::move(shape)) {
     this->forwarded = true;
   }
 
   using Node<Scalar>::value;
 
-  void move_to(DevPtr to) {
+  void move_to(const DevPtr& to) {
     this->value().move_to(to);
     this->grad().move_to(to);
   }

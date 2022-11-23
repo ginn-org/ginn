@@ -195,10 +195,6 @@ void bind_node(py::module_& m) {
   bind_data_of<Half>(hdata);
   bind_data_of<bool>(bdata);
 
-  // NOTE: Not sure how to instantiate factory functions with value type args
-  // when perfect forwarding was used (template Arg&&). Is using references
-  // safe?
-
   for_each<Real, Half, Int, bool>([&](auto scalar) {
     using Scalar = decltype(scalar);
     // nvcc 11.1 forces me to use an explicit static cast here.
