@@ -745,8 +745,8 @@ gradients by construction. However here we use some `InPlace` nodes to have
 memory reuse and smaller memory footprint, such as InPlaceProdScalar or
 InPlaceMask. These special node types require some assumptions for gradient
 correctness, e.g. `::backward()` of the input node to an `InPlace` node
-should not use `::value()` in its computation. See [InPlace](TODO) for a
-full list of requirements and use cases of `InPlace` nodes. If these
+should not use `::value()` in its computation. See [InPlace](inplace.md) for
+a full list of requirements and use cases of `InPlace` nodes. If these
 assumptions are violated but an `InPlace` node is regardless used, gradients
 are likely to be incorrect. We explicitly check gradients on the loss
 computation graph here to make sure we are safe in this regard.
@@ -801,4 +801,4 @@ TEST_CASE("Gradcheck") {
 
 ---
 
-(Generated with `/Users/oirsoy/work/pybind/ginn-public/tools/cpp2md.py` from `examples/min-gpt.cu.cpp`.)
+(Generated with `tools/cpp2md.py` from `examples/min-gpt.cu.cpp`.)
