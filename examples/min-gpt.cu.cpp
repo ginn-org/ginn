@@ -1,3 +1,5 @@
+/// # minGPT
+
 // Copyright 2022 Bloomberg Finance L.P.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +14,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/// # minGPT
-///
 /// This example defines a minimal GPT implementation used to train a character
 /// level language model. It uses
 /// [Karpathy's
@@ -490,7 +490,7 @@ struct GptModel {
     while (s.size() < len) {
       auto y = run({s});
       auto probs = Softmax(y);
-      auto prob = Chip<3>(probs, s.size() - 1, 2);
+      auto prob = Chip(probs, s.size() - 1, 2);
       Graph(prob).forward();
       Size i = sample(prob->value());
       s += chars.reverse_lookup(i);
@@ -637,8 +637,8 @@ int main() {
 /// memory reuse and smaller memory footprint, such as InPlaceProdScalar or
 /// InPlaceMask. These special node types require some assumptions for gradient
 /// correctness, e.g. `::backward()` of the input node to an `InPlace` node
-/// should not use `::value()` in its computation. See [InPlace](TODO) for a
-/// full list of requirements and use cases of `InPlace` nodes. If these
+/// should not use `::value()` in its computation. See [InPlace](inplace.md) for
+/// a full list of requirements and use cases of `InPlace` nodes. If these
 /// assumptions are violated but an `InPlace` node is regardless used, gradients
 /// are likely to be incorrect. We explicitly check gradients on the loss
 /// computation graph here to make sure we are safe in this regard.

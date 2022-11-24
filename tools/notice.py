@@ -5,50 +5,76 @@ import re
 import sys
 from typing import List
 
-CPP_HEADER_RE = re.compile(
-    "(// Copyright.*\n"
-    "//\n"
-    '// Licensed under the Apache License, Version 2\.0 \(the "License"\);\n'
-    "// you may not use this file except in compliance with the License\.\n"
-    "// You may obtain a copy of the License at\n"
-    "//\n"
-    "//     http://www.apache.org/licenses/LICENSE-2.0\n"
-    "//\n"
-    "// Unless required by applicable law or agreed to in writing, software\n"
-    '// distributed under the License is distributed on an "AS IS" BASIS,\n'
-    "// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied\.\n"
-    "// See the License for the specific language governing permissions and\n"
-    "// limitations under the License\.\n\n)"
-    "(.*)$",  # rest of the file
+HEADER = """ Copyright.*
+
+ Licensed under the Apache License, Version 2\.0 \(the "License"\);
+ you may not use this file except in compliance with the License\.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied\.
+ See the License for the specific language governing permissions and
+ limitations under the License\."""
+
+
+CPP_HEADER_MATCHER = re.compile(
+    "(" + "\n".join(["//" + line for line in HEADER.split("\n")]) + "\n\n)(.*)$",
+    re.DOTALL,
+)
+PY_HEADER_MATCHER = re.compile(
+    "(" + "\n".join(["#" + line for line in HEADER.split("\n")]) + "\n\n)(.*)$",
     re.DOTALL,
 )
 
-CPP_NOTICE = """// Copyright 2022 Bloomberg Finance L.P.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
-"""
+NOTICE = """ Copyright 2022 Bloomberg Finance L.P.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License."""
+
+CPP_NOTICE = "\n".join(["//" + line for line in NOTICE.split("\n")]) + "\n\n"
+PY_NOTICE = "\n".join(["#" + line for line in NOTICE.split("\n")]) + "\n\n"
 
 
-def add_notice_to_files(filenames: List[str], write: bool = False):
+def infer_lang(fname: str) -> str:
+    if fname.endswith(".py"):
+        return "py"
+    for ext in [".h", ".cu", ".cpp", ".c"]:
+        return "cpp"
+    raise f"Failed to infer language from filename {fname}!"
+
+
+def add_notice_to_files(filenames: List[str], lang: str, write: bool = False):
     for file in filenames:
+        lang_ = infer_lang(file) if lang == "auto" else lang
+        if lang_ == "cpp":
+            matcher = CPP_HEADER_MATCHER
+            notice = CPP_NOTICE
+        elif lang_ == "py":
+            matcher = PY_HEADER_MATCHER
+            notice = PY_NOTICE
+        else:
+            raise f"Unexpected language: {lang}!"
+
         with open(file) as f:
             data = f.read()
-        match = re.match(CPP_HEADER_RE, data)
+        match = re.match(matcher, data)
         if match:
-            subbed = re.sub(CPP_HEADER_RE, CPP_NOTICE + r"\2", data)
+            subbed = re.sub(matcher, notice + r"\2", data)
         else:
-            subbed = CPP_NOTICE + data
+            subbed = notice + data
         if write:
             with open(file, "w") as f:
                 f.write(subbed)
@@ -66,6 +92,13 @@ if __name__ == "__main__":
         action="store_true",
         help="overwrite files with new notice",
     )
+    parser.add_argument(
+        "-l",
+        "--lang",
+        default="auto",
+        help="language of the files (auto infers from extension)",
+        choices=["auto", "cpp", "py"],
+    )
     args = parser.parse_intermixed_args()
 
-    add_notice_to_files(args.files, args.write)
+    add_notice_to_files(args.files, args.lang, args.write)

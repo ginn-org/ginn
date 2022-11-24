@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
   update::Adam<Real> updater(lr);
 
   // Single instance (batch)
-  auto pass = [&](DataPtr<Real> x, Indices& y, auto& acc, bool train) {
+  auto pass = [&](const DataPtr<Real>& x, Indices& y, auto& acc, bool train) {
     auto h = Affine<SigmoidOp>(W, x, b);
     auto y_ = Affine(U, h, c);
     auto loss = Sum(PickNegLogSoftmax(y_, y));

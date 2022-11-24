@@ -23,10 +23,12 @@ template <typename Scalar>
 class Initer {
  public:
   virtual void init(Tensor<Scalar>& w) = 0;
-  void init(const WeightPtr<Scalar> w) { init(w->value()); }
+  void init(const WeightPtr<Scalar>& w) { init(w->value()); }
   void init(const std::vector<WeightPtr<Scalar>>& ws) {
     for (auto w : ws) { init(w); }
   }
+
+  virtual ~Initer() = default;
 };
 
 namespace init {
@@ -52,12 +54,16 @@ class Xavier : public Initer<Scalar> {
 template <typename Scalar>
 class Uniform : public Initer<Scalar> {
  public:
+  Scalar range;
+
   using Initer<Scalar>::init;
-  Scalar a;
-  Uniform(Scalar a_a = Scalar(1.)) : a(a_a) {}
+
+  template <typename RhsScalar = Scalar>
+  Uniform(RhsScalar range = RhsScalar(1.)) : range(range) {}
+
   void init(Tensor<Scalar>& w) override {
     w.set_random();
-    w = w.t() * a;
+    w = w.t() * range;
   }
 };
 

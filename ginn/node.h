@@ -41,9 +41,8 @@ class Ptr {
   using element_type = typename std::shared_ptr<NodeType>::element_type;
 
   Ptr() = default;
-
+  Ptr(NodeType* ptr) : ptr_(ptr) {}
   Ptr(std::shared_ptr<NodeType> ptr) : ptr_(std::move(ptr)) {}
-
   Ptr(std::nullptr_t) : ptr_(nullptr) {}
 
   template <typename OtherNodeType,
@@ -53,7 +52,6 @@ class Ptr {
   Ptr(const Ptr<OtherNodeType>& other) : ptr_(other.ptr_) {}
 
   Ptr(const Ptr<NodeType>&) = default;
-
   Ptr& operator=(const Ptr&) = default;
 
   template <typename OtherNodeType>
@@ -320,26 +318,14 @@ auto derived_cast(const Container& v) {
   /*If first arg is a Ptr<Node<Scalar>> for a derived node type, forward its   \
    * Scalar */                                                                 \
   template <typename Arg, typename... Args>                                    \
-  auto f(Arg arg, Args&&... args) {                                            \
+  auto f(Arg&& arg, Args&&... args) {                                          \
     using NodePtr = innermost_t<Arg>;                                          \
-    using Scalar = typename NodePtr::element_type::Scalar;                     \
-    return make_ref<f##Node<Scalar>>(arg, std::forward<Args>(args)...);        \
+    using Scalar = typename std::decay_t<NodePtr>::element_type::Scalar;       \
+    return make_ref<f##Node<Scalar>>(std::forward<Arg>(arg),                   \
+                                     std::forward<Args>(args)...);             \
   }                                                                            \
   static_assert(true, "Factory maker requires a semicolon")
 
-#define GINN_MAKE_RANKED_SCALAR_FORWARDING_FACTORY(f)                          \
-  /*If first arg is a Ptr<Node<Scalar>> for a derived node type, forward its   \
-   * Scalar */                                                                 \
-  template <Size N,                                                            \
-            typename NodePtr,                                                  \
-            typename... Args,                                                  \
-            typename = std::enable_if_t<                                       \
-                std::is_base_of_v<BaseNode, typename NodePtr::element_type>>>  \
-  auto f(NodePtr arg, Args&&... args) {                                        \
-    using Scalar = typename std::decay_t<decltype(*arg)>::Scalar;              \
-    return make_ref<f##Node<N, Scalar>>(arg, std::forward<Args>(args)...);     \
-  }                                                                            \
-  static_assert(true, "Factory maker requires a semicolon")
 } // end namespace ginn
 
 #endif

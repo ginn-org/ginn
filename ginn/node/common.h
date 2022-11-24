@@ -45,13 +45,54 @@ class AddScalarNode : public BaseDataNode<Scalar> {
 
   template <typename RightScalar,
             typename = std::enable_if_t<ginn::is_arithmetic_v<RightScalar>>>
-  AddScalarNode(NodePtr<Scalar> a, RightScalar b)
+  AddScalarNode(const NodePtr<Scalar>& a, RightScalar b)
       : BaseDataNode<Scalar>({a}), in_(a), val_(Scalar(b)) {}
 
   std::string name() const override { return "AddScalar"; }
 };
 
 GINN_MAKE_SCALAR_FORWARDING_FACTORY(AddScalar);
+
+// To be used when scalar is on the left e.g. 1 - x, otherwise we can use
+// AddScalar instead since doing x - 1 == x + (-(-1)) is cheap, no negation
+// of a node type, no temporary nodes.
+template <typename Scalar>
+class SubtractScalarNode : public BaseDataNode<Scalar> {
+  static_assert(not std::is_same_v<Scalar, bool>);
+  static_assert(ginn::is_arithmetic_v<Scalar>);
+
+ protected:
+  NodePtr<Scalar> in_;
+  Scalar val_;
+
+  void forward_() override {
+    value().resize(in_->value().shape());
+    value() = val_ - in_->value().t();
+  }
+
+  void backward_() override {
+    if (in_->has_grad()) { in_->grad() -= grad().t(); }
+  }
+
+ public:
+  using BaseDataNode<Scalar>::value;
+  using BaseDataNode<Scalar>::grad;
+
+  template <typename LeftScalar,
+            typename = std::enable_if_t<ginn::is_arithmetic_v<LeftScalar>>>
+  SubtractScalarNode(LeftScalar a, const NodePtr<Scalar>& b)
+      : BaseDataNode<Scalar>({b}), in_(b), val_(Scalar(a)) {}
+
+  std::string name() const override { return "SubtractScalar"; }
+};
+
+template <typename LeftScalar,
+          typename NodePtr,
+          typename = std::enable_if_t<ginn::is_node_ptr_v<NodePtr>>>
+auto SubtractScalar(LeftScalar a, NodePtr b) {
+  using Scalar = typename std::decay_t<NodePtr>::element_type::Scalar;
+  return make_ref<SubtractScalarNode<Scalar>>(a, std::move(b));
+}
 
 template <typename Scalar>
 class AddNode : public BaseDataNode<Scalar> {
@@ -104,9 +145,8 @@ class AddNode : public BaseDataNode<Scalar> {
       : BaseDataNode<Scalar>(ins), ins_(ins) {}
 
   template <typename... Args>
-  AddNode(const NodePtr<Scalar>& in, Args&&... args)
-      : AddNode(std::vector<NodePtr<Scalar>>{in, std::forward<Args>(args)...}) {
-  }
+  AddNode(const NodePtr<Scalar>& in, const Args&... args)
+      : AddNode(std::vector<NodePtr<Scalar>>{in, args...}) {}
 
   void set_ins(const std::vector<BaseNodePtr>& ins) override {
     BaseNode::ins_ = ins;
@@ -166,7 +206,7 @@ class ProdScalarNode : public BaseDataNode<Scalar> {
 
   template <typename RightScalar,
             typename = std::enable_if_t<ginn::is_arithmetic_v<RightScalar>>>
-  ProdScalarNode(NodePtr<Scalar> a, RightScalar b)
+  ProdScalarNode(const NodePtr<Scalar>& a, RightScalar b)
       : BaseDataNode<Scalar>({a}), in_(a), val_(Scalar(b)) {}
 
   std::string name() const override { return "ProdScalar"; }
@@ -193,7 +233,7 @@ class CwiseProdNode : public BaseDataNode<Scalar> {
   using BaseDataNode<Scalar>::value;
   using BaseDataNode<Scalar>::grad;
 
-  CwiseProdNode(NodePtr<Scalar> a, NodePtr<Scalar> b)
+  CwiseProdNode(const NodePtr<Scalar>& a, const NodePtr<Scalar>& b)
       : BaseDataNode<Scalar>({a, b}), a_(a), b_(b) {}
 
   std::string name() const override { return "CwiseProd"; }
@@ -259,15 +299,16 @@ class CwiseProdAddNode : public BaseDataNode<Scalar> {
   using BaseDataNode<Scalar>::value;
   using BaseDataNode<Scalar>::grad;
 
+  template <typename BiasScalar = Scalar>
   CwiseProdAddNode(NodePtr<Scalar> a,
                    NodePtr<Scalar> b,
                    NodePtr<Scalar> c,
-                   Scalar multiplier_bias = Scalar(0))
+                   BiasScalar multiplier_bias = BiasScalar(0))
       : BaseDataNode<Scalar>({a, b, c}),
         a_(a),
         b_(b),
         c_(c),
-        multiplier_bias_(multiplier_bias) {}
+        multiplier_bias_(Scalar(multiplier_bias)) {}
 
   std::string name() const override { return "CwiseProdAdd"; }
 };
@@ -301,10 +342,10 @@ class CwiseMaxNode : public BaseDataNode<Scalar> {
   using BaseDataNode<Scalar>::value;
   using BaseDataNode<Scalar>::grad;
 
-  CwiseMaxNode(const std::vector<NodePtr<Scalar>> ins)
+  CwiseMaxNode(const std::vector<NodePtr<Scalar>>& ins)
       : BaseDataNode<Scalar>(ins), ins_(ins) {}
   template <typename... Args>
-  CwiseMaxNode(const NodePtr<Scalar>& in, Args&&... args)
+  CwiseMaxNode(const NodePtr<Scalar>& in, const Args&... args)
       : BaseDataNode<Scalar>(std::vector<NodePtr<Scalar>>{in, args...}),
         ins_(std::vector<NodePtr<Scalar>>{in, args...}) {}
 
@@ -397,13 +438,13 @@ auto operator-(const Left& a, const Right& b) {
     } else if constexpr (ginn::is_arithmetic_v<Right>) {
       return AddScalar(a, -b);
     } else {
-      GINN_THROW("Unexpected argument type in operator+!");
+      GINN_THROW("Unexpected argument type in operator-!");
     }
   } else {
     if constexpr (ginn::is_node_ptr_v<Right>) {
-      GINN_THROW("TODO: Maybe subtract scalar node?");
+      return SubtractScalar(a, b);
     } else {
-      GINN_THROW("Unexpected argument type in operator+!");
+      GINN_THROW("Unexpected argument type in operator-!");
     }
   }
 }

@@ -197,7 +197,9 @@ auto Affine(const std::vector<NodePtr<Scalar>>& ins) {
   return make_ref<AffineNode<Scalar>>(ins);
 }
 
-template <typename Node, typename... Args>
+template <typename Node,
+          typename... Args,
+          typename = std::enable_if_t<std::is_base_of_v<BaseNode, Node>>>
 auto Affine(Ptr<Node> in, Args&&... args) {
   using Scalar = typename Node::Scalar;
   return make_ref<AffineNode<Scalar>>(in, std::forward<Args>(args)...);

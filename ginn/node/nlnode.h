@@ -47,7 +47,8 @@ namespace ginn {
     using BaseDataNode<Scalar>::value;                                         \
     using BaseDataNode<Scalar>::grad;                                          \
     using UnaryOp = F##Op<Scalar>;                                             \
-    F##Node(NodePtr<Scalar> in) : BaseDataNode<Scalar>({in}), in_(in) {}       \
+    F##Node(const NodePtr<Scalar>& in)                                         \
+        : BaseDataNode<Scalar>({in}), in_(in) {}                               \
     void set_ins(const std::vector<BaseNodePtr>& ins) override {               \
       GINN_ASSERT(ins.size() == 1);                                            \
       BaseNode::ins_ = ins;                                                    \

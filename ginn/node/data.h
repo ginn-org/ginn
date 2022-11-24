@@ -64,11 +64,6 @@ class BaseDataNode : public Node<Scalar> {
   bool has_grad() const override { return has_grad_; }
   virtual void has_grad(bool hg) { has_grad_ = hg; }
 
-  void move_to(DevPtr to) {
-    fx_.move_to(to);
-    dfx_.move_to(to);
-  }
-
   // Do not override to keep the class abstract
   std::string name() const override = 0;
 };
@@ -79,14 +74,20 @@ class DataNode : public BaseDataNode<Scalar> {
   DataNode(DevPtr dev = cpu()) : BaseDataNode<Scalar>(dev) {
     this->forwarded = true;
   }
-  DataNode(const Shape& shape) : BaseDataNode<Scalar>(shape) {
+  DataNode(Shape shape) : BaseDataNode<Scalar>(std::move(shape)) {
     this->forwarded = true;
   }
-  DataNode(DevPtr dev, const Shape& shape) : BaseDataNode<Scalar>(dev, shape) {
+  DataNode(DevPtr dev, Shape shape)
+      : BaseDataNode<Scalar>(std::move(dev), std::move(shape)) {
     this->forwarded = true;
   }
 
   using Node<Scalar>::value;
+
+  void move_to(const DevPtr& to) {
+    this->value().move_to(to);
+    this->grad().move_to(to);
+  }
 
   void fill(Scalar val) { value().fill(val); }
   void set_zero() { value().set_zero(); }
@@ -189,12 +190,12 @@ auto Random(const Shape& shape) {
 
 // Temporary? workaround for lack of "uniform" impl for Half
 template <>
-auto Random<Half>(DevPtr dev, const Shape& shape) {
+inline auto Random<Half>(DevPtr dev, const Shape& shape) {
   return Random(dev, shape)->cast<Half>();
 }
 
 template <>
-auto Random<Half>(const Shape& shape) {
+inline auto Random<Half>(const Shape& shape) {
   return Random(shape)->cast<Half>();
 }
 
@@ -207,7 +208,7 @@ auto FixedRandom(DevPtr dev, const Shape& shape) {
 
 template <int Rank, typename Scalar = Real>
 auto Values(DevPtr dev, NestedInitList<Rank, Scalar> val) {
-  auto x = Data<Scalar>(dev, shape_of<Size, Rank, Scalar>(val));
+  auto x = Data<Scalar>(std::move(dev), shape_of<Size, Rank, Scalar>(val));
   x->value().template set<Rank>(val);
   return x;
 }

@@ -26,29 +26,26 @@ template <typename Scalar>
 class Updater {
  public:
   bool guard = true;
-  virtual void update(WeightNode<Scalar>*) = 0;
+  virtual void update(const WeightPtr<Scalar>&) = 0;
 
-  void update(const std::unordered_set<WeightNode<Scalar>*>& ws) {
+  void update(const std::vector<WeightPtr<Scalar>>& ws) {
     for (auto w : ws) { update(w); }
-  }
-
-  void update(const std::vector<WeightNode<Scalar>*>& ws) {
-    for (auto w : ws) { update(w); }
-  }
-
-  void update(const std::vector<Ptr<WeightNode<Scalar>>>& ws) {
-    for (auto w : ws) { update(w.get()); }
   }
 
   void update(Graph& g) {
-    std::unordered_set<WeightNode<Scalar>*> ws;
+    std::unordered_set<WeightNode<Scalar>*> visited;
     for (auto n : g.nodes()) {
-      auto n_ =
-          dynamic_cast<WeightNode<Scalar>*>(n.get()); // is this expensive?
-      if (n_ and n_->has_grad()) { ws.insert(n_); }
+      auto w = dynamic_ref_cast<WeightNode<Scalar>>(n);
+      if (w and w->has_grad()) {
+        if (visited.find(w.get()) == visited.end()) {
+          update(w);
+          visited.insert(w.get());
+        }
+      }
     }
-    update(ws);
   }
+
+  virtual ~Updater() = default;
 };
 
 namespace update {
@@ -57,11 +54,11 @@ template <typename Scalar>
 class Sgd : public Updater<Scalar> {
  public:
   using Updater<Scalar>::update;
-  Real lr, clip;
+  Scalar lr, clip;
 
   Sgd(Real a_lr = 1e-1, Real a_clip = 5.) : lr(a_lr), clip(a_clip) {}
 
-  void update(WeightNode<Scalar>* w) override {
+  void update(const WeightPtr<Scalar>& w) override {
     if (this->guard) {
       std::lock_guard<std::mutex> l(w->access());
       update(w->value(), w->grad());
@@ -76,11 +73,12 @@ class Sgd : public Updater<Scalar> {
   }
 };
 
+// TODO: Two Scalar parameters, one for weight and one for histories
 template <typename Scalar>
 class Adam : public Updater<Scalar> {
  public:
   struct History {
-    Tensor<Scalar> m, v;
+    Tensor<Real> m, v;
     Real beta_1_t, beta_2_t;
   };
 
@@ -88,19 +86,20 @@ class Adam : public Updater<Scalar> {
   std::unordered_map<size_t, History> weight_histories;
   std::mutex history_access;
   // std::unordered_map<std::pair<Device, Tensor*>, Tensor> m__, v__; TODO
-  Real lr_, clip_, eps_, beta_1_, beta_2_;
+  Real lr_, eps_, beta_1_, beta_2_;
+  Scalar clip_;
 
   Adam(Real lr = 1e-3,
        Real clip = 5.,
        Real eps = 1e-8,
        Real beta_1 = 0.9,
        Real beta_2 = 0.999)
-      : lr_(lr), clip_(clip), eps_(eps), beta_1_(beta_1), beta_2_(beta_2) {}
+      : lr_(lr), eps_(eps), beta_1_(beta_1), beta_2_(beta_2), clip_(clip) {}
 
   template <typename WeightPtr>
   void init(WeightPtr w) {
     GINN_ASSERT(w->value().size() > 0);
-    Tensor<Scalar> m(w->dev(), w->value().shape()),
+    Tensor<Real> m(w->dev(), w->value().shape()),
         v(w->dev(), w->value().shape());
     m.set_zero();
     v.set_zero();
@@ -122,18 +121,18 @@ class Adam : public Updater<Scalar> {
     auto& m = h->m;
     auto& v = h->v;
 
-    Scalar clip(clip_), beta_1(beta_1_), beta_2(beta_2_);
-    Scalar eps(eps_); // TODO: this is likely to underflow for Half?
-
-    d = d.t().cwiseMin(clip).cwiseMax(-clip);
-    m = beta_1 * m.t() + (1. - beta_1) * d.t();
-    v = beta_2 * v.t() + (1. - beta_2) * d.t().square();
+    d = d.t().cwiseMin(clip_).cwiseMax(-clip_);
+    m = beta_1_ * m.t() + (1. - beta_1_) * d.t().template cast<Real>();
+    v = beta_2_ * v.t() + (1. - beta_2_) * d.t().template cast<Real>().square();
     h->beta_1_t *= beta_1_;
     h->beta_2_t *= beta_2_;
-    w += (Scalar(-lr_ * (1. / (1. - h->beta_1_t))) * m.t()) /
-         (eps + (Scalar(1. / (1. - h->beta_2_t)) * v.t()).sqrt());
+    // TODO: instruction that directly increments float by half?
+    w += ((-lr_ * (1. / (1. - h->beta_1_t))) * m.t() /
+          (eps_ + ((1. / (1. - h->beta_2_t)) * v.t()).sqrt()))
+             .template cast<Scalar>();
   }
-  void update(WeightNode<Scalar>* w) override {
+
+  void update(const WeightPtr<Scalar>& w) override {
     if (this->guard) {
       std::lock_guard<std::mutex> l(w->access());
       if (w->dev()->type() == CPU and

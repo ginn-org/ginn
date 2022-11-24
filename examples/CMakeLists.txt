@@ -84,7 +84,7 @@ add_custom_target(examples DEPENDS ${CPU_EXAMPLES})
 if(GINN_ENABLE_GPU)
   foreach(target ${GPU_EXAMPLES})
     target_compile_options(${target} PRIVATE ${GPU_EXAMPLE_OPTS})
-    target_link_options(${target} PRIVATE ${GPU_LINK_OPTS})
+    target_link_libraries(${target} CUDA::curand CUDA::cublas)
   endforeach()
 
   add_custom_target(cudaexamples DEPENDS ${GPU_EXAMPLES})

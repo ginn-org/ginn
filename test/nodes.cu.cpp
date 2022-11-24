@@ -263,7 +263,7 @@ TEMPLATE_TEST_CASE("Slice", "[layout]", Real, Half, Int) {
                           {5, 6},
                           {7, 8}})->cast<Scalar>();
     REQUIRE(out->shape() == Shape{3, 2});
-    check(Slice<2>(x, Index<2>{1, 0}, Index<2>{3, 2}), out);
+    check(Slice(x, Shape{1, 0}, Shape{3, 2}), out);
   }
 
   SECTION("Col subset") {
@@ -272,14 +272,14 @@ TEMPLATE_TEST_CASE("Slice", "[layout]", Real, Half, Int) {
                           {6},
                           {8}})->cast<Scalar>();
     REQUIRE(out->shape() == Shape{4, 1});
-    check(Slice<2>(x, Index<2>{0, 1}, Index<2>{4, 1}), out);
+    check(Slice(x, Shape{0, 1}, Shape{4, 1}), out);
   }
 
   SECTION("Row & col subset") {
     auto out = Values<2>({{5},
                           {7}})->cast<Scalar>();
     REQUIRE(out->shape() == Shape{2, 1});
-    check(Slice<2>(x, Index<2>{2, 0}, Index<2>{2, 1}), out);
+    check(Slice(x, Shape{2, 0}, Shape{2, 1}), out);
   }
 }
 
@@ -302,23 +302,23 @@ TEMPLATE_TEST_CASE("Chip", "[layout]", Real, Int, Half) {
   }
 
   SECTION("Forward") {
-    check(Chip<2>(x_, 2, 0), y_);
-    check(Chip<2>(x_, 1, 1), z_);
+    check(Chip(x_, 2, 0), y_);
+    check(Chip(x_, 1, 1), z_);
   }
 
   SECTION("Grad or cuda") {
     SECTION("Basic") {
-      CHECK_(Chip<2>(x_, 0, 0), {x_}, true);
-      CHECK_(Chip<2>(x_, 1, 1), {x_}, true);
-      CHECK_(Chip<2>(x_, 2, 0), {x_}, true);
+      CHECK_(Chip(x_, 0, 0), {x_}, true);
+      CHECK_(Chip(x_, 1, 1), {x_}, true);
+      CHECK_(Chip(x_, 2, 0), {x_}, true);
     }
 
     SECTION("High rank") {
       auto x = Random(Dev, {4, 2, 3})->cast<Scalar>();
-      CHECK_(Chip<3>(x, 3, 0), {x}, true);
-      CHECK_(Chip<3>(x, 0, 1), {x}, true);
-      CHECK_(Chip<3>(x, 1, 2), {x}, true);
-      CHECK_(Chip<3>(x, 2, 2), {x}, true);
+      CHECK_(Chip(x, 3, 0), {x}, true);
+      CHECK_(Chip(x, 0, 1), {x}, true);
+      CHECK_(Chip(x, 1, 2), {x}, true);
+      CHECK_(Chip(x, 2, 2), {x}, true);
     }
   }
 }
@@ -504,7 +504,30 @@ TEMPLATE_TEST_CASE("Add subtract", "[arithmetic]", Real, Half, Int) {
     CHECK_(a - b         , {a, b}, true);
   }
 
-    //TODO: Subtract scalar
+  SECTION("Subtract scalar") {
+    auto e = Values<2>({{ 0, -3},
+                        {-1, -4},
+                        {-2, -5}})->cast<Scalar>();
+    check(SubtractScalar(1, a), e);
+    check(1 - a,                e);
+    check(1.0 - a,              e);
+    CHECK_(SubtractScalar(1, a), {a});
+    CHECK_(1 - a,                {a});
+    CHECK_(1.0 - a,              {a});
+
+    auto a2 = Values<2>({{1, 4},
+                         {2, 5},
+                         {3, 6}})->cast<Scalar>();
+    auto e2 = Values<2>({{0, 3},
+                         {1, 4},
+                         {2, 5}})->cast<Scalar>();
+    check(AddScalar(a2, -1), e2);
+    check(a2 - 1,            e2);
+    check(a2 - 1.,           e2);
+    CHECK_(AddScalar(a2, -1), {a2});
+    CHECK_(a2 - 1,            {a2});
+    CHECK_(a2 - 1.,           {a2});
+  }
 
   SECTION("Unary -") {
     auto e = Values<2>({{-1, -4},
@@ -585,13 +608,6 @@ TEMPLATE_TEST_CASE("Add subtract", "[arithmetic]", Real, Half, Int) {
       }
     }
 
-    SECTION("CwiseMax") {
-      check(CwiseMax(b, c), a);
-      // Warning: CwiseMax does not have derivative at points where argmax is
-      // more than one. Gradcheck might fail if two maxes are within gradcheck eps.
-      CHECK_(CwiseMax(a, b, c), {a, b, c}, true, 1e-6);
-    }
-
     SECTION("Wrong shapes") {
       SECTION("b only column") {
         auto b = Values<1>({-1,
@@ -623,6 +639,13 @@ TEMPLATE_TEST_CASE("Add subtract", "[arithmetic]", Real, Half, Int) {
         CHECK_THROWS(Graph(CwiseProdAdd(a, b, c)).forward());
       }
     }
+  }
+
+  SECTION("CwiseMax") {
+    check(CwiseMax(b, c), a);
+    // Warning: CwiseMax does not have derivative at points where argmax is
+    // more than one. Gradcheck might fail if two maxes are within gradcheck eps.
+    CHECK_(CwiseMax(a, b, c), {a, b, c}, true, 1e-6);
   }
 }
 
@@ -796,8 +819,8 @@ TEMPLATE_TEST_CASE("Select", "[select]", Real, Half, Int) {
   using Scalar = TestType;
   auto if_ = Values<2>({{1., 0.},
                         {0., 1.},
-                        {1., 0.}})->cast<Scalar>();
-  if_->has_grad(false);
+                        {1., 0.}})->cast<bool>();
+  if_->has_grad(false); // TODO: maybe integral nodes should have this default?
   auto a = Values<2>({{1., 2.},
                       {3., 4.},
                       {5., 6.}})->cast<Scalar>();
@@ -885,8 +908,8 @@ TEMPLATE_TEST_CASE("LayerNorm", "[layernorm][inplace]", Real, Half) {
   using Scalar = TestType;
   auto x = Random(Dev, {3, 2})->cast<Scalar>();
   auto y = Random(Dev, {3, 2, 4})->cast<Scalar>();
-  x->value() = x->value().t() + Scalar(2);
-  y->value() = y->value().t() - Scalar(2);
+  x->value() = x->value().t() * Scalar(3) + Scalar(2);
+  y->value() = y->value().t() * Scalar(2.5) - Scalar(2);
 
   #ifdef GINN_ENABLE_GPU
   auto eps2 = std::is_same_v<Scalar, Half> ? 1e-2 : 1e-4;
@@ -910,20 +933,13 @@ TEMPLATE_TEST_CASE("LayerNorm", "[layernorm][inplace]", Real, Half) {
 }
 
 TEMPLATE_TEST_CASE("Sums", "[reduce]", Real, Half) {
-  // TODO: ColSum does not reduce rank of tensor but Sum does, pick one or the
-  //   other for both!
   using Scalar = TestType;
   auto W = Values<2>({{1, 2, 3},
                       {4, 5, 6}})->cast<Scalar>();
-  //auto Wsum = Values<2>({{21}});
-
-  SECTION("ColSum") {
-    auto Wcol = Values<2>({{5, 7, 9}})->cast<Scalar>();
-
-    check(ColSum(W), Wcol);
-    CHECK_(ColSum(W), {W}, true);
+  SECTION("Sum") {
+    auto Wsum = Values<0>(21)->cast<Scalar>();
+    check(Sum(W), Wsum);
   }
-  //SECTION("Sum")    { check(Sum(W),    Wsum); }
 
   SECTION("AxisSum") {
     auto V    = Values<3>({{{1, 2, 3},
@@ -1027,15 +1043,15 @@ TEMPLATE_TEST_CASE("BatchedProd", "[prod]", Real, Half) {
     b->value() = b->value().t() - Scalar(1.);
     auto c = BatchedProd(a, b);
 
-    auto c0 = Chip<3>(c, 0, 2);
-    auto c1 = Chip<3>(c, 1, 2);
-    auto c2 = Chip<3>(c, 2, 2);
-    auto c3 = Chip<3>(c, 3, 2);
+    auto c0 = Chip(c, 0, 2);
+    auto c1 = Chip(c, 1, 2);
+    auto c2 = Chip(c, 2, 2);
+    auto c3 = Chip(c, 3, 2);
 
-    auto a0 = Chip<3>(a, 0, 2), b0 = Chip<3>(b, 0, 2);
-    auto a1 = Chip<3>(a, 1, 2), b1 = Chip<3>(b, 1, 2);
-    auto a2 = Chip<3>(a, 2, 2), b2 = Chip<3>(b, 2, 2);
-    auto a3 = Chip<3>(a, 3, 2), b3 = Chip<3>(b, 3, 2);
+    auto a0 = Chip(a, 0, 2), b0 = Chip(b, 0, 2);
+    auto a1 = Chip(a, 1, 2), b1 = Chip(b, 1, 2);
+    auto a2 = Chip(a, 2, 2), b2 = Chip(b, 2, 2);
+    auto a3 = Chip(a, 3, 2), b3 = Chip(b, 3, 2);
 
     auto c0_ = a0 * b0;
     auto c1_ = a1 * b1;
@@ -1061,7 +1077,7 @@ TEMPLATE_TEST_CASE("BatchedProd", "[prod]", Real, Half) {
     auto c = BatchedProd(a, b);
 
     auto ChipTwice = [](auto x, Size i, Size j) {
-      return Chip<3>(Chip<4>(x, j, 3), i, 2);
+      return Chip(Chip(x, j, 3), i, 2);
     };
 
     auto c00 = ChipTwice(c, 0, 0);
@@ -1128,7 +1144,7 @@ TEMPLATE_TEST_CASE("Affine", "[affine]", Real, Half) {
 
   SECTION("Other nonlins") {
     CHECK_(Affine<TanhOp>(W, V, b), {W, V, b}, true, eps2);
-    CHECK_(Affine<ReluOp>(W, V, b), {W, V, b}, true, eps2);
+    CHECK_(Affine<ReluOp>(W * 10, V, b), {W, V, b}, true, eps2);
     CHECK_(Affine<Gelu2Op>(W, V, b), {W, V, b}, true, eps2);
     CHECK_(Affine<GeluOp>(W, V, b), {W, V, b}, true, eps2);
   }

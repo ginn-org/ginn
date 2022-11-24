@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import os
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
@@ -72,5 +73,8 @@ if __name__ == "__main__":
 
     # Put footnote at the end
     my_name = sys.argv[0]
+    cwd = os.getcwd() + "/"
+    if my_name.startswith(cwd):
+        my_name = my_name[len(cwd):]
     fname = sys.argv[1] if len(sys.argv) > 1 else "stdin"
     sys.stdout.write(f"\n---\n\n(Generated with `{my_name}` from `{fname}`.)\n")

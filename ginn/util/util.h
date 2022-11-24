@@ -26,9 +26,9 @@
 #include <unordered_set>
 #include <vector>
 
+#include <Eigen/Dense>
 #include <ginn/def.h>
 #include <ginn/except.h>
-#include <Eigen/Dense>
 
 namespace ginn {
 
@@ -76,7 +76,7 @@ auto lines(const String& fname) {
   return internal::FileLines(std::string(fname));
 }
 
-auto lines(std::ifstream& in) { return internal::FileLines(in); }
+inline auto lines(std::ifstream& in) { return internal::FileLines(in); }
 
 template <
     typename String,
@@ -87,7 +87,7 @@ std::vector<std::string> readlines(const String& fname) {
   return lines_;
 }
 
-std::vector<std::string> readlines(std::ifstream& in) {
+inline std::vector<std::string> readlines(std::ifstream& in) {
   std::vector<std::string> lines_;
   for (auto& line : lines(in)) { lines_.push_back(line); }
   return lines_;
@@ -105,7 +105,7 @@ template <typename T = std::string>
 T getline(std::istream& in);
 
 template <>
-std::string getline(std::istream& in) {
+inline std::string getline(std::istream& in) {
   GINN_ASSERT(in, "Input stream could not be opened!");
   std::string line;
   std::getline(in, line);
@@ -113,32 +113,32 @@ std::string getline(std::istream& in) {
 }
 
 template <>
-size_t getline<size_t>(std::istream& in) {
+inline size_t getline<size_t>(std::istream& in) {
   return std::stoull(getline(in));
 }
 
 template <>
-unsigned getline<unsigned>(std::istream& in) {
+inline unsigned getline<unsigned>(std::istream& in) {
   return std::stoul(getline(in));
 }
 
 template <>
-long getline<long>(std::istream& in) {
+inline long getline<long>(std::istream& in) {
   return std::stol(getline(in));
 }
 
 template <>
-float getline<float>(std::istream& in) {
+inline float getline<float>(std::istream& in) {
   return std::stof(getline(in));
 }
 
 template <>
-double getline<double>(std::istream& in) {
+inline double getline<double>(std::istream& in) {
   return std::stod(getline(in));
 }
 
 template <>
-bool getline<bool>(std::istream& in) {
+inline bool getline<bool>(std::istream& in) {
   GINN_ASSERT(in, "Input stream could not be opened!");
   std::string s = getline(in);
   if (s == "1" or s == "true" or s == "True") { return true; }
@@ -176,7 +176,8 @@ bool has(const std::string& whole, const Str& part) {
   return whole.find(part) != std::string::npos;
 }
 
-std::vector<std::string> split(const std::string& s) { // splits from whitespace
+inline std::vector<std::string>
+split(const std::string& s) { // splits from whitespace
   std::stringstream ss(s);
   std::string item;
   std::vector<std::string> elems;
@@ -184,7 +185,7 @@ std::vector<std::string> split(const std::string& s) { // splits from whitespace
   return elems;
 }
 
-std::vector<std::string>
+inline std::vector<std::string>
 split(const std::string& s, char delim, bool allow_empty = false) {
   std::vector<std::string> elems;
   std::string buffer;
@@ -201,7 +202,7 @@ split(const std::string& s, char delim, bool allow_empty = false) {
   return elems;
 }
 
-bool startswith(const std::string& s, const std::string& prefix) {
+inline bool startswith(const std::string& s, const std::string& prefix) {
   if (s.size() < prefix.size()) { return false; }
   return s.substr(0, prefix.size()) == prefix;
 }
@@ -245,8 +246,7 @@ std::vector<T> operator+=(std::vector<T>& left, const std::vector<T>& right) {
 
 template <int Rank, typename T>
 struct NestedInitListImpl {
-  using type =
-      std::vector<typename NestedInitListImpl<Rank - 1, T>::type>;
+  using type = std::vector<typename NestedInitListImpl<Rank - 1, T>::type>;
 };
 
 template <typename T>
@@ -259,18 +259,23 @@ using NestedInitList = typename NestedInitListImpl<Rank, T>::type;
 
 // Helper for assigning a nested initializer list rhs to an indexable type lhs
 // such that lhs(i, j, ..., k) = rhs[i][j]...[k]
-template <int Rank, typename Scalar, typename T, typename... Args>
-void assign(T&& lhs, NestedInitList<Rank, Scalar> rhs, Args... args) {
+template <int Rank,
+          typename Scalar,
+          typename RhsScalar,
+          typename T,
+          typename... Args>
+void assign(T&& lhs, NestedInitList<Rank, RhsScalar> rhs, Args... args) {
   typename T::Index i = 0;
   if constexpr (Rank == 0) {
-    lhs(i) = rhs;
+    lhs(i) = Scalar(rhs);
   } else if constexpr (Rank == 1) {
     for (auto it = rhs.begin(); it != rhs.end(); it++) {
-      lhs(args..., i++) = *it;
+      lhs(args..., i++) = Scalar(*it);
     }
   } else {
     for (auto it = rhs.begin(); it != rhs.end(); it++) {
-      assign<Rank - 1, Scalar>(std::forward<T>(lhs), *it, args..., i++);
+      assign<Rank - 1, Scalar, RhsScalar>(
+          std::forward<T>(lhs), *it, args..., i++);
     }
   }
 }

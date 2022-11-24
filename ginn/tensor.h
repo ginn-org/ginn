@@ -152,21 +152,21 @@ class Tensor {
  public:
   // Construct
   Tensor(DevPtr dev = cpu()) : dev_(std::move(dev)) {}
-  Tensor(DevPtr dev, Shape shape) : dev_(std::move(dev)), shape_(std::move(shape)) {
+  Tensor(DevPtr dev, Shape shape)
+      : dev_(std::move(dev)), shape_(std::move(shape)) {
     allocate(size());
   }
   Tensor(DevPtr dev, Shape shape, Scalar val)
-      : dev_(std::move(dev)), shape_(std::move(shape)) {
-    allocate(size());
+      : Tensor<Scalar>(std::move(dev), std::move(shape)) {
     fill(val);
   }
-  Tensor(const Shape& shape, const std::vector<Scalar>& val)
-      : dev_(cpu()), shape_(shape) {
+  Tensor(Shape shape) : Tensor<Scalar>(cpu(), std::move(shape)) {}
+  Tensor(Shape shape, const std::vector<Scalar>& val)
+      : Tensor<Scalar>(std::move(shape)) {
     GINN_ASSERT(size() == (Size)val.size(),
                 "Size of Shape (" + std::to_string(size()) +
                     ") does not match size of values (" +
                     std::to_string(val.size()) + ")!");
-    allocate(size());
     auto vmap = v();
     for (size_t i = 0; i < val.size(); i++) { vmap[i] = val[i]; }
   }
@@ -203,9 +203,9 @@ class Tensor {
 
   // Copy & Move assign
   // TODO: Consider operator= copying the device as well, to avoid confusion.
-  // Maybe only having the special ctor and `move_to()` as well as
-  // `maybe_copy_to()` is enough to transfer tensor across devices. This just
-  // seems confusing.
+  //   Maybe only having the special ctor and `move_to()` as well as
+  //   `maybe_copy_to()` is enough to transfer tensor across devices. This just
+  //   seems confusing.
   auto& operator=(const Tensor<Scalar>& other) {
     if (this == &other) { return *this; }
     resize(other.shape_);
@@ -318,25 +318,29 @@ class Tensor {
   }
 
   // View as classical (CPU) Eigen matrix
-  auto m() {
-    GINN_ASSERT(dev()->type() == CPU, "m() can only be invoked on Cpu tensors!");
+  MatrixMap<Scalar> m() {
+    GINN_ASSERT(dev()->type() == CPU,
+                "m() can only be invoked on Cpu tensors!");
     auto dims = reduce(shape_, 2);
     return MatrixMap<Scalar>(data_, dims[0], dims[1]);
   }
   // TODO: should there be a Map type to const?
-  auto m() const {
-    GINN_ASSERT(dev()->type() == CPU, "m() can only be invoked on Cpu tensors!");
+  MatrixMap<Scalar> m() const {
+    GINN_ASSERT(dev()->type() == CPU,
+                "m() can only be invoked on Cpu tensors!");
     auto dims = reduce(shape_, 2);
     return MatrixMap<Scalar>(data_, dims[0], dims[1]);
   }
 
-  auto v() {
-    GINN_ASSERT(dev()->type() == CPU, "v() can only be invoked on Cpu tensors!");
+  VectorMap<Scalar> v() {
+    GINN_ASSERT(dev()->type() == CPU,
+                "v() can only be invoked on Cpu tensors!");
     auto dims = reduce(shape_, 1);
     return VectorMap<Scalar>(data_, dims[0]);
   }
-  auto v() const {
-    GINN_ASSERT(dev()->type() == CPU, "v() can only be invoked on Cpu tensors!");
+  VectorMap<Scalar> v() const {
+    GINN_ASSERT(dev()->type() == CPU,
+                "v() can only be invoked on Cpu tensors!");
     auto dims = reduce(shape_, 1);
     return VectorMap<Scalar>(data_, dims[0]);
   }
@@ -352,6 +356,11 @@ class Tensor {
     GINN_ASSERT(dev()->type() == CPU,
                 "end() can only be invoked on Cpu tensors!");
     return data_ + size();
+  }
+
+  std::vector<Scalar> vector() const {
+    auto t = copy_to(cpu());
+    return std::vector<Scalar>(t.begin(), t.end());
   }
 
   // wrap a Rank-0 (single element) Tensor around a scalar entry of this tensor
@@ -430,11 +439,13 @@ class Tensor {
 
   void set_random() {
     // TODO: making a copy here for now, get rid of this
-    if constexpr (std::is_same_v<Scalar, Half>) {
+    if constexpr (std::is_same_v<Scalar, Half> or std::is_same_v<Scalar, Int> or
+                  std::is_same_v<Scalar, bool>) {
+      // TODO: properly handle int and bool
       Tensor<Real> tmp(dev(), shape());
       tmp.set_random();
       *this = tmp.cast<Scalar>();
-    } else {
+    } else if constexpr (std::is_same_v<Scalar, Real>) {
       if (dev_->type() == CPU) {
         m().setRandom();
       }
@@ -445,12 +456,16 @@ class Tensor {
       }
 #endif
       else {
-        GINN_ASSERT(false);
+        GINN_THROW("Unexpected device type!");
       }
+    } else {
+      GINN_THROW("Unexpected Scalar type!");
     }
   }
 
-  void set(const std::vector<Scalar>& val) {
+  template <typename RhsScalar>
+  void set(const std::vector<RhsScalar>& vals) {
+    std::vector<Scalar> val(vals.begin(), vals.end());
     if (dev_->type() == CPU) {
       auto v_ = v();
       auto s = std::min((size_t)v_.size(), val.size());
@@ -472,15 +487,15 @@ class Tensor {
     set(std::vector<Scalar>{Scalar(args)...});
   }
 
-  template <int Rank>
-  void set(NestedInitList<Rank, Scalar> val) {
-    resize(shape_of<Size, Rank, Scalar>(val));
+  template <int Rank, typename RhsScalar = Scalar>
+  void set(NestedInitList<Rank, RhsScalar> val) {
+    resize(shape_of<Size, Rank, RhsScalar>(val));
     if (dev_->type() == CPU) {
-      assign<Rank, Scalar>(view<Rank>(), val);
+      assign<Rank, Scalar, RhsScalar>(view<Rank>(), val);
 #ifdef GINN_ENABLE_GPU
     } else if (dev_->type() == GPU) {
       Tensor<Scalar> tmp(cpu(), shape());
-      tmp.set<Rank>(val);
+      tmp.set<Rank, RhsScalar>(val);
       *this = tmp;
 #endif
     } else {
@@ -595,11 +610,11 @@ class LhsExpr {
 #define LHSEXPR_IMPLEMENT(op)                                                  \
   template <typename RhsExpr>                                                  \
   void op(RhsExpr rhs) {                                                       \
-    if (dev->type() == CPU) {                                                   \
+    if (dev->type() == CPU) {                                                  \
       e.device(cpu_device()).op(rhs);                                          \
-    } else if (dev->type() == GPU) {                                            \
-      auto& gd = gpu_device(dev->id().idx);                                     \
-      GINN_CUDA_CALL(cudaSetDevice(dev->id().idx));                             \
+    } else if (dev->type() == GPU) {                                           \
+      auto& gd = gpu_device(dev->id().idx);                                    \
+      GINN_CUDA_CALL(cudaSetDevice(dev->id().idx));                            \
       e.device(gd).op(rhs);                                                    \
     } else {                                                                   \
       GINN_THROW("Unexpected device!");                                        \
@@ -609,7 +624,7 @@ class LhsExpr {
 #define LHSEXPR_IMPLEMENT(op)                                                  \
   template <typename RhsExpr>                                                  \
   void op(RhsExpr rhs) {                                                       \
-    if (dev->type() == CPU) {                                                   \
+    if (dev->type() == CPU) {                                                  \
       e.device(cpu_device()).op(rhs);                                          \
     } else {                                                                   \
       GINN_THROW("Unexpected device!");                                        \
@@ -659,7 +674,10 @@ class ChipExpr {
 
  public:
   ChipExpr(DevPtr dev, LhsExpr lhs, Size offset, Size dim)
-      : dev_(std::move(dev)), lhs_(std::move(lhs)), offset_(offset), dim_(dim) {}
+      : dev_(std::move(dev)),
+        lhs_(std::move(lhs)),
+        offset_(offset),
+        dim_(dim) {}
   template <typename RhsExpr>
   void operator=(RhsExpr rhs) {
     Lhs(dev_, lhs_.chip(offset_, dim_)) = rhs;

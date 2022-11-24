@@ -1,5 +1,21 @@
 # minGPT
 
+```cpp
+// Copyright 2022 Bloomberg Finance L.P.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+```
+
 This example defines a minimal GPT implementation used to train a character
 level language model. It uses
 [Karpathy's
@@ -185,7 +201,7 @@ pointers easily to the underlying type.
 
 ```cpp
   CausalSelfAttentionLayerNode() = default;
-  CausalSelfAttentionLayerNode(Device& dev, const Config& params)
+  CausalSelfAttentionLayerNode(DevPtr dev, const Config& params)
       : n_head(params.n_head), hidden_dim(params.hidden_dim) {
     GINN_ASSERT(hidden_dim % n_head == 0,
                 "Hidden dims must be a multiple of number of heads!");
@@ -273,7 +289,7 @@ affine, and dropout layers.
 
 ```cpp
   BlockLayerNode() = default;
-  BlockLayerNode(Device& dev, const Config& params)
+  BlockLayerNode(DevPtr dev, const Config& params)
       : ln1(LayerNormLayer<Real>(dev, params.hidden_dim)),
         ln2(LayerNormLayer<Real>(dev, params.hidden_dim)),
         attn(CausalSelfAttentionLayer(dev, params)),
@@ -326,7 +342,7 @@ struct GptLayerNode : CombinedLayerNode<NodePtr<Real>(NodePtr<Real>)> {
   std::vector<ConstLayerBasePtr> children() const override { return {blocks}; }
 
   GptLayerNode() = default;
-  GptLayerNode(Device& dev, const Config& params) {
+  GptLayerNode(DevPtr dev, const Config& params) {
     blocks = DropoutLayer<Real>(params.embd_drop_p);
     for (Size i = 0; i < params.n_layer; i++) {
       blocks = blocks | BlockLayer(dev, params);
@@ -376,7 +392,7 @@ clever about initialization (e.g. zero biases or centering layer-norm
 multiplier at one) is left for future work.
 
 ```cpp
-  GptModel(Device& dev, Config params, IndexMap<char> cmap, Size len)
+  GptModel(DevPtr dev, Config params, IndexMap<char> cmap, Size len)
       : chars(std::move(cmap)), pos_embedding_table(len) {
     for (auto c : chars.keys()) {
       embedding_table[c] = Weight(dev, {params.hidden_dim});
@@ -561,7 +577,7 @@ this node, we can sample an index and append the corresponding char to
     while (s.size() < len) {
       auto y = run({s});
       auto probs = Softmax(y);
-      auto prob = Chip<3>(probs, s.size() - 1, 2);
+      auto prob = Chip(probs, s.size() - 1, 2);
       Graph(prob).forward();
       Size i = sample(prob->value());
       s += chars.reverse_lookup(i);
@@ -596,9 +612,9 @@ loop.
 int main() {
   using namespace ginn;
 #ifdef GINN_ENABLE_GPU
-  Device& dev = gpu();
+  DevPtr dev = gpu();
 #else
-  Device& dev = cpu();
+  DevPtr dev = cpu();
 #endif
 
   srand(124);
@@ -729,8 +745,8 @@ gradients by construction. However here we use some `InPlace` nodes to have
 memory reuse and smaller memory footprint, such as InPlaceProdScalar or
 InPlaceMask. These special node types require some assumptions for gradient
 correctness, e.g. `::backward()` of the input node to an `InPlace` node
-should not use `::value()` in its computation. See [InPlace](inplace.md) for a
-full list of requirements and use cases of `InPlace` nodes. If these
+should not use `::value()` in its computation. See [InPlace](inplace.md) for
+a full list of requirements and use cases of `InPlace` nodes. If these
 assumptions are violated but an `InPlace` node is regardless used, gradients
 are likely to be incorrect. We explicitly check gradients on the loss
 computation graph here to make sure we are safe in this regard.
@@ -740,7 +756,7 @@ computation graph here to make sure we are safe in this regard.
 
 TEST_CASE("Gradcheck") {
   using namespace ginn;
-  Device& dev = cpu();
+  DevPtr dev = cpu();
 
   // Don't forget to enable GINN_DOUBLE_PRECISION
   std::string data = "First Citizen:\n"
@@ -785,4 +801,4 @@ TEST_CASE("Gradcheck") {
 
 ---
 
-(Generated with `./tools/cpp2md.py` from `examples/min-gpt.cu.cpp`.)
+(Generated with `tools/cpp2md.py` from `examples/min-gpt.cu.cpp`.)
