@@ -110,11 +110,11 @@ template <typename Then, typename Else>
 auto Select(const NodePtr<bool>& if_, Then&& then_, Else&& else_) {
   if constexpr (is_node_ptr_v<std::decay_t<Then>>) {
     using Scalar = typename std::decay_t<Then>::element_type::Scalar;
-    return make_ref<SelectNode<Scalar>>(
+    return make_ptr<SelectNode<Scalar>>(
         if_, std::forward<Then>(then_), std::forward<Else>(else_));
   } else {
     using Scalar = typename std::decay_t<Then>;
-    return make_ref<SelectNode<Scalar>>(
+    return make_ptr<SelectNode<Scalar>>(
         if_, std::forward<Then>(then_), std::forward<Else>(else_));
   }
 }

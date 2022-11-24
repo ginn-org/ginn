@@ -444,7 +444,7 @@ class StackNode : public BaseDataNode<Scalar> {
 
 template <typename Scalar>
 auto Stack(const std::vector<std::vector<NodePtr<Scalar>>>& ins) {
-  return make_ref<StackNode<Scalar>>(ins);
+  return make_ptr<StackNode<Scalar>>(ins);
 }
 // auto Stack(NestedInitList<2, NodePtr<Real>> ins) {
 //   return Stack(std::vector<NodePtr<Real>>(ins));
@@ -692,7 +692,7 @@ class MapNode : public BaseDataNode<Scalar> {
   void set_ins(const std::vector<BaseNodePtr>& ins) override {
     GINN_ASSERT(ins.size() == 1);
     BaseNode::ins_ = ins;
-    in_ = dynamic_ref_cast<Node<Scalar>>(ins.front());
+    in_ = dynamic_ptr_cast<Node<Scalar>>(ins.front());
     GINN_ASSERT(in_);
   }
 
@@ -835,7 +835,7 @@ class RowBroadcastNode : public BaseDataNode<Scalar> {
         in_(in),
         rows_(rows) {}
   RowBroadcastNode(NodePtr<Scalar> in, Size rows)
-      : RowBroadcastNode(in, make_ref<DimNode>(rows)) {}
+      : RowBroadcastNode(in, make_ptr<DimNode>(rows)) {}
 
   std::string name() const override { return "RowBroadcast"; }
 };
@@ -873,7 +873,7 @@ class ColBroadcastNode : public BaseDataNode<Scalar> {
         in_(in),
         cols_(cols) {}
   ColBroadcastNode(NodePtr<Scalar> in, Size cols)
-      : ColBroadcastNode(in, make_ref<DimNode>(cols)) {}
+      : ColBroadcastNode(in, make_ptr<DimNode>(cols)) {}
 
   using BaseDataNode<Scalar>::value;
   using BaseDataNode<Scalar>::grad;

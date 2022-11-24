@@ -35,7 +35,7 @@ class Updater {
   void update(Graph& g) {
     std::unordered_set<WeightNode<Scalar>*> visited;
     for (auto n : g.nodes()) {
-      auto w = dynamic_ref_cast<WeightNode<Scalar>>(n);
+      auto w = dynamic_ptr_cast<WeightNode<Scalar>>(n);
       if (w and w->has_grad()) {
         if (visited.find(w.get()) == visited.end()) {
           update(w);

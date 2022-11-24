@@ -36,19 +36,19 @@ void check_expr(NodeFunc expr,
   Tensor<Real> cpu_grad;
   for (auto dev : std::vector<DevPtr>{cpu(), gpu()}) {
     for (auto& x : ins) {
-      if (auto x_ = dynamic_ref_cast<DataNode<Real>>(x)) {
+      if (auto x_ = dynamic_ptr_cast<DataNode<Real>>(x)) {
         x_->move_to(dev);
         if (randomize_inputs and dev == cpu()) { x_->set_random(); }
-      } else if (auto x_ = dynamic_ref_cast<DataNode<Int>>(x)) {
+      } else if (auto x_ = dynamic_ptr_cast<DataNode<Int>>(x)) {
         x_->move_to(dev);
-      } else if (auto x_ = dynamic_ref_cast<DataNode<Half>>(x)) {
+      } else if (auto x_ = dynamic_ptr_cast<DataNode<Half>>(x)) {
         x_->move_to(dev);
-      } else if (auto x_ = dynamic_ref_cast<DataNode<bool>>(x)) {
+      } else if (auto x_ = dynamic_ptr_cast<DataNode<bool>>(x)) {
         x_->move_to(dev);
-      } else if (auto x_ = dynamic_ref_cast<WeightNode<Real>>(x)) {
+      } else if (auto x_ = dynamic_ptr_cast<WeightNode<Real>>(x)) {
         x_->move_to(dev);
         if (randomize_inputs and dev == cpu()) { x_->set_random(); }
-      } else if (auto x_ = dynamic_ref_cast<WeightNode<Half>>(x)) {
+      } else if (auto x_ = dynamic_ptr_cast<WeightNode<Half>>(x)) {
         x_->move_to(dev);
       }
     }
@@ -76,19 +76,19 @@ void check_expr(NodeFunc expr,
         g.backward();
 
         for (auto& in : ins) {
-          if (auto in_ = dynamic_ref_cast<DataNode<Real>>(in)) {
+          if (auto in_ = dynamic_ptr_cast<DataNode<Real>>(in)) {
             Tensor<Real> grad = in_->grad();
             grad.move_to(cpu());
             grads[dev->type()].push_back(grad.v());
-          } else if (auto in_ = dynamic_ref_cast<WeightNode<Real>>(in)) {
+          } else if (auto in_ = dynamic_ptr_cast<WeightNode<Real>>(in)) {
             Tensor<Real> grad = in_->grad();
             grad.move_to(cpu());
             grads[dev->type()].push_back(grad.v());
-          } else if (auto in_ = dynamic_ref_cast<DataNode<Half>>(in)) {
+          } else if (auto in_ = dynamic_ptr_cast<DataNode<Half>>(in)) {
             Tensor<Half> grad = in_->grad();
             grad.move_to(cpu());
             grads[dev->type()].push_back(grad.cast<Real>().v());
-          } else if (auto in_ = dynamic_ref_cast<WeightNode<Half>>(in)) {
+          } else if (auto in_ = dynamic_ptr_cast<WeightNode<Half>>(in)) {
             Tensor<Half> grad = in_->grad();
             grad.move_to(cpu());
             grads[dev->type()].push_back(grad.cast<Real>().v());

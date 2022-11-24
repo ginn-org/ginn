@@ -141,9 +141,9 @@ inline void check_grad(NodeFunc f_e,
 
   if (randomize_inputs) {
     for (BaseNodePtr w : ins) {
-      if (auto w_ = dynamic_ref_cast<BaseDataNode<>>(w)) {
+      if (auto w_ = dynamic_ptr_cast<BaseDataNode<>>(w)) {
         w_->value().set_random();
-      } else if (auto w_ = dynamic_ref_cast<WeightNode<>>(w)) {
+      } else if (auto w_ = dynamic_ptr_cast<WeightNode<>>(w)) {
         w_->value().set_random();
       }
     }
@@ -156,11 +156,11 @@ inline void check_grad(NodeFunc f_e,
   g.forward(); // to init all shapes
 
   for (BaseNodePtr w : ins) {
-    if ((dynamic_ref_cast<BaseDataNode<>>(w) or
-         dynamic_ref_cast<WeightNode<>>(w)) and
+    if ((dynamic_ptr_cast<BaseDataNode<>>(w) or
+         dynamic_ptr_cast<WeightNode<>>(w)) and
         w->has_grad()) {
       w->reset_grad();
-      auto wr = dynamic_ref_cast<Node<Real>>(w);
+      auto wr = dynamic_ptr_cast<Node<Real>>(w);
       auto mask = FixedRandom(e->dev(), e->value().shape());
       auto ng = numeric_grad(e, wr, mask, eps);
       auto ag = analytic_grad(e, wr, mask);

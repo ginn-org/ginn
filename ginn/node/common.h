@@ -91,7 +91,7 @@ template <typename LeftScalar,
           typename = std::enable_if_t<ginn::is_node_ptr_v<NodePtr>>>
 auto SubtractScalar(LeftScalar a, NodePtr b) {
   using Scalar = typename std::decay_t<NodePtr>::element_type::Scalar;
-  return make_ref<SubtractScalarNode<Scalar>>(a, std::move(b));
+  return make_ptr<SubtractScalarNode<Scalar>>(a, std::move(b));
 }
 
 template <typename Scalar>

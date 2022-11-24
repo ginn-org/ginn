@@ -78,12 +78,12 @@ class Ptr {
 };
 
 template <typename NodeType, typename... Args>
-auto make_ref(Args&&... args) {
+auto make_ptr(Args&&... args) {
   return Ptr(std::make_shared<NodeType>(std::forward<Args>(args)...));
 }
 
 template <typename T, typename U>
-auto dynamic_ref_cast(const Ptr<U>& sp) {
+auto dynamic_ptr_cast(const Ptr<U>& sp) {
   return Ptr(std::dynamic_pointer_cast<T>(sp.as_shared_ptr()));
 }
 
@@ -216,11 +216,11 @@ class Graph {
   }
 
   auto& backward(double loss_coeff = 1) {
-    if (auto sink = dynamic_ref_cast<Node<Real>>(list_.back())) {
+    if (auto sink = dynamic_ptr_cast<Node<Real>>(list_.back())) {
       GINN_ASSERT(sink->has_grad());
       // TODO: should i constrain this to have shape {1} ?
       sink->grad().fill(loss_coeff); // assume scalar loss.
-    } else if (auto sink = dynamic_ref_cast<Node<Half>>(list_.back())) {
+    } else if (auto sink = dynamic_ptr_cast<Node<Half>>(list_.back())) {
       GINN_ASSERT(sink->has_grad());
       // TODO: should i constrain this to have shape {1} ?
       sink->grad().fill(Half(loss_coeff)); // assume scalar loss.
@@ -264,7 +264,7 @@ template <typename DerivedNode, typename Container>
 auto derived_cast(const Container& v) {
   std::vector<Ptr<DerivedNode>> rv;
   for (const auto& x : v) {
-    if (auto x_ = dynamic_ref_cast<DerivedNode>(x)) {
+    if (auto x_ = dynamic_ptr_cast<DerivedNode>(x)) {
       rv.push_back(x_);
     } else {
       GINN_THROW("Failed to cast to a derived Node!");
@@ -280,11 +280,11 @@ auto derived_cast(const Container& v) {
 #define GINN_MAKE_FACTORY(f)                                                   \
   template <typename... Args>                                                  \
   auto f(Args&&... args) {                                                     \
-    return make_ref<f##Node>(std::forward<Args>(args)...);                     \
+    return make_ptr<f##Node>(std::forward<Args>(args)...);                     \
   }                                                                            \
   template <typename... Args>                                                  \
   auto Fixed##f(Args&&... args) {                                              \
-    auto n = make_ref<f##Node>(std::forward<Args>(args)...);                   \
+    auto n = make_ptr<f##Node>(std::forward<Args>(args)...);                   \
     n->has_grad(false);                                                        \
     return n;                                                                  \
   }                                                                            \
@@ -295,11 +295,11 @@ auto derived_cast(const Container& v) {
 #define GINN_MAKE_TEMPLATE_FACTORY(f)                                          \
   template <typename Scalar, typename... Args>                                 \
   auto f(Args&&... args) {                                                     \
-    return make_ref<f##Node<Scalar>>(std::forward<Args>(args)...);             \
+    return make_ptr<f##Node<Scalar>>(std::forward<Args>(args)...);             \
   }                                                                            \
   template <typename Scalar, typename... Args>                                 \
   auto Fixed##f(Args&&... args) {                                              \
-    auto n = make_ref<f##Node<Scalar>>(std::forward<Args>(args)...);           \
+    auto n = make_ptr<f##Node<Scalar>>(std::forward<Args>(args)...);           \
     n->has_grad(false);                                                        \
     return n;                                                                  \
   }                                                                            \
@@ -321,7 +321,7 @@ auto derived_cast(const Container& v) {
   auto f(Arg&& arg, Args&&... args) {                                          \
     using NodePtr = innermost_t<Arg>;                                          \
     using Scalar = typename std::decay_t<NodePtr>::element_type::Scalar;       \
-    return make_ref<f##Node<Scalar>>(std::forward<Arg>(arg),                   \
+    return make_ptr<f##Node<Scalar>>(std::forward<Arg>(arg),                   \
                                      std::forward<Args>(args)...);             \
   }                                                                            \
   static_assert(true, "Factory maker requires a semicolon")

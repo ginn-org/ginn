@@ -194,7 +194,7 @@ class AffineNode : public BaseDataNode<Scalar> {
 
 template <typename Scalar>
 auto Affine(const std::vector<NodePtr<Scalar>>& ins) {
-  return make_ref<AffineNode<Scalar>>(ins);
+  return make_ptr<AffineNode<Scalar>>(ins);
 }
 
 template <typename Node,
@@ -202,7 +202,7 @@ template <typename Node,
           typename = std::enable_if_t<std::is_base_of_v<BaseNode, Node>>>
 auto Affine(Ptr<Node> in, Args&&... args) {
   using Scalar = typename Node::Scalar;
-  return make_ref<AffineNode<Scalar>>(in, std::forward<Args>(args)...);
+  return make_ptr<AffineNode<Scalar>>(in, std::forward<Args>(args)...);
 }
 
 template <typename Node,
@@ -212,7 +212,7 @@ template <typename Node,
               std::is_base_of_v<NonlinOp<typename Node::Scalar>, NonlinType>>>
 auto Affine(NonlinType nonlin, Ptr<Node> in, Args&&... args) {
   using Scalar = typename Node::Scalar;
-  return make_ref<AffineNode<Scalar>>(nonlin, in, std::forward<Args>(args)...);
+  return make_ptr<AffineNode<Scalar>>(nonlin, in, std::forward<Args>(args)...);
 }
 
 template <typename Node,
@@ -222,14 +222,14 @@ template <typename Node,
               std::is_base_of_v<NonlinOp<typename Node::Scalar>, NonlinType>>>
 auto Affine(std::unique_ptr<NonlinType> nonlin, Ptr<Node> in, Args&&... args) {
   using Scalar = typename Node::Scalar;
-  return make_ref<AffineNode<Scalar>>(
+  return make_ptr<AffineNode<Scalar>>(
       std::move(nonlin), in, std::forward<Args>(args)...);
 }
 
 template <template <typename> typename Nonlin, typename Node, typename... Args>
 auto Affine(Ptr<Node> in, Args&&... args) {
   using Scalar = typename Node::Scalar;
-  return make_ref<AffineNode<Scalar>>(
+  return make_ptr<AffineNode<Scalar>>(
       Nonlin<Scalar>(), in, std::forward<Args>(args)...);
 }
 

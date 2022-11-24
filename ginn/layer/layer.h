@@ -79,7 +79,7 @@ class LayerNodeBase {
   std::vector<WeightPtr<Scalar>> weights() {
     std::vector<WeightPtr<Scalar>> rval;
     for (auto w : weights_()) {
-      auto ws = dynamic_ref_cast<WeightNode<Scalar>>(w);
+      auto ws = dynamic_ptr_cast<WeightNode<Scalar>>(w);
       if (ws) { rval.push_back(ws); }
     }
     return rval;

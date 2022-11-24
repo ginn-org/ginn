@@ -86,8 +86,8 @@ class ExtendedGraph {
       auto& bias = ins.back();
       add_ins.reserve(ins.size());
       for (size_t i = 0; (i + 1) < ins.size(); i += 2) {
-        auto a = dynamic_ref_cast<Node<Real>>(ins[i]);
-        auto b = dynamic_ref_cast<Node<Real>>(ins[i + 1]);
+        auto a = dynamic_ptr_cast<Node<Real>>(ins[i]);
+        auto b = dynamic_ptr_cast<Node<Real>>(ins[i + 1]);
         GINN_ASSERT(a);
         GINN_ASSERT(b);
         auto prod = a * b;
@@ -95,7 +95,7 @@ class ExtendedGraph {
         prods_.push_back(prod.get());
       }
       auto dim = Dim(ins.at(1)->cols());
-      auto biasx = ColBroadcast(dynamic_ref_cast<Node<Real>>(bias), dim);
+      auto biasx = ColBroadcast(dynamic_ptr_cast<Node<Real>>(bias), dim);
       add_ins.push_back(biasx);
       auto add = Add(add_ins);
       for (size_t i = 0; i < add_ins.size(); i++) {
@@ -155,11 +155,11 @@ class ExtendedGraph {
         if (prods.size() == 1) { continue; } // only 1 Prod with that height
 
         for (auto prod : prods) {
-          cat_ins.push_back(dynamic_ref_cast<Node<Real>>(
+          cat_ins.push_back(dynamic_ptr_cast<Node<Real>>(
               prod->in(1))); // collect all rhs nodes
         }
         auto cat = RowwiseCat(cat_ins);
-        auto batched_prod = dynamic_ref_cast<Node<Real>>(prods.front()->in(0)) *
+        auto batched_prod = dynamic_ptr_cast<Node<Real>>(prods.front()->in(0)) *
                             cat; // lhs * batched rhs
 
         uncats.reserve(cat_ins.size());

@@ -76,8 +76,8 @@ class ProdNode : public BaseDataNode<Scalar> {
   void set_ins(const std::vector<BaseNodePtr>& ins) override {
     GINN_ASSERT(ins.size() == 2);
     BaseNode::ins_ = ins;
-    a_ = dynamic_ref_cast<Node<Scalar>>(ins[0]);
-    b_ = dynamic_ref_cast<Node<Scalar>>(ins[1]);
+    a_ = dynamic_ptr_cast<Node<Scalar>>(ins[0]);
+    b_ = dynamic_ptr_cast<Node<Scalar>>(ins[1]);
   }
 
   std::string name() const override { return "Prod"; }

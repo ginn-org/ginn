@@ -98,7 +98,7 @@ class DataNode : public BaseDataNode<Scalar> {
 
   template <typename OtherScalar>
   auto cast() const {
-    auto other = make_ref<DataNode<OtherScalar>>(this->dev(), this->shape());
+    auto other = make_ptr<DataNode<OtherScalar>>(this->dev(), this->shape());
     other->has_grad(this->has_grad());
     other->forwarded = this->forwarded;
     other->value() = this->value().template cast<OtherScalar>();
@@ -153,7 +153,7 @@ auto Constant(DevPtr dev, const Shape& shape, Scalar val) {
 
 template <typename Scalar, typename InScalar>
 auto ConstantLike(NodePtr<InScalar> x, Scalar val) {
-  return make_ref<ConstantLikeNode<Scalar>>(x, val);
+  return make_ptr<ConstantLikeNode<Scalar>>(x, val);
 }
 
 template <typename Scalar = Real>

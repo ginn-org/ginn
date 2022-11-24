@@ -41,7 +41,7 @@ class SumNode : public BaseDataNode<Scalar> {
   void set_ins(const std::vector<BaseNodePtr>& ins) override {
     GINN_ASSERT(ins.size() == 1);
     BaseNode::ins_ = ins;
-    in_ = dynamic_ref_cast<Node<Scalar>>(ins.front());
+    in_ = dynamic_ptr_cast<Node<Scalar>>(ins.front());
   }
 
   std::string name() const override { return "Sum"; }

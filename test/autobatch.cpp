@@ -41,7 +41,7 @@ void check(NodePtr<Real> e,
   g.reset_forwarded();
   g.forward();
 
-  auto sink = dynamic_ref_cast<Node<Real>>(g.sink());
+  auto sink = dynamic_ptr_cast<Node<Real>>(g.sink());
 
   Tensor<Real> sink_before = sink->value();
 
@@ -83,7 +83,7 @@ TEST_CASE("Autobatch", "[autobatch]") {
   g.reset_forwarded();
 
   g = Autobatch(g);
-  auto sink = dynamic_ref_cast<Node<Real>>(g.sink());
+  auto sink = dynamic_ptr_cast<Node<Real>>(g.sink());
   g.forward();
   Tensor<Real> after = sink->value();
 
@@ -110,7 +110,7 @@ TEST_CASE("Autobatch grad", "[autobatch]") {
   Tensor<Real> db_before = b->grad();
 
   g = Autobatch(g);
-  auto sink = dynamic_ref_cast<Node<Real>>(g.sink());
+  auto sink = dynamic_ptr_cast<Node<Real>>(g.sink());
 
   g.reset_forwarded();
   g.forward();

@@ -102,8 +102,8 @@ class WeightNode : public Node<Scalar> {
   }
 
   auto copy(Copy mode = Copy::Tied) {
-    if (mode == Copy::Deep) { return make_ref<WeightNode>(*this); }
-    auto tied_copy = make_ref<WeightNode>(this->fx_->dev());
+    if (mode == Copy::Deep) { return make_ptr<WeightNode>(*this); }
+    auto tied_copy = make_ptr<WeightNode>(this->fx_->dev());
     tied_copy->id_ = this->id_;
     tied_copy->fx_ = this->fx_;
     tied_copy->dfx_ = this->dfx_;
@@ -139,7 +139,7 @@ using ConstWeightPtr = Ptr<const WeightNode<Scalar>>;
 
 template <typename Scalar = Real>
 auto Weight(DevPtr dev = cpu(), const Shape& s = {0}) {
-  return make_ref<WeightNode<Scalar>>(dev, s);
+  return make_ptr<WeightNode<Scalar>>(dev, s);
 }
 template <typename Scalar = Real>
 auto Weight(DevPtr dev, std::initializer_list<Size> shape) {
@@ -147,7 +147,7 @@ auto Weight(DevPtr dev, std::initializer_list<Size> shape) {
 }
 template <typename Scalar>
 auto Weight(const WeightNode<Scalar>& other) {
-  return make_ref<WeightNode<Scalar>>(other);
+  return make_ptr<WeightNode<Scalar>>(other);
 }
 
 template <typename Scalar = Real>
