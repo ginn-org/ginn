@@ -92,6 +92,8 @@ void bind_tensor_of(PyClass& m) {
       py::is_operator());
 }
 
+GINN_PY_MAKE_SCALAR_DISPATCHER(Tensor)
+
 void bind_tensor(py::module_& m) {
   using namespace py::literals;
 

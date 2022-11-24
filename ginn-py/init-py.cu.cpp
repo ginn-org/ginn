@@ -47,8 +47,8 @@ void bind_init_of(py::module_& m) {
 }
 
 using namespace ginn::init;
-GINN_PY_MAKE_SCALAR_DISPATCHER(Xavier)
-GINN_PY_MAKE_SCALAR_DISPATCHER(Uniform)
+GINN_PY_MAKE_FLOATING_SCALAR_DISPATCHER(Xavier)
+GINN_PY_MAKE_FLOATING_SCALAR_DISPATCHER(Uniform)
 
 void bind_init(py::module_& m) {
   using namespace py::literals;

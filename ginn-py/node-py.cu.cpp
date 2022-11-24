@@ -110,34 +110,8 @@ void bind_data_of(PyClass& m) {
   m.def("bool", &T::template cast<bool>);
 }
 
-template <typename... Args>
-py::object Data_(Args&&... args, Scalar_ scalar) {
-  if (scalar == Scalar_::Real) {
-    return py::cast(Data<Real>(std::forward<Args>(args)...));
-  } else if (scalar == Scalar_::Half) {
-    return py::cast(Data<Half>(std::forward<Args>(args)...));
-  } else if (scalar == Scalar_::Int) {
-    return py::cast(Data<Int>(std::forward<Args>(args)...));
-  } else if (scalar == Scalar_::Bool) {
-    return py::cast(Data<bool>(std::forward<Args>(args)...));
-  } else {
-    GINN_THROW("Unexpected Scalar type!");
-    return {};
-  }
-}
-
-template <typename... Args>
-py::object Random_(Args&&... args, Scalar_ scalar) {
-  if (scalar == Scalar_::Real) {
-    return py::cast(Random<Real>(std::forward<Args>(args)...));
-  } else if (scalar == Scalar_::Half) {
-    return py::cast(Random<Half>(std::forward<Args>(args)...));
-    // TODO: Int & bool here
-  } else {
-    GINN_THROW("Unexpected Scalar type!");
-    return {};
-  }
-}
+GINN_PY_MAKE_SCALAR_DISPATCHER(Data)
+GINN_PY_MAKE_FLOATING_SCALAR_DISPATCHER(Random) // TODO: Int & bool
 
 template <typename Scalar, typename NodeClass>
 void op_overload_helper(Scalar, NodeClass& nc) {

@@ -69,6 +69,23 @@ auto name(std::string name) {
       return py::cast(F<Real>(std::forward<Args>(args)...));                   \
     } else if (scalar == Scalar_::Half) {                                      \
       return py::cast(F<Half>(std::forward<Args>(args)...));                   \
+    } else if (scalar == Scalar_::Int) {                                       \
+      return py::cast(F<Int>(std::forward<Args>(args)...));                    \
+    } else if (scalar == Scalar_::Bool) {                                      \
+      return py::cast(F<bool>(std::forward<Args>(args)...));                   \
+    } else {                                                                   \
+      GINN_THROW("Unexpected Scalar type!");                                   \
+      return {};                                                               \
+    }                                                                          \
+  }
+
+#define GINN_PY_MAKE_FLOATING_SCALAR_DISPATCHER(F)                             \
+  template <typename... Args>                                                  \
+  py::object F##_(Args&&... args, Scalar_ scalar) {                            \
+    if (scalar == Scalar_::Real) {                                             \
+      return py::cast(F<Real>(std::forward<Args>(args)...));                   \
+    } else if (scalar == Scalar_::Half) {                                      \
+      return py::cast(F<Half>(std::forward<Args>(args)...));                   \
     } else {                                                                   \
       GINN_THROW("Unexpected Scalar type!");                                   \
       return {};                                                               \

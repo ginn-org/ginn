@@ -50,17 +50,7 @@ void bind_weight_of(PyClass& m) {
       .def("set_random", &T::set_random);
 }
 
-template <typename... Args>
-py::object Weight_(Args&&... args, Scalar_ scalar) {
-  if (scalar == Scalar_::Real) {
-    return py::cast(Weight<Real>(std::forward<Args>(args)...));
-  } else if (scalar == Scalar_::Half) {
-    return py::cast(Weight<Half>(std::forward<Args>(args)...));
-  } else {
-    GINN_THROW("Unexpected Scalar type!");
-    return {};
-  }
-}
+GINN_PY_MAKE_FLOATING_SCALAR_DISPATCHER(Weight)
 
 void bind_weight_node(py::module_& m) {
   using namespace py::literals;
