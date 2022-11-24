@@ -49,7 +49,14 @@ auto declare_node_of(py::module_& m) {
   using namespace pybind11::literals;
 
   auto node = py::class_<Node<Scalar>, BaseNode, Ptr<Node<Scalar>>>(
-      m, name<Scalar>("Node"));
+                  m, name<Scalar>("Node"))
+                  .def("forward", &BaseNode::forward)
+                  .def("reset_forwarded", &BaseNode::reset_forwarded)
+                  .def("reset_grad", &BaseNode::reset_grad)
+                  .def_property(
+                      "forwarded",
+                      [](const BaseNode& n) { return n.forwarded; },
+                      [](BaseNode& n, bool val) { n.forwarded = val; });
   py::class_<BaseDataNode<Scalar>, Node<Scalar>, Ptr<BaseDataNode<Scalar>>>(
       m, name<Scalar>("BaseDataNode"))
       .def_property(

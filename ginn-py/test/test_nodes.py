@@ -800,3 +800,29 @@ def test_affine_w_high_rank(scalar, dev):
 
     eps = 2e-3 if scalar == ginn.Scalar.Half else 1e-6
     check(ginn.Affine([W, V, b]), WVb, eps=eps)
+
+
+@scalars2
+@devices
+def test_weight(scalar, dev):
+    W = ginn.Weight(scalar=scalar, device=dev, shape=[2, 3])
+    W.set_random()
+    t = W.value.copy_to(dev)
+
+    assert W.forwarded
+    W.reset_forwarded()
+    assert W.forwarded
+
+    W.forward()
+    assert W.value == t
+
+    W.reset_grad()
+
+    W2 = W.copy(ginn.Copy.Tied)
+    assert W2.value is W.value
+    assert W2.grad is not W.grad
+
+    W3 = W.copy(ginn.Copy.Deep)
+    assert W3.value == W.value
+    assert W3.value is not W.value
+    assert W3.grad is not W.grad
