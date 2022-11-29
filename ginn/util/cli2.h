@@ -24,7 +24,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include <ginn/extern/tblr.h>
+#include <tblr.h>
+
 #include "fmt.h"
 #include "sto.h"
 #include "tty.h"

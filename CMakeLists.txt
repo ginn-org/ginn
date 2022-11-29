@@ -25,6 +25,7 @@ endif()
 
 include_directories("${PROJECT_SOURCE_DIR}/")
 include_directories("${PROJECT_SOURCE_DIR}/extern/eigen/")
+include_directories("${PROJECT_SOURCE_DIR}/extern/tblr/tblr/")
 include_directories("${PROJECT_SOURCE_DIR}/extern/fmt/include/")
 include_directories("${PROJECT_SOURCE_DIR}/extern/Catch2/single_include/catch2/")
 include_directories("${PROJECT_SOURCE_DIR}/extern/pybind11/include/")

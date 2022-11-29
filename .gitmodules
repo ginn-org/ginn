@@ -14,3 +14,6 @@
 [submodule "pybind11"]
 	path = extern/pybind11
 	url = ../../pybind/pybind11
+[submodule "extern/tblr"]
+	path = extern/tblr
+	url = ../../oir/tblr.git

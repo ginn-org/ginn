@@ -8,6 +8,7 @@ TESTS_PATH = test
 
 INCLUDES = -I./ \
 	   -I./extern/eigen/ \
+	   -I./extern/tblr/tblr/ \
 	   -I./extern/fmt/include/ \
 	   -I./extern/cppitertools/ \
 	   -I./extern/Catch2/single_include/catch2/

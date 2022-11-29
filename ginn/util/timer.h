@@ -26,8 +26,9 @@
 #include <unordered_set>
 #include <vector>
 
+#include <tblr.h>
+
 #include <ginn/except.h>
-#include <ginn/extern/tblr.h>
 
 namespace ginn {
 namespace timer {

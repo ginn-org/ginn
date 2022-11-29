@@ -15,13 +15,14 @@
 #include <iostream>
 #include <unordered_set>
 
+#include <tblr.h>
+
 #include <ginn/init/init.h>
 #include <ginn/update/update.h>
 
 #include <ginn/node/layout.h>
 #include <ginn/node/pick.h>
 
-#include <ginn/extern/tblr.h>
 #include <ginn/metric.h>
 #include <ginn/util/amax.h>
 #include <ginn/util/cli2.h>
