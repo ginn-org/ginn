@@ -6,12 +6,16 @@ BUILD_PATH ?= ./build
 EXAMPLES_PATH = examples
 TESTS_PATH = test
 
-INCLUDES = -I./ -I./eigen/ -I./fmt/include/ -I./cppitertools/ -I./Catch2/single_include/catch2/
+INCLUDES = -I./ \
+	   -I./extern/eigen/ \
+	   -I./extern/fmt/include/ \
+	   -I./extern/cppitertools/ \
+	   -I./extern/Catch2/single_include/catch2/
 
 CUDA_INCLUDES = 
 CUDA_LINKS = -lcurand -lcublas
 
-CXXFLAGS = -std=c++17 -Werror -Wall -Wno-maybe-uninitialized -Wno-unused-but-set-parameter
+CXXFLAGS = -std=c++17 -Wall -Wno-unused-but-set-parameter
 
 
 CUDAFLAGS = -std=c++17 -DGINN_ENABLE_GPU --x cu \

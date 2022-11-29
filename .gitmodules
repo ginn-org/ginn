@@ -1,16 +1,16 @@
 [submodule "eigen"]
-	path = eigen
+	path = extern/eigen
 	url = https://gitlab.com/libeigen/eigen.git
 	branch = master
 [submodule "fmt"]
-	path = fmt
+	path = extern/fmt
 	url = ../../fmtlib/fmt.git
 [submodule "cppitertools"]
-	path = cppitertools
+	path = extern/cppitertools
 	url = ../../ryanhaining/cppitertools.git
 [submodule "Catch2"]
-	path = Catch2
+	path = extern/Catch2
 	url = ../../catchorg/Catch2.git
 [submodule "pybind11"]
-	path = pybind11
+	path = extern/pybind11
 	url = ../../pybind/pybind11
