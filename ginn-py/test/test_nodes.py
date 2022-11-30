@@ -14,6 +14,7 @@
 
 import ginn
 import pytest
+from testutil import check_grad
 
 scalars = pytest.mark.parametrize(
     "scalar",
@@ -92,6 +93,9 @@ class TestStack:
         s = ginn.Stack([[a, b], [c, d], [e, f]])
         check(s, expected)
 
+        if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+            check_grad(s, [a, b, c, d, e, f])
+
     @scalars3
     @devices
     def test_rank_2(self, scalar, dev):
@@ -108,11 +112,13 @@ class TestStack:
                 [[[3, 7], [11, 15], [19, 23]], [[4, 8], [12, 16], [20, 24]]],
             ],
         ).cast(scalar)
-        check(ginn.Stack([[a, b], [c, d], [e, f]]), expected)
+        s = ginn.Stack([[a, b], [c, d], [e, f]])
+        check(s, expected)
 
-    @pytest.mark.parametrize(
-        "scalar", [ginn.Scalar.Real, ginn.Scalar.Half, ginn.Scalar.Int]
-    )
+        if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+            check_grad(s, [a, b, c, d, e, f])
+
+    @scalars3
     @devices
     def test_errors(self, scalar, dev):
         a = ginn.Values(dev, [1, 2, 3, 4]).cast(scalar)
@@ -143,6 +149,9 @@ def test_cat(scalar, dev):
 
     check(ginn.Cat([a, b, c]), res)
 
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(ginn.Cat([a, b, c]), [a, b, c])
+
 
 @scalars
 @devices
@@ -154,6 +163,9 @@ def test_rowwise_cat(scalar, dev):
     res = ginn.Values(dev, [[1, 3, 4, 7, 8, 9], [2, 5, 6, 0, 1, 2]]).cast(scalar)
 
     check(ginn.RowwiseCat([a, b, c]), res)
+
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(ginn.RowwiseCat([a, b, c]), [a, b, c])
 
 
 @scalars
