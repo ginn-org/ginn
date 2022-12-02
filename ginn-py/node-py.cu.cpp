@@ -102,6 +102,7 @@ void bind_data_of(PyClass& m) {
     case Scalar_::Half: return py::cast(t.template cast<Half>());
     case Scalar_::Int: return py::cast(t.template cast<Int>());
     case Scalar_::Bool: return py::cast(t.template cast<bool>());
+    default: return {};
     }
   });
   m.def("real", &T::template cast<Real>);
@@ -156,6 +157,7 @@ void bind_node(py::module_& m) {
   py::class_<Graph>(m, "Graph")
       .def(py::init<Ptr<BaseNode>>())
       .def("forward", &Graph::forward)
+      .def("reset_forwarded", &Graph::reset_forwarded)
       .def("reset_grad", &Graph::reset_grad)
       .def("backward", &Graph::backward, "loss_coeff"_a);
 

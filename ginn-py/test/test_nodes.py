@@ -14,6 +14,7 @@
 
 import ginn
 import pytest
+from test_util import check_grad
 
 scalars = pytest.mark.parametrize(
     "scalar",
@@ -92,6 +93,9 @@ class TestStack:
         s = ginn.Stack([[a, b], [c, d], [e, f]])
         check(s, expected)
 
+        if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+            check_grad(s, [a, b, c, d, e, f])
+
     @scalars3
     @devices
     def test_rank_2(self, scalar, dev):
@@ -108,11 +112,13 @@ class TestStack:
                 [[[3, 7], [11, 15], [19, 23]], [[4, 8], [12, 16], [20, 24]]],
             ],
         ).cast(scalar)
-        check(ginn.Stack([[a, b], [c, d], [e, f]]), expected)
+        s = ginn.Stack([[a, b], [c, d], [e, f]])
+        check(s, expected)
 
-    @pytest.mark.parametrize(
-        "scalar", [ginn.Scalar.Real, ginn.Scalar.Half, ginn.Scalar.Int]
-    )
+        if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+            check_grad(s, [a, b, c, d, e, f])
+
+    @scalars3
     @devices
     def test_errors(self, scalar, dev):
         a = ginn.Values(dev, [1, 2, 3, 4]).cast(scalar)
@@ -143,6 +149,9 @@ def test_cat(scalar, dev):
 
     check(ginn.Cat([a, b, c]), res)
 
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(ginn.Cat([a, b, c]), [a, b, c])
+
 
 @scalars
 @devices
@@ -155,6 +164,9 @@ def test_rowwise_cat(scalar, dev):
 
     check(ginn.RowwiseCat([a, b, c]), res)
 
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(ginn.RowwiseCat([a, b, c]), [a, b, c])
+
 
 @scalars
 @devices
@@ -166,6 +178,10 @@ def test_reshape(scalar, dev):
 
     check(ginn.Reshape(W, shape=[6, 1]), col)
     check(ginn.Reshape(W, shape=[3, 2]), mat)
+
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(ginn.Reshape(W, shape=[6, 1]), [W])
+        check_grad(ginn.Reshape(W, shape=[3, 2]), [W])
 
 
 @scalars
@@ -180,6 +196,11 @@ def test_rank_view(scalar, dev):
     check(ginn.RankView(W, 1), col)
     check(ginn.RankView(W, 2), mat)
     check(ginn.RankView(W, 3), ten)
+
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(ginn.RankView(W, 1), [W])
+        check_grad(ginn.RankView(W, 2), [W])
+        check_grad(ginn.RankView(W, 3), [W])
 
 
 @scalars
@@ -200,6 +221,11 @@ def test_slice(scalar, dev):
     assert out.shape == [2, 1]
     check(ginn.Slice(x, [2, 0], [2, 1]), out)
 
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(ginn.Slice(x, [1, 0], [3, 2]), [x])
+        check_grad(ginn.Slice(x, offsets=[0, 1], sizes=[4, 1]), [x])
+        check_grad(ginn.Slice(x, [2, 0], [2, 1]), [x])
+
 
 @scalars
 @devices
@@ -210,6 +236,10 @@ def test_chip(scalar, dev):
     z = ginn.Values(dev, [2, 4, 6, 8]).cast(scalar)
     check(ginn.Chip(x, 2, 0), y)
     check(ginn.Chip(x, 1, 1), z)
+
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(ginn.Chip(x, 2, 0), [x])
+        check_grad(ginn.Chip(x, 1, 1), [x])
 
 
 @scalars
@@ -276,41 +306,64 @@ def test_permute(scalar, dev):
     check(ginn.Permute(a, [2, 0, 1]), f)
     check(ginn.Permute(a, [0, 1, 2]), a)
 
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(ginn.Permute(a, [0, 2, 1]), [a])
+        check_grad(ginn.Transpose(a, 1, 2), [a])
+        check_grad(ginn.Permute(a, [2, 1, 0]), [a])
+        check_grad(ginn.Transpose(a, 2, 0), [a])
+        check_grad(ginn.Permute(a, [1, 0, 2]), [a])
+        check_grad(ginn.Transpose(a, 0, 1), [a])
+        check_grad(ginn.Permute(a, [1, 2, 0]), [a])
+        check_grad(ginn.Permute(a, [2, 0, 1]), [a])
+        check_grad(ginn.Permute(a, [0, 1, 2]), [a])
 
-class TestBroadcast:
-    @scalars
-    @devices
-    def test_row_broadcast(self, scalar, dev):
-        a = ginn.Values(dev, [[1], [2], [3]]).cast(scalar)
-        b = ginn.Values(dev, [[0.1, 1.2, 2.3]]).cast(scalar)
 
-        assert a.shape == [3, 1]
-        assert b.shape == [1, 3]
+@scalars
+@devices
+def test_row_broadcast(scalar, dev):
+    a = ginn.Values(dev, [[1], [2], [3]]).cast(scalar)
+    b = ginn.Values(dev, [[0.1, 1.2, 2.3]]).cast(scalar)
 
-        b3 = ginn.Values(dev, [[0.1, 1.2, 2.3], [0.1, 1.2, 2.3], [0.1, 1.2, 2.3]]).cast(
-            scalar
-        )
+    assert a.shape == [3, 1]
+    assert b.shape == [1, 3]
 
-        check(ginn.RowBroadcast(b, 3), b3)
-        check(ginn.RowBroadcast(b, 1), b)
-        check(ginn.RowBroadcast(b, ginn.Dim(a, 0)), b3)
-        check(ginn.RowBroadcast(b, ginn.Dim(a, 1)), b)
+    b3 = ginn.Values(dev, [[0.1, 1.2, 2.3], [0.1, 1.2, 2.3], [0.1, 1.2, 2.3]]).cast(
+        scalar
+    )
 
-    @scalars
-    @devices
-    def test_col_broadcast(self, scalar, dev):
-        a = ginn.Values(dev, [[1], [2], [3]]).cast(scalar)
-        b = ginn.Values(dev, [[0.1, 1.2, 2.3]]).cast(scalar)
+    check(ginn.RowBroadcast(b, 3), b3)
+    check(ginn.RowBroadcast(b, 1), b)
+    check(ginn.RowBroadcast(b, ginn.Dim(a, 0)), b3)
+    check(ginn.RowBroadcast(b, ginn.Dim(a, 1)), b)
 
-        assert a.shape == [3, 1]
-        assert b.shape == [1, 3]
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(ginn.RowBroadcast(b, 3), [b])
+        check_grad(ginn.RowBroadcast(b, 1), [b])
+        check_grad(ginn.RowBroadcast(b, ginn.Dim(a, 0)), [b])
+        check_grad(ginn.RowBroadcast(b, ginn.Dim(a, 1)), [b])
 
-        a3 = ginn.Values(dev, [[1, 1, 1], [2, 2, 2], [3, 3, 3]]).cast(scalar)
 
-        check(ginn.ColBroadcast(a, 3), a3)
-        check(ginn.ColBroadcast(a, 1), a)
-        check(ginn.ColBroadcast(a, ginn.Dim(b, 1)), a3)
-        check(ginn.ColBroadcast(a, ginn.Dim(b, 0)), a)
+@scalars
+@devices
+def test_col_broadcast(scalar, dev):
+    a = ginn.Values(dev, [[1], [2], [3]]).cast(scalar)
+    b = ginn.Values(dev, [[0.1, 1.2, 2.3]]).cast(scalar)
+
+    assert a.shape == [3, 1]
+    assert b.shape == [1, 3]
+
+    a3 = ginn.Values(dev, [[1, 1, 1], [2, 2, 2], [3, 3, 3]]).cast(scalar)
+
+    check(ginn.ColBroadcast(a, 3), a3)
+    check(ginn.ColBroadcast(a, 1), a)
+    check(ginn.ColBroadcast(a, ginn.Dim(b, 1)), a3)
+    check(ginn.ColBroadcast(a, ginn.Dim(b, 0)), a)
+
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(ginn.ColBroadcast(a, 3), [a])
+        check_grad(ginn.ColBroadcast(a, 1), [a])
+        check_grad(ginn.ColBroadcast(a, ginn.Dim(b, 1)), [a])
+        check_grad(ginn.ColBroadcast(a, ginn.Dim(b, 0)), [a])
 
 
 @scalars
@@ -351,6 +404,14 @@ def test_add(scalar, dev):
     check(ginn.Add([a, b, a]), e)
     check(a + b + a, e)
 
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(ginn.Add(a, b), [a, b])
+        check_grad(a + b, [a, b])
+        check_grad(ginn.Add([a, b, c]), [a, b, c])
+        check_grad(a + b + c, [a, b, c])
+        check_grad(ginn.Add([a, b, a]), [a, b])
+        check_grad(a + b + a, [a, b])
+
 
 @scalars3
 @devices
@@ -364,6 +425,11 @@ def test_add_scalar(scalar, dev):
         check(a + s, e)
         check(s + a, e)
 
+        if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+            check_grad(ginn.AddScalar(a, s), [a])
+            check_grad(a + s, [a])
+            check_grad(s + a, [a])
+
 
 @scalars3
 @devices
@@ -376,18 +442,18 @@ def test_subtract_scalar(scalar, dev):
         check(ginn.SubtractScalar(s, a), e)
         check(s - a, e)
 
-    e2 = ginn.Values([[0, 3], [1, 4], [2, 5]]).cast(scalar)
+        if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+            check_grad(ginn.SubtractScalar(s, a), [a])
+            check_grad(s - a, [a])
+
+    e2 = ginn.Values(dev, [[0, 3], [1, 4], [2, 5]]).cast(scalar)
     for s in [1, 1.0]:
         check(ginn.AddScalar(a, -s), e2)
         check(a - s, e2)
 
-
-@scalars3
-@devices
-def test_subtract_scalar(scalar, dev):
-    a = ginn.Values(dev, [[1, 4], [2, 5], [3, 6]]).cast(scalar)
-
-    pass
+        if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+            check_grad(ginn.AddScalar(a, -s), [a])
+            check_grad(a - s, [a])
 
 
 @scalars3
@@ -401,6 +467,11 @@ def test_prod_scalar(scalar, dev):
         check(a * s, e)
         check(s * a, e)
 
+        if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+            check_grad(ginn.ProdScalar(a, s), [a])
+            check_grad(a * s, [a])
+            check_grad(s * a, [a])
+
 
 @scalars3
 @devices
@@ -410,6 +481,9 @@ def test_cwise_prod(scalar, dev):
     e = ginn.Values(dev, [[-1, 16], [-4, 25], [-9, 36]]).cast(scalar)
 
     check(ginn.CwiseProd(a, b), e)
+
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(ginn.CwiseProd(a, b), [a, b])
 
 
 class TestCwiseProdAdd:
@@ -423,6 +497,9 @@ class TestCwiseProdAdd:
         e = ginn.Values(dev, [[0, 12], [-2, 20], [-6, 30]]).cast(scalar)
         check(ginn.CwiseProdAdd(a, b, c), e)
 
+        if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+            check_grad(ginn.CwiseProdAdd(a, b, c), [a, b, c])
+
     @scalars3
     @devices
     def test_regular_w_bias(self, scalar, dev):
@@ -434,6 +511,10 @@ class TestCwiseProdAdd:
         check(ginn.CwiseProdAdd(a, b, c, 1), e)
         check(ginn.CwiseProdAdd(a, b, c, 1.0), e)
 
+        if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+            check_grad(ginn.CwiseProdAdd(a, b, c, 1), [a, b, c])
+            check_grad(ginn.CwiseProdAdd(a, b, c, 1.0), [a, b, c])
+
     @scalars3
     @devices
     def test_broadcast(self, scalar, dev):
@@ -443,6 +524,9 @@ class TestCwiseProdAdd:
 
         e = ginn.Values(dev, [[3, 0], [1, -5], [-3, -12]]).cast(scalar)
         check(ginn.CwiseProdAdd(a, b, c), e)
+
+        if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+            check_grad(ginn.CwiseProdAdd(a, b, c), [a, b, c])
 
     @scalars3
     @devices
@@ -455,6 +539,10 @@ class TestCwiseProdAdd:
         check(ginn.CwiseProdAdd(a, b, c, 1), e)
         check(ginn.CwiseProdAdd(a, b, c, 1.0), e)
 
+        if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+            check_grad(ginn.CwiseProdAdd(a, b, c, 1), [a, b, c])
+            check_grad(ginn.CwiseProdAdd(a, b, c, 1.0), [a, b, c])
+
 
 @scalars3
 @devices
@@ -464,6 +552,13 @@ def test_cwise_max(scalar, dev):
     c = ginn.Values(dev, [[1, -4], [2, -5], [3, -6]]).cast(scalar)
 
     check(ginn.CwiseMax([a, b, c]), a)
+
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        # gradcheck will fail for equal values
+        a = ginn.Values(dev, [[1.5, 4], [2, 5], [3.7, 6]]).cast(scalar)
+        b = ginn.Values(dev, [[-1, 4.2], [-2, 5.2], [-3, 6.6]]).cast(scalar)
+        c = ginn.Values(dev, [[1, -4], [2.3, -5], [3, -6]]).cast(scalar)
+        check_grad(ginn.CwiseMax([a, b, c]), [a, b, c])
 
 
 @scalars2
@@ -506,6 +601,14 @@ def test_nonlin(scalar, dev):
     # TODO: Gelu forward
     # TODO: Gelu2 forward
 
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(ginn.Identity(W), [W])
+        check_grad(ginn.Tanh(W * 0.1), [W])
+        check_grad(ginn.Relu(W), [W])
+        check_grad(ginn.Sigmoid(W), [W])
+        check_grad(ginn.Softmax(W * 0.1), [W])
+        check_grad(ginn.Sqrt(ginn.CwiseProd(W, W)), [W])
+
 
 @scalars2
 @devices
@@ -524,6 +627,11 @@ def test_nonlin_extreme(scalar, dev):
     check(ginn.Softmax(ginn.Reshape(x, [1, 2])), ginn.Reshape(smaxx2, [1, 2]))
     check(ginn.Softmax(x), smaxx)
     check(ginn.Softmax(x2), smaxx)
+
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(ginn.Sigmoid(x), [x])
+        check_grad(ginn.Softmax(x), [x])
+        check_grad(ginn.Softmax(x2), [x2])
 
 
 @scalars2
@@ -555,27 +663,15 @@ def test_pick_and_friends(scalar, dev):
     check(-ginn.Log(ginn.Pick(ginn.Softmax(W), il)), pnlsm, eps=eps)
     check(-ginn.Log(ginn.Pick(ginn.Softmax(W), it)), pnlsm, eps=eps)
 
-
-@scalars2
-@devices
-def test_pick_and_friends(scalar, dev):
-    W = ginn.Values(
-        dev, [[-0.5, 0.55, -0.45], [1.0, 2.0, -1.0], [0.0, 0.0, 0.0], [0.3, -0.33, 1.3]]
-    ).cast(scalar)
-    p = ginn.Values(dev, [[0, 1, 0], [1, 0, 1], [0, 1, 0], [1, 0, 1]]).int()
-    p.has_grad = False
-    pnls = ginn.Values(
-        dev,
-        [
-            [0.47407698, 0.45549248, 0.49324895],
-            [0.31326169, 2.12692801, 1.31326169],
-            [0.69314718, 0.69314718, 0.69314718],
-            [0.55435524, 0.54169836, 0.24100845],
-        ],
-    ).cast(scalar)
-
-    eps = 2e-3 if W.scalar == ginn.Scalar.Half else 1e-6
-    check(ginn.PickNegLogSigmoid(W, p), pnls, eps=eps)
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(ginn.Pick(W, il), [W])
+        check_grad(ginn.Pick(W, it), [W])
+        check_grad(ginn.PickSoftmax(W, il), [W])
+        check_grad(ginn.PickSoftmax(W, it), [W])
+        check_grad(ginn.Pick(ginn.Softmax(W), il), [W])
+        check_grad(ginn.Pick(ginn.Softmax(W), it), [W])
+        check_grad(ginn.PickNegLogSoftmax(W, il), [W])
+        check_grad(ginn.PickNegLogSoftmax(W, it), [W])
 
 
 # TODO: add "Half" to the following test once I make ginn::Half known to python
@@ -608,6 +704,11 @@ def test_select(scalar, dev):
     check(ginn.Select(if_, val(7), b), y3)
     check(ginn.Select(if_, val(7), val(-2)), y4)
 
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(ginn.Select(if_, a, b), [a, b])
+        check_grad(ginn.Select(if_, a, val(7)), [a])
+        check_grad(ginn.Select(if_, val(7), b), [b])
+
 
 @scalars
 @devices
@@ -627,6 +728,12 @@ def test_mask(scalar, dev):
     check(ginn.Mask(a, mask, -1.0), y1)
     check(ginn.Mask(a, mask2, 7), y2)
     check(ginn.Mask(a, mask2, 7.0), y2)
+
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(ginn.Mask(a, mask, -1), [a])
+        check_grad(ginn.Mask(a, mask, -1.0), [a])
+        check_grad(ginn.Mask(a, mask2, 7), [a])
+        check_grad(ginn.Mask(a, mask2, 7.0), [a])
 
 
 @scalars2
@@ -656,6 +763,15 @@ def test_axis_sum(scalar, dev):
     with pytest.raises(RuntimeError):
         ginn.AxisSum(V, [2, 0])
 
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(ginn.AxisSum(V, [0]), [V])
+        check_grad(ginn.AxisSum(V, [0, 1]), [V])
+        check_grad(ginn.AxisSum(V, [0, 1, 2]), [V])
+        check_grad(ginn.AxisSum(V, [1]), [V])
+        check_grad(ginn.AxisSum(V, [1, 2]), [V])
+        check_grad(ginn.AxisSum(V, [2]), [V])
+        check_grad(ginn.AxisSum(V, [0, 2]), [V])
+
 
 @scalars2
 @devices
@@ -669,6 +785,11 @@ def test_reduce(scalar, dev):
     check(ginn.Sum(W), s)
     check(ginn.Mean(W), μ)
     check(ginn.Variance(W), σ2)
+
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(ginn.Sum(W), [W])
+        check_grad(ginn.Mean(W), [W])
+        check_grad(ginn.Variance(W), [W])
 
 
 @scalars3
@@ -692,7 +813,11 @@ def test_prod(scalar, dev):
 
     eps = 1e-2 if scalar == ginn.Scalar.Half else 1e-6
     check(ginn.Prod(W, V), WV, eps=eps)
-    check(W * V, WV, eps)
+    check(W * V, WV, eps=eps)
+
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(ginn.Prod(W, V), [W, V])
+        check_grad(W * V, [W, V])
 
 
 @scalars2
@@ -723,6 +848,9 @@ def test_batched_prod(scalar, dev):
     check(c2, c2_, eps)
     check(c3, c3_, eps)
 
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(c, [a, b], eps=2e-2)
+
     a = ginn.Random(dev, [2, 3, 2, 2]).cast(scalar)
     b = ginn.Random(dev, [3, 5, 2, 2]).cast(scalar)
     c = ginn.BatchedProd(a, b)
@@ -751,6 +879,9 @@ def test_batched_prod(scalar, dev):
     check(c10, c10_, eps)
     check(c11, c11_, eps)
 
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(c, [a, b], eps=2e-2)
+
 
 @scalars2
 @devices
@@ -764,6 +895,10 @@ def test_affine(scalar, dev):
     eps = 2e-3 if scalar == ginn.Scalar.Half else 1e-6
     check(ginn.Affine([W, V, b]), WVb, eps=eps)
     check(W * V + b, WVb, eps=eps)
+
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(ginn.Affine([W, V, b]), [W, V, b])
+        check_grad(W * V + b, [W, V, b])
 
     # TODO: add Affine with nonlins after Nonlin refactor
 
@@ -780,26 +915,29 @@ def test_affine_w_broadcast(scalar, dev):
     eps = 2e-3 if scalar == ginn.Scalar.Half else 1e-6
     check(ginn.Affine([W, V, b]), WVb, eps=eps)
 
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(ginn.Affine([W, V, b]), [W, V, b])
+
 
 @scalars2
 @devices
 def test_affine_w_high_rank(scalar, dev):
     W = ginn.Values(dev, [[1, 2, 3], [4, 5, 6]]).cast(scalar)  # 2 x 3
+    # 3 x 2 x 2
     V = ginn.Values(
         dev, [[[6, 5], [6, 5]], [[4, -1], [4, -1]], [[-2, -3], [-2, -3]]]
-    ).cast(
-        scalar
-    )  # 3 x 2 x 2
+    ).cast(scalar)
     b = ginn.Values(dev, [[0.1], [0.2]]).cast(scalar)
-
+    # 2 x 2 x 2
     WVb = ginn.Values(
         dev, [[[8.1, -5.9], [8.1, -5.9]], [[32.2, -2.8], [32.2, -2.8]]]
-    ).cast(
-        scalar
-    )  # 2 x 2 x 2
+    ).cast(scalar)
 
     eps = 2e-3 if scalar == ginn.Scalar.Half else 1e-6
     check(ginn.Affine([W, V, b]), WVb, eps=eps)
+
+    if scalar == ginn.Scalar.Real and dev == ginn.cpu():
+        check_grad(ginn.Affine([W, V, b]), [W, V, b])
 
 
 @scalars2
