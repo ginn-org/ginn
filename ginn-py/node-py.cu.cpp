@@ -102,6 +102,7 @@ void bind_data_of(PyClass& m) {
     case Scalar_::Half: return py::cast(t.template cast<Half>());
     case Scalar_::Int: return py::cast(t.template cast<Int>());
     case Scalar_::Bool: return py::cast(t.template cast<bool>());
+    default: return {};
     }
   });
   m.def("real", &T::template cast<Real>);

@@ -16,12 +16,12 @@ from typing import List
 
 import ginn
 import numpy as np
-from pytest import approx
+import pytest
 
 
 # Compute numeric grad for gradient checks, using finite differences
 def numeric_grad(
-    node: ginn.RealNode, weight: ginn.RealNode, mask: ginn.RealNode, eps: float = 1e-4
+    node: ginn.RealNode, weight: ginn.RealNode, mask: ginn.RealNode, eps: float
 ) -> ginn.RealTensor:
     s = ginn.Sum(ginn.CwiseProd(mask, node))
     g = ginn.Graph(s)
@@ -61,7 +61,7 @@ def analytic_grad(
     return weight.grad.copy_to(ginn.cpu())
 
 
-def check_grad(node: ginn.RealNode, ins: List[ginn.RealNode], eps: float = 1e-4):
+def check_grad(node: ginn.RealNode, ins: List[ginn.RealNode], eps: float = 1e-2):
     node = node + node  # to make sure grad accumulates over input repetition
     g = ginn.Graph(node)
     g.reset_forwarded()
@@ -71,9 +71,9 @@ def check_grad(node: ginn.RealNode, ins: List[ginn.RealNode], eps: float = 1e-4)
         if w.has_grad:
             w.reset_grad()
 
-            mask = ginn.Random(device=node.dev, shape=node.shape)
+            mask = ginn.Random(device=node.dev, shape=node.shape) * 0.5 + 1.0
             mask.has_grad = False
 
             ng = numeric_grad(node, w, mask, eps)
             ag = analytic_grad(node, w, mask)
-            ag.list() == approx(ng.list(), rel=eps)
+            assert ag.list() == pytest.approx(ng.list(), abs=1e-5, rel=eps)
