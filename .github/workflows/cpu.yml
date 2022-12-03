@@ -1,0 +1,41 @@
+name: cpu (build & test)
+run-name: ${{ github.actor }} is building for gpu
+on: [push]
+jobs:
+  build-and-run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Print environment
+        run: |
+          cmake --version
+          g++ --version
+      - name: Configure
+        run: cmake -B build
+      - name: Build tests
+        run: make -C build -j2 tests
+      - name: Build examples
+        run: make -C build -j2 examples
+      - name: Build python bindings
+        run: make -C build -j2 ginn
+      - name: Run tests
+        run: |
+          ./build/test/autobatch
+          ./build/test/convnodes
+          ./build/test/dev
+          ./build/test/dropoutnodes
+          ./build/test/graph
+          ./build/test/include
+          ./build/test/model
+          ./build/test/nodes
+          ./build/test/sample
+          ./build/test/tensor
+          ./build/test/util
+      - name: Run python tests
+        run: |
+          pip install pytest numpy
+          PYTHONPATH=./build/ginn-py/ pytest -s --color=yes ./ginn-py/test/
+

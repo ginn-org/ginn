@@ -1,8 +1,8 @@
-name: build
-run-name: ${{ github.actor }} is testing ginn
+name: gpu (build only)
+run-name: ${{ github.actor }} is building for gpu
 on: [push]
 jobs:
-  build-and-run-tests:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
