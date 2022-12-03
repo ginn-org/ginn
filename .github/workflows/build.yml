@@ -19,3 +19,4 @@ jobs:
       - run: cmake --version
 
       - run: cmake -B build -DGINN_ENABLE_GPU=1
+      - run: make -C build -j2 cudatests
