@@ -5,18 +5,27 @@ jobs:
   build-and-run-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
         with:
           submodules: recursive
-      - uses: Jimver/cuda-toolkit@v0.2.8
+      - name: Get cuda toolkit
+        uses: Jimver/cuda-toolkit@v0.2.8
         id: cuda-toolkit
         with:
           cuda: '11.7.0'
-
-      - run: echo "${{ steps.cuda-toolkit.outputs.cuda }}"
-      - run: echo "${{ steps.cuda-toolkit.outputs.CUDA_PATH }}"
-      - run: nvcc -V
-      - run: cmake --version
-
-      - run: cmake -B build -DGINN_ENABLE_GPU=1
-      - run: make -C build -j2 cudatests
+      - name: Print environment
+        run: |
+          echo "${{ steps.cuda-toolkit.outputs.cuda }}"
+          echo "${{ steps.cuda-toolkit.outputs.CUDA_PATH }}"
+          nvcc -V
+          cmake --version
+          g++ --version
+      - name: Configure
+        run: cmake -B build -DGINN_ENABLE_GPU=1
+      - name: Build tests
+        run: make -C build -j2 cudatests
+      - name: Build examples
+        run: make -C build -j2 cudaexamples
+      - name: Build python bindings
+        run: make -C build -j2 ginn
