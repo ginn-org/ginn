@@ -1,5 +1,5 @@
 name: cpu (build & test)
-run-name: ${{ github.actor }} is building for gpu
+run-name: ${{ github.actor }} is building & testing for cpu
 on: [push]
 jobs:
   build-and-run-tests:
@@ -21,6 +21,10 @@ jobs:
         run: make -C build -j2 examples
       - name: Build python bindings
         run: make -C build -j2 ginn
+      - name: Run python tests
+        run: |
+          pip install pytest numpy
+          PYTHONPATH=./build/ginn-py/ pytest -s --color=yes ./ginn-py/test/
       - name: Run tests
         run: |
           ./build/test/autobatch
@@ -34,8 +38,4 @@ jobs:
           ./build/test/sample
           ./build/test/tensor
           ./build/test/util
-      - name: Run python tests
-        run: |
-          pip install pytest numpy
-          PYTHONPATH=./build/ginn-py/ pytest -s --color=yes ./ginn-py/test/
 

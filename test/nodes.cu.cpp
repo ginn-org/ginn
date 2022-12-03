@@ -713,7 +713,7 @@ TEMPLATE_TEST_CASE("Nonlin", "[nlnode]", Real, Half) {
   CHECK_(Sigmoid(W),  {W}, true);
   CHECK_(Softmax(W),  {W}, true);
   CHECK_(Sqrt(W + Scalar(3)),  {W}, true);
-  CHECK_(Log(CwiseProd(W, W)), {W}, true);
+  CHECK_(Log(W + Scalar(1.5)), {W}, true);
   CHECK_(Gelu(W),     {W}, true, std::is_same_v<Scalar, Half> ? 1e-3 : 1e-4);
   CHECK_(Gelu2(W),    {W}, true, std::is_same_v<Scalar, Half> ? 1e-3 : 1e-4);
 }
