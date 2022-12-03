@@ -15,6 +15,8 @@
 #ifndef GINN_DEV_H
 #define GINN_DEV_H
 
+#include <memory>
+
 #include <ginn/def.h>
 
 #ifdef GINN_ENABLE_GPU
