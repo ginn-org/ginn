@@ -102,7 +102,8 @@ void bind_tensor(py::module_& m) {
       .value("Real", Scalar_::Real)
       .value("Half", Scalar_::Half)
       .value("Int", Scalar_::Int)
-      .value("Bool", Scalar_::Bool);
+      .value("Bool", Scalar_::Bool)
+      .export_values();
 
   // making pybind know all tensor types first, so method docs contain the
   // appropriate python types throughout.

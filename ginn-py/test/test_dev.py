@@ -55,10 +55,10 @@ def test_cpu(dev):
 
 def test_cpu_tensors():
     for scalar, size in [
-        (ginn.Scalar.Real, 4),
-        (ginn.Scalar.Half, 2),
-        (ginn.Scalar.Int, 4),
-        (ginn.Scalar.Bool, 1),
+        (ginn.Real, 4),
+        (ginn.Half, 2),
+        (ginn.Int, 4),
+        (ginn.Bool, 1),
     ]:
         dev = ginn.PreallocCpu(100)
 

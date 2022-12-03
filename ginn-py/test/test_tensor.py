@@ -15,7 +15,7 @@
 import ginn
 
 TensorTypes = [ginn.RealTensor, ginn.HalfTensor, ginn.IntTensor, ginn.BoolTensor]
-ScalarTypes = [ginn.Scalar.Real, ginn.Scalar.Half, ginn.Scalar.Int, ginn.Scalar.Bool]
+ScalarTypes = [ginn.Real, ginn.Half, ginn.Int, ginn.Bool]
 
 
 def test_ctors():
@@ -64,10 +64,10 @@ def test_casting():
             else:
                 assert t.scalar != Scalar
 
-        assert t.real() == t.cast(ginn.Scalar.Real)
-        assert t.int() == t.cast(ginn.Scalar.Int)
-        assert t.half() == t.cast(ginn.Scalar.Half)
-        assert t.bool() == t.cast(ginn.Scalar.Bool)
+        assert t.real() == t.cast(ginn.Real)
+        assert t.int() == t.cast(ginn.Int)
+        assert t.half() == t.cast(ginn.Half)
+        assert t.bool() == t.cast(ginn.Bool)
 
     t = ginn.RealTensor(ginn.cpu(), [2, 3])
     for i, scalar in enumerate(ScalarTypes):
