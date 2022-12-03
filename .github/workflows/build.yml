@@ -14,3 +14,4 @@ jobs:
       - run: echo "${{ steps.cuda-toolkit.outputs.cuda }}"
       - run: echo "${{ steps.cuda-toolkit.outputs.CUDA_PATH }}"
       - run: nvcc -V
+      - run: cmake --version
