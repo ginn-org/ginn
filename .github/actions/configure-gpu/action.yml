@@ -14,5 +14,7 @@ runs:
         nvcc -V
         cmake --version
         g++ --version
+      shell: bash
     - name: Configure
       run: cmake -B build -DGINN_ENABLE_GPU=1 -DCMAKE_COLOR_MAKEFILE=1
+      shell: bash
