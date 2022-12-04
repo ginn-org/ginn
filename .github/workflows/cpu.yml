@@ -1,6 +1,8 @@
 name: cpu (build & test)
 run-name: ${{ github.actor }} is building & testing for cpu
 on: [push]
+env:
+  MAKEFLAGS: --no-print-directory
 jobs:
   build-and-run-tests:
     runs-on: ubuntu-latest
@@ -14,7 +16,7 @@ jobs:
           cmake --version
           g++ --version
       - name: Configure
-        run: cmake -B build -DCMAKE_COLOR_MAKEFILE=1 --no-print-directory
+        run: cmake -B build -DCMAKE_COLOR_MAKEFILE=1
       - name: Build tests
         run: make -C build -j2 tests
       - name: Run tests
@@ -43,7 +45,7 @@ jobs:
           cmake --version
           g++ --version
       - name: Configure
-        run: cmake -B build -DCMAKE_COLOR_MAKEFILE=1 --no-print-directory
+        run: cmake -B build -DCMAKE_COLOR_MAKEFILE=1
       - name: Build examples
         run: make -C build -j2 examples
 
@@ -59,7 +61,7 @@ jobs:
           cmake --version
           g++ --version
       - name: Configure
-        run: cmake -B build -DCMAKE_COLOR_MAKEFILE=1 --no-print-directory
+        run: cmake -B build -DCMAKE_COLOR_MAKEFILE=1
       - name: Build python bindings
         run: make -C build -j2 ginn
       - name: Run python tests
