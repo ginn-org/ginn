@@ -17,7 +17,7 @@ jobs:
           cmake --version
           g++ --version
       - name: Configure
-        run: cmake -B build -DCMAKE_COLOR_MAKEFILE=1
+        run: cmake -B build -DCMAKE_COLOR_MAKEFILE=ON -DCMAKE_COLOR_DIAGNOSTICS=ON
       - name: Build tests
         run: make -C build -j2 tests
       - name: Run tests
