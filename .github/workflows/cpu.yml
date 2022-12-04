@@ -3,6 +3,7 @@ run-name: ${{ github.actor }} is building & testing for cpu
 on: [push]
 env:
   MAKEFLAGS: --no-print-directory
+  CMAKE_CXX_FLAGS: -fdiagnostics-color=always
 jobs:
   build-and-run-tests:
     runs-on: ubuntu-latest
