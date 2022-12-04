@@ -3,7 +3,6 @@ run-name: ${{ github.actor }} is building & testing for cpu
 on: [push]
 env:
   MAKEFLAGS: --no-print-directory
-  CMAKE_CXX_FLAGS: -fdiagnostics-color=always
 jobs:
   build-and-run-tests:
     runs-on: ubuntu-latest
@@ -17,7 +16,7 @@ jobs:
           cmake --version
           g++ --version
       - name: Configure
-        run: cmake -B build -DCMAKE_COLOR_MAKEFILE=ON -DCMAKE_COLOR_DIAGNOSTICS=ON
+        run: cmake -B build
       - name: Build tests
         run: make -C build -j2 tests
       - name: Run tests
@@ -46,7 +45,7 @@ jobs:
           cmake --version
           g++ --version
       - name: Configure
-        run: cmake -B build -DCMAKE_COLOR_MAKEFILE=1
+        run: cmake -B build
       - name: Build examples
         run: make -C build -j2 examples
 
@@ -62,7 +61,7 @@ jobs:
           cmake --version
           g++ --version
       - name: Configure
-        run: cmake -B build -DCMAKE_COLOR_MAKEFILE=1
+        run: cmake -B build
       - name: Build python bindings
         run: make -C build -j2 ginn
       - name: Run python tests

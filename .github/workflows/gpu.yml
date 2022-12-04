@@ -5,24 +5,8 @@ jobs:
   build-tests:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Get cuda toolkit
-        uses: Jimver/cuda-toolkit@v0.2.8
-        id: cuda-toolkit
-        with:
-          cuda: '11.7.0'
-      - name: Print environment
-        run: |
-          echo "${{ steps.cuda-toolkit.outputs.cuda }}"
-          echo "${{ steps.cuda-toolkit.outputs.CUDA_PATH }}"
-          nvcc -V
-          cmake --version
-          g++ --version
-      - name: Configure
-        run: cmake -B build -DGINN_ENABLE_GPU=1 -DCMAKE_COLOR_MAKEFILE=1
+      - name: Checkout and configure
+        uses: ./.github/actions/configure-gpu.yml
       - name: Build tests
         run: make -C build -j2 cudatests
 
