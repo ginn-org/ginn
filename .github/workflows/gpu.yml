@@ -1,0 +1,39 @@
+name: gpu (build only)
+run-name: ${{ github.actor }} is building for gpu
+on: [push]
+jobs:
+  build-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Bootstrap and configure
+        uses: ./.github/actions/configure-gpu
+      - name: Build tests
+        run: make -C build -j2 cudatests
+
+  build-examples:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Bootstrap and configure
+        uses: ./.github/actions/configure-gpu
+      - name: Build examples
+        run: make -C build -j2 cudaexamples
+
+  build-python:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Bootstrap and configure
+        uses: ./.github/actions/configure-gpu
+      - name: Build python bindings
+        run: make -C build -j2 ginn
