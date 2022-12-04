@@ -30,7 +30,8 @@ jobs:
           ./build/test/sample
           ./build/test/tensor
           ./build/test/util
-  build-examples
+
+  build-examples:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -45,7 +46,8 @@ jobs:
         run: cmake -B build
       - name: Build examples
         run: make -C build -j2 examples
-  build-and-test-python
+
+  build-and-test-python:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
