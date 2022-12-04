@@ -5,7 +5,11 @@ jobs:
   build-tests:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout and configure
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Bootstrap and configure
         uses: ./.github/actions/configure-gpu
       - name: Build tests
         run: make -C build -j2 cudatests
