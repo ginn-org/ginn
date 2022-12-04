@@ -10,7 +10,7 @@ jobs:
         with:
           submodules: recursive
       - name: Bootstrap and configure
-        uses: ./.github/actions/configure-gpu.yml
+        uses: ./.github/actions/configure-gpu
       - name: Build tests
         run: make -C build -j2 cudatests
 
