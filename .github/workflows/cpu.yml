@@ -17,14 +17,6 @@ jobs:
         run: cmake -B build
       - name: Build tests
         run: make -C build -j2 tests
-      - name: Build examples
-        run: make -C build -j2 examples
-      - name: Build python bindings
-        run: make -C build -j2 ginn
-      - name: Run python tests
-        run: |
-          pip install pytest numpy
-          PYTHONPATH=./build/ginn-py/ pytest -s --color=yes ./ginn-py/test/
       - name: Run tests
         run: |
           ./build/test/autobatch
@@ -39,3 +31,38 @@ jobs:
           ./build/test/tensor
           ./build/test/util
 
+  build-examples
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Print environment
+        run: |
+          cmake --version
+          g++ --version
+      - name: Configure
+        run: cmake -B build
+      - name: Build examples
+        run: make -C build -j2 examples
+
+  build-and-test-python
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Print environment
+        run: |
+          cmake --version
+          g++ --version
+      - name: Configure
+        run: cmake -B build
+      - name: Build python bindings
+        run: make -C build -j2 ginn
+      - name: Run python tests
+        run: |
+          pip install pytest numpy
+          PYTHONPATH=./build/ginn-py/ pytest -s --color=yes ./ginn-py/test/
