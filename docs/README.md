@@ -2,7 +2,7 @@ __Ginn__: Graph Interface to Neural Networks
 
 A minimalistic, header only neural net library
 
-[![cpu (build & test)](https://github.com/ginn-org/ginn/actions/workflows/cpu.yml/badge.svg)](https://github.com/ginn-org/ginn/actions/workflows/cpu.yml) [![gpu (build only)](https://github.com/ginn-org/ginn/actions/workflows/gpu.yml/badge.svg)](https://github.com/ginn-org/ginn/actions/workflows/gpu.yml) 
+[![cpu (build & test)](https://github.com/ginn-org/ginn/actions/workflows/cpu.yml/badge.svg?event=push)](https://github.com/ginn-org/ginn/actions/workflows/cpu.yml) [![gpu (build only)](https://github.com/ginn-org/ginn/actions/workflows/gpu.yml/badge.svg?event=push)](https://github.com/ginn-org/ginn/actions/workflows/gpu.yml) 
 
 ## Design goals
 Ginn is inspired by dynamic computation graph approaches like PyTorch or DyNet. On top of that it strives for the following:
