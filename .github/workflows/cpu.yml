@@ -1,6 +1,10 @@
 name: cpu (build & test)
 run-name: ${{ github.actor }} is building & testing for cpu
-on: [push]
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 env:
   MAKEFLAGS: --no-print-directory
 jobs:
