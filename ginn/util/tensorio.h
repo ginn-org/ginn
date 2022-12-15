@@ -69,7 +69,7 @@ void print_helper(std::ostream& os,
 
 template <typename Scalar>
 void print(std::ostream& os, const Tensor<Scalar>& t) {
-  if (t.dev()->type() != CPU) {
+  if (t.dev()->kind() != CPU) {
     auto t_ = t.copy_to(cpu());
     print(os, t_);
   }

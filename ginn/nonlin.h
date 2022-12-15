@@ -25,7 +25,7 @@ template <typename Expr>
 bool make_bool(const DevPtr& dev, const Expr& e) {
   Tensor<bool> result(dev, Shape{});
   result = e;
-  if (dev->type() == CPU) { return result.v()[0]; }
+  if (dev->kind() == CPU) { return result.v()[0]; }
   return result.move_to(cpu()).v()[0];
 }
 

@@ -351,7 +351,7 @@ class StackNode : public BaseDataNode<Scalar> {
     value().resize(ns);
     Size sz = nodes_[0][0]->size();
 
-    if (dev()->type() == CPU) {
+    if (dev()->kind() == CPU) {
       auto view = value().reshaped({sz, m, n});
       for (Size i = 0; i < m; i++) {
         for (Size j = 0; j < n; j++) {
@@ -361,7 +361,7 @@ class StackNode : public BaseDataNode<Scalar> {
         }
       }
 #ifdef GINN_ENABLE_GPU
-    } else if (dev()->type() == GPU) {
+    } else if (dev()->kind() == GPU) {
       std::vector<Scalar*> ins_flat(m * n);
       for (Size i = 0; i < m; i++) {
         for (Size j = 0; j < n; j++) {
@@ -386,7 +386,7 @@ class StackNode : public BaseDataNode<Scalar> {
     Size m = nodes_.size();
     Size n = nodes_[0].size();
     Size sz = nodes_[0][0]->size();
-    if (dev()->type() == CPU) {
+    if (dev()->kind() == CPU) {
       auto view = grad().reshaped({sz, m, n});
       for (Size i = 0; i < m; i++) {
         for (Size j = 0; j < n; j++) {
@@ -398,7 +398,7 @@ class StackNode : public BaseDataNode<Scalar> {
         }
       }
 #ifdef GINN_ENABLE_GPU
-    } else if (dev()->type() == GPU) {
+    } else if (dev()->kind() == GPU) {
       std::vector<Scalar*> d_ins_flat(m * n);
       thrust::device_vector<Scalar> dummy_in(sz);
       for (Size i = 0; i < m; i++) {

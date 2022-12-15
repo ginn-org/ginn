@@ -319,27 +319,27 @@ class Tensor {
 
   // View as classical (CPU) Eigen matrix
   MatrixMap<Scalar> m() {
-    GINN_ASSERT(dev()->type() == CPU,
+    GINN_ASSERT(dev()->kind() == CPU,
                 "m() can only be invoked on Cpu tensors!");
     auto dims = reduce(shape_, 2);
     return MatrixMap<Scalar>(data_, dims[0], dims[1]);
   }
   // TODO: should there be a Map type to const?
   MatrixMap<Scalar> m() const {
-    GINN_ASSERT(dev()->type() == CPU,
+    GINN_ASSERT(dev()->kind() == CPU,
                 "m() can only be invoked on Cpu tensors!");
     auto dims = reduce(shape_, 2);
     return MatrixMap<Scalar>(data_, dims[0], dims[1]);
   }
 
   VectorMap<Scalar> v() {
-    GINN_ASSERT(dev()->type() == CPU,
+    GINN_ASSERT(dev()->kind() == CPU,
                 "v() can only be invoked on Cpu tensors!");
     auto dims = reduce(shape_, 1);
     return VectorMap<Scalar>(data_, dims[0]);
   }
   VectorMap<Scalar> v() const {
-    GINN_ASSERT(dev()->type() == CPU,
+    GINN_ASSERT(dev()->kind() == CPU,
                 "v() can only be invoked on Cpu tensors!");
     auto dims = reduce(shape_, 1);
     return VectorMap<Scalar>(data_, dims[0]);
@@ -347,13 +347,13 @@ class Tensor {
 
   // begin() and end() help with feeding tensors into generic algorithms
   const Scalar* begin() const {
-    GINN_ASSERT(dev()->type() == CPU,
+    GINN_ASSERT(dev()->kind() == CPU,
                 "begin() can only be invoked on Cpu tensors!");
     return data_;
   }
 
   const Scalar* end() const {
-    GINN_ASSERT(dev()->type() == CPU,
+    GINN_ASSERT(dev()->kind() == CPU,
                 "end() can only be invoked on Cpu tensors!");
     return data_ + size();
   }
@@ -446,11 +446,11 @@ class Tensor {
       tmp.set_random();
       *this = tmp.cast<Scalar>();
     } else if constexpr (std::is_same_v<Scalar, Real>) {
-      if (dev_->type() == CPU) {
+      if (dev_->kind() == CPU) {
         m().setRandom();
       }
 #ifdef GINN_ENABLE_GPU
-      else if (dev_->type() == GPU) {
+      else if (dev_->kind() == GPU) {
         curand_gen(dev_->id().idx).uniform(data_, size());
         lhs() = -1 + (2 * t());
       }
@@ -466,12 +466,12 @@ class Tensor {
   template <typename RhsScalar>
   void set(const std::vector<RhsScalar>& vals) {
     std::vector<Scalar> val(vals.begin(), vals.end());
-    if (dev_->type() == CPU) {
+    if (dev_->kind() == CPU) {
       auto v_ = v();
       auto s = std::min((size_t)v_.size(), val.size());
       for (size_t i = 0; i < s; i++) { v_[i] = val[i]; }
 #ifdef GINN_ENABLE_GPU
-    } else if (dev_->type() == GPU) {
+    } else if (dev_->kind() == GPU) {
       Tensor<Scalar> tmp(cpu(), shape());
       tmp = *this;
       tmp.set(val);
@@ -490,10 +490,10 @@ class Tensor {
   template <int Rank, typename RhsScalar = Scalar>
   void set(NestedInitList<Rank, RhsScalar> val) {
     resize(shape_of<Size, Rank, RhsScalar>(val));
-    if (dev_->type() == CPU) {
+    if (dev_->kind() == CPU) {
       assign<Rank, Scalar, RhsScalar>(view<Rank>(), val);
 #ifdef GINN_ENABLE_GPU
-    } else if (dev_->type() == GPU) {
+    } else if (dev_->kind() == GPU) {
       Tensor<Scalar> tmp(cpu(), shape());
       tmp.set<Rank, RhsScalar>(val);
       *this = tmp;
@@ -504,8 +504,8 @@ class Tensor {
   }
 
   bool operator==(const Tensor<Scalar>& other) const {
-    if (dev()->type() == CPU) {
-      if (other.dev()->type() == CPU) {
+    if (dev()->kind() == CPU) {
+      if (other.dev()->kind() == CPU) {
         return shape_ == other.shape_ and v() == other.v();
       }
       Tensor<Scalar> other_cp(cpu());
@@ -519,7 +519,7 @@ class Tensor {
   }
 
   void save(std::ostream& out) const {
-    if (dev()->type() == CPU) {
+    if (dev()->kind() == CPU) {
       out << shape_.size() << std::endl;
       for (Size dim : shape_) { out << dim << " "; }
       out << std::endl;
@@ -536,7 +536,7 @@ class Tensor {
   }
 
   void load(std::istream& in) {
-    if (dev()->type() == CPU) {
+    if (dev()->kind() == CPU) {
       Size r;
       in >> r;
       Shape new_shape(r);
@@ -610,9 +610,9 @@ class LhsExpr {
 #define LHSEXPR_IMPLEMENT(op)                                                  \
   template <typename RhsExpr>                                                  \
   void op(RhsExpr rhs) {                                                       \
-    if (dev->type() == CPU) {                                                  \
+    if (dev->kind() == CPU) {                                                  \
       e.device(cpu_device()).op(rhs);                                          \
-    } else if (dev->type() == GPU) {                                           \
+    } else if (dev->kind() == GPU) {                                           \
       auto& gd = gpu_device(dev->id().idx);                                    \
       GINN_CUDA_CALL(cudaSetDevice(dev->id().idx));                            \
       e.device(gd).op(rhs);                                                    \
@@ -624,7 +624,7 @@ class LhsExpr {
 #define LHSEXPR_IMPLEMENT(op)                                                  \
   template <typename RhsExpr>                                                  \
   void op(RhsExpr rhs) {                                                       \
-    if (dev->type() == CPU) {                                                  \
+    if (dev->kind() == CPU) {                                                  \
       e.device(cpu_device()).op(rhs);                                          \
     } else {                                                                   \
       GINN_THROW("Unexpected device!");                                        \

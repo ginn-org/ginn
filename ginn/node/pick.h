@@ -58,13 +58,13 @@ class PickNode : public BaseDataNode<Scalar> {
                 "Index size does not match input columns! (" +
                     std::to_string(index.size()) + "≠" +
                     std::to_string(input.cols()));
-    if (dev()->type() == CPU) {
+    if (dev()->kind() == CPU) {
       auto vv = value().v();
       auto ivm = input.m();
       auto iv = index.v();
       for (Size i = 0; i < index.size(); i++) { vv[i] = ivm.col(i)[iv[i]]; }
 #ifdef GINN_ENABLE_GPU
-    } else if (dev()->type() == GPU) {
+    } else if (dev()->kind() == GPU) {
       Int rows = input.rows();
       auto index_begin = thrust::device_ptr<Int>(index.data());
       auto ct_begin = thrust::make_counting_iterator(Int(0));
@@ -85,7 +85,7 @@ class PickNode : public BaseDataNode<Scalar> {
   void pick_grad(Tensor<Scalar>& grad_in, bool negate = false) {
     auto& index = index_->value();
     if (in_->has_grad()) {
-      if (dev()->type() == CPU) {
+      if (dev()->kind() == CPU) {
         auto iv = index.v();
         auto gv = grad().v();
         auto igm = grad_in.m();
@@ -97,7 +97,7 @@ class PickNode : public BaseDataNode<Scalar> {
           }
         }
 #ifdef GINN_ENABLE_GPU
-      } else if (dev()->type() == GPU) {
+      } else if (dev()->kind() == GPU) {
         Int rows = in_->value().rows();
         auto index_begin = thrust::device_ptr<Int>(index.data());
         auto ct_begin = thrust::make_counting_iterator(Int(0));
@@ -134,7 +134,7 @@ class PickNode : public BaseDataNode<Scalar> {
 
   void check_range() {
     // TODO: Gpu
-    if (dev()->type() == CPU) {
+    if (dev()->kind() == CPU) {
       GINN_ASSERT((index_->value().v().array() >= Scalar(0)).all(),
                   "Picking index is negative!");
       GINN_ASSERT(
@@ -313,7 +313,7 @@ class PickNegLogSoftmax2Node : public BaseDataNode {
   Real eps = 0;
 
   void forward_() override {
-    GINN_ASSERT(dev()->type() == CPU); // for now
+    GINN_ASSERT(dev()->kind() == CPU); // for now
     smax.resize(scores->value().shape());
     SoftmaxOp::forward(smax, scores->value());
 

@@ -31,8 +31,8 @@ void check_expr(NodeFunc expr,
                 Real eps = 1e-4) {
   static_assert(ginn::is_node_ptr_v<std::invoke_result_t<NodeFunc>>);
   using Scalar = typename std::invoke_result_t<NodeFunc>::element_type::Scalar;
-  std::unordered_map<DeviceType, Vector<Real>> values;
-  std::unordered_map<DeviceType, std::vector<Vector<Real>>> grads;
+  std::unordered_map<DeviceKind, Vector<Real>> values;
+  std::unordered_map<DeviceKind, std::vector<Vector<Real>>> grads;
   Tensor<Real> cpu_grad;
   for (auto dev : std::vector<DevPtr>{cpu(), gpu()}) {
     for (auto& x : ins) {
@@ -59,13 +59,13 @@ void check_expr(NodeFunc expr,
     g.reset_forwarded();
     g.forward();
 
-    values[dev->type()] =
+    values[dev->kind()] =
         e->value().maybe_copy_to(cpu()).template cast<Real>().v();
 
     if constexpr (ginn::is_floating_point_v<Scalar>) {
       if (has_grad) {
         g.reset_grad();
-        if (dev->type() == CPU) {
+        if (dev->kind() == CPU) {
           Tensor<Real> grad(cpu(), e->grad().shape());
           grad.set_random();
           e->grad() = grad.cast<Scalar>();
@@ -79,19 +79,19 @@ void check_expr(NodeFunc expr,
           if (auto in_ = dynamic_ptr_cast<DataNode<Real>>(in)) {
             Tensor<Real> grad = in_->grad();
             grad.move_to(cpu());
-            grads[dev->type()].push_back(grad.v());
+            grads[dev->kind()].push_back(grad.v());
           } else if (auto in_ = dynamic_ptr_cast<WeightNode<Real>>(in)) {
             Tensor<Real> grad = in_->grad();
             grad.move_to(cpu());
-            grads[dev->type()].push_back(grad.v());
+            grads[dev->kind()].push_back(grad.v());
           } else if (auto in_ = dynamic_ptr_cast<DataNode<Half>>(in)) {
             Tensor<Half> grad = in_->grad();
             grad.move_to(cpu());
-            grads[dev->type()].push_back(grad.cast<Real>().v());
+            grads[dev->kind()].push_back(grad.cast<Real>().v());
           } else if (auto in_ = dynamic_ptr_cast<WeightNode<Half>>(in)) {
             Tensor<Half> grad = in_->grad();
             grad.move_to(cpu());
-            grads[dev->type()].push_back(grad.cast<Real>().v());
+            grads[dev->kind()].push_back(grad.cast<Real>().v());
           }
         }
       }
