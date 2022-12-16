@@ -57,13 +57,13 @@ using namespace ginn::literals;
                                                                                \
     SECTION("Device") {                                                        \
       TENSOR_CTOR(t, init_dev);                                                \
-      CHECK(t.dev()->kind() == DEV_TYPE);                                       \
+      CHECK(t.dev()->kind() == DEV_TYPE);                                      \
       CHECK(t.size() == 0);                                                    \
     }                                                                          \
                                                                                \
     SECTION("Shape") {                                                         \
       TENSOR_CTOR(t, init_dev, {2, 1, 3});                                     \
-      CHECK(t.dev()->kind() == DEV_TYPE);                                       \
+      CHECK(t.dev()->kind() == DEV_TYPE);                                      \
       CHECK(t.size() == 6);                                                    \
       CHECK(t.shape().size() == 3);                                            \
     }                                                                          \
@@ -82,7 +82,7 @@ using namespace ginn::literals;
         val = Half{0.6};                                                       \
       }                                                                        \
       TENSOR_CTOR(t, init_dev, {2, 1, 3}, val);                                \
-      CHECK(t.dev()->kind() == DEV_TYPE);                                       \
+      CHECK(t.dev()->kind() == DEV_TYPE);                                      \
       CHECK(t.size() == 6);                                                    \
       CHECK(t.shape().size() == 3);                                            \
       t.move_to(cpu());                                                        \
