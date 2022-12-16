@@ -57,13 +57,13 @@ using namespace ginn::literals;
                                                                                \
     SECTION("Device") {                                                        \
       TENSOR_CTOR(t, init_dev);                                                \
-      CHECK(t.dev()->type() == DEV_TYPE);                                       \
+      CHECK(t.dev()->kind() == DEV_TYPE);                                      \
       CHECK(t.size() == 0);                                                    \
     }                                                                          \
                                                                                \
     SECTION("Shape") {                                                         \
       TENSOR_CTOR(t, init_dev, {2, 1, 3});                                     \
-      CHECK(t.dev()->type() == DEV_TYPE);                                       \
+      CHECK(t.dev()->kind() == DEV_TYPE);                                      \
       CHECK(t.size() == 6);                                                    \
       CHECK(t.shape().size() == 3);                                            \
     }                                                                          \
@@ -82,7 +82,7 @@ using namespace ginn::literals;
         val = Half{0.6};                                                       \
       }                                                                        \
       TENSOR_CTOR(t, init_dev, {2, 1, 3}, val);                                \
-      CHECK(t.dev()->type() == DEV_TYPE);                                       \
+      CHECK(t.dev()->kind() == DEV_TYPE);                                      \
       CHECK(t.size() == 6);                                                    \
       CHECK(t.shape().size() == 3);                                            \
       t.move_to(cpu());                                                        \
@@ -185,7 +185,7 @@ TEMPLATE_LIST_TEST_CASE("View", "[tensor]", Typelist) {
     t = TensorType(dev, {2, 1, 3}, {1, 2, 3, 4, 5, 6});
   }
 
-  if (dev->type() == CPU) {
+  if (dev->kind() == CPU) {
     CHECK(t.v() == VectorMap<Scalar>(t.data(), 6));
     CHECK(t.m() == MatrixMap<Scalar>(t.data(), 2, 3));
   } else {
@@ -194,21 +194,21 @@ TEMPLATE_LIST_TEST_CASE("View", "[tensor]", Typelist) {
   }
 
   CHECK(equals(
-      t.template view<1>(), TensorMap<Scalar, 1>(t.data(), 6), dev->type()));
+      t.template view<1>(), TensorMap<Scalar, 1>(t.data(), 6), dev->kind()));
 
-  CHECK(equals(t.t(), TensorMap<Scalar, 2>(t.data(), 2, 3), dev->type()));
+  CHECK(equals(t.t(), TensorMap<Scalar, 2>(t.data(), 2, 3), dev->kind()));
 
   CHECK(equals(t.template view<3>(),
                TensorMap<Scalar, 3>(t.data(), 2, 1, 3),
-               dev->type()));
+               dev->kind()));
 
   CHECK(equals(t.template view<4>(),
                TensorMap<Scalar, 4>(t.data(), 2, 1, 3, 1),
-               dev->type()));
+               dev->kind()));
 
   CHECK(equals(t.template view<5>(),
                TensorMap<Scalar, 5>(t.data(), 2, 1, 3, 1, 1),
-               dev->type()));
+               dev->kind()));
 }
 
 TEMPLATE_LIST_TEST_CASE("Set values", "[tensor]", Typelist) {

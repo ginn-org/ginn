@@ -50,13 +50,13 @@ inline Eigen::DefaultDevice& cpu_device() {
   return dev;
 };
 
-enum DeviceType { CPU, GPU, NULL_DEV };
+enum DeviceKind { CPU, GPU, NULL_DEV };
 
 struct DeviceId { // to distinguish multiple gpus
-  const DeviceType type;
+  const DeviceKind kind;
   const size_t idx = 0;
   bool operator==(const DeviceId& other) const {
-    return type == other.type and idx == other.idx;
+    return kind == other.kind and idx == other.idx;
   }
 };
 
@@ -65,7 +65,7 @@ class Device {
   virtual void* alloc(size_t size) = 0;
   virtual void* realloc(void* data, size_t size) = 0;
   virtual void free(void* data) = 0;
-  virtual DeviceType type() const = 0;
+  virtual DeviceKind kind() const = 0;
   virtual DeviceId id() const = 0;
   virtual short precedence() const { return 0; }
 
@@ -83,7 +83,7 @@ class NullDevice : public Device {
   void* alloc(size_t /*size*/) override { return nullptr; }
   void* realloc(void* /*data*/, size_t /*size*/) override { return nullptr; }
   void free(void* /*data*/) override {}
-  DeviceType type() const override { return NULL_DEV; }
+  DeviceKind kind() const override { return NULL_DEV; }
   DeviceId id() const override { return {NULL_DEV, 0}; }
   short precedence() const override { return -1; }
 };
@@ -100,7 +100,7 @@ class CpuDevice : public Device {
     return ::realloc(data, size);
   }
   void free(void* data) override { ::free(data); }
-  DeviceType type() const override { return CPU; }
+  DeviceKind kind() const override { return CPU; }
   DeviceId id() const override { return {CPU, 0}; }
 };
 
@@ -133,7 +133,7 @@ class PreallocCpuDevice : public Device {
   }
   void* realloc(void* /*data*/, size_t /*size*/) override { return nullptr; }
   void free(void* /*data*/) override {}
-  DeviceType type() const override { return CPU; }
+  DeviceKind kind() const override { return CPU; }
   DeviceId id() const override { return {CPU, 0}; }
   short precedence() const override { return 1; }
   void clear() { offset_ = storage_.data(); }
@@ -173,7 +173,7 @@ class GpuDevice : public Device {
     set_device();
     GINN_CUDA_CALL(cudaFree(data));
   }
-  DeviceType type() const override { return GPU; }
+  DeviceKind kind() const override { return GPU; }
   DeviceId id() const override { return {GPU, id_}; }
   auto& stream() { return *stream_; }
   auto& handle() { return *handle_; }
@@ -244,7 +244,7 @@ class PreallocGpuDevice : public Device {
   }
   void* realloc(void* data, size_t size) override { return nullptr; }
   void free(void* data) override {}
-  DeviceType type() const override { return GPU; }
+  DeviceKind kind() const override { return GPU; }
   DeviceId id() const override { return {GPU, id_}; }
   short precedence() const override { return 1; }
   void clear() { offset_ = storage_.data(); }
@@ -296,18 +296,18 @@ class PeerAccess {
 
 inline void
 Device::copy(const Device& other, void* data, void* other_data, size_t size) {
-  if (type() == CPU and other.type() == CPU) {
+  if (kind() == CPU and other.kind() == CPU) {
     memcpy(data, other_data, size);
 #ifdef GINN_ENABLE_GPU
-  } else if (type() == CPU and other.type() == GPU) {
+  } else if (kind() == CPU and other.kind() == GPU) {
     GINN_CUDA_CALL(cudaSetDevice(other.id().idx));
     GINN_CUDA_CALL(cudaMemcpy(data, other_data, size, cudaMemcpyDeviceToHost));
-  } else if (type() == GPU and other.type() == CPU) {
+  } else if (kind() == GPU and other.kind() == CPU) {
     auto& stream = gpu(id().idx)->stream();
     GINN_CUDA_CALL(cudaSetDevice(id().idx));
     GINN_CUDA_CALL(cudaMemcpyAsync(
         data, other_data, size, cudaMemcpyHostToDevice, stream));
-  } else if (type() == GPU and other.type() == GPU) {
+  } else if (kind() == GPU and other.kind() == GPU) {
     if (id().idx == other.id().idx) {
       auto& stream = gpu(id().idx)->stream();
       GINN_CUDA_CALL(cudaSetDevice(id().idx));

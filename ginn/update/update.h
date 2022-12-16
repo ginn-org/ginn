@@ -135,7 +135,7 @@ class Adam : public Updater<Scalar> {
   void update(const WeightPtr<Scalar>& w) override {
     if (this->guard) {
       std::lock_guard<std::mutex> l(w->access());
-      if (w->dev()->type() == CPU and
+      if (w->dev()->kind() == CPU and
           !w->grad().m().array().isFinite().all()) { // TODO: GPU?
         if (w->grad().m().array().isInf().any()) {
           std::cerr << "Gradient has an inf!" << std::endl;

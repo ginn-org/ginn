@@ -29,7 +29,7 @@ namespace py = pybind11;
 void bind_dev(py::module_& m) {
   using namespace py::literals;
 
-  py::enum_<DeviceType>(m, "DeviceType")
+  py::enum_<DeviceKind>(m, "DeviceType")
       .value("CPU", CPU)
       .value("GPU", GPU)
       .value("NULL_DEV", NULL_DEV);
@@ -37,9 +37,9 @@ void bind_dev(py::module_& m) {
   py::class_<DeviceId>(m, "DeviceId")
       .def("__repr__",
            [](const DeviceId& i) -> std::string {
-             return std::string("<DeviceId with type: ") +
-                    (i.type == 0     ? "CPU"
-                     : (i.type == 1) ? "GPU"
+             return std::string("<DeviceId with kind: ") +
+                    (i.kind == 0     ? "CPU"
+                     : (i.kind == 1) ? "GPU"
                                      : "NULL_DEV") +
                     ", idx: " + std::to_string(i.idx) + ">";
            })
@@ -49,7 +49,7 @@ void bind_dev(py::module_& m) {
           py::is_operator());
 
   py::class_<Device, std::shared_ptr<Device>>(m, "Device")
-      .def_property_readonly("type", &Device::type)
+      .def_property_readonly("kind", &Device::kind)
       .def_property_readonly("id", &Device::id)
       .def_property_readonly("precedence", &Device::precedence);
 

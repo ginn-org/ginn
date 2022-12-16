@@ -45,7 +45,7 @@ class AffineNode : public BaseDataNode<Scalar> {
         nonlin_->backward_requires_input() ? preactiv_ : value();
     affine.resize(new_s);
 
-    if (dev()->type() == CPU) {
+    if (dev()->kind() == CPU) {
       affine.m() = (a.m() * b.m()).colwise() + bias.v();
       for (size_t i = 2; i < ins_.size() - 1; i += 2) {
         auto &a = ins_[i]->value(), &b = ins_[i + 1]->value();
@@ -53,7 +53,7 @@ class AffineNode : public BaseDataNode<Scalar> {
         affine.m().noalias() += a.m() * b.m();
       }
 #ifdef GINN_ENABLE_GPU
-    } else if (dev()->type() == GPU) {
+    } else if (dev()->kind() == GPU) {
       affine = bias.t().broadcast(Index<2>{1, value().cols()});
       internal::gpu_prod(affine, a, b, internal::ProdResult::Add);
       for (size_t i = 2; i < ins_.size() - 1; i += 2) {
@@ -86,7 +86,7 @@ class AffineNode : public BaseDataNode<Scalar> {
       // which is okay since NonlinOp::backward_() is _not_ using it.
     }
 
-    if (dev()->type() == CPU) {
+    if (dev()->kind() == CPU) {
       auto& bias = ins_.back();
       if (bias->has_grad()) {
         bias->grad().m().noalias() += daffine.m().rowwise().sum();
@@ -101,7 +101,7 @@ class AffineNode : public BaseDataNode<Scalar> {
         }
       }
 #ifdef GINN_ENABLE_GPU
-    } else if (dev()->type() == GPU) {
+    } else if (dev()->kind() == GPU) {
       using namespace internal;
       auto& bias = ins_.back();
       // Eigen::array<int, 1> red_axis{1};

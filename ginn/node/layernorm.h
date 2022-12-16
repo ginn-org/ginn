@@ -58,7 +58,7 @@ class LayerNormNode : public BaseDataNode<Scalar> {
 
       in_->grad() +=
           (grad().t() - bc(grad_mean.t()) - value().t() * bc(dot.t())) /
-          std_.t().broadcast(Index<2>{rows, 1});
+          bc(std_.t());
     }
   }
 
