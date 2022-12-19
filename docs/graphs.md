@@ -1,5 +1,7 @@
 ## Nodes
 
+<span style="position: absolute; top: 20px; right: 20px;"> Defined in <code><a href="https://github.com/ginn-org/ginn/blob/main/ginn/node.h"> \<ginn/node.h\> </a></code> </span>
+
 A computation graph (specifically a DAG) consists of computation nodes and
 connections between them. Each node can implement a unit of computation
 (a function) or simply be a constant data (e.g. a vector). Such a node

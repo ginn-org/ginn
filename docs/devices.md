@@ -1,5 +1,7 @@
 ## Devices
 
+<span style="position: absolute; top: 20px; right: 20px;"> Defined in <code><a href="https://github.com/ginn-org/ginn/blob/main/ginn/dev.h"> \<ginn/dev.h\> </a></code> </span>
+
 Devices provides means for memory allocations to Tensors. A device determines
 two main things:
 

@@ -1,5 +1,7 @@
 ## Layers
 
+<span style="position: absolute; top: 20px; right: 20px;"> Defined in <code><a href="https://github.com/ginn-org/ginn/blob/main/ginn/layer/layer.h"> \<ginn/layer/layer.h\> </a></code> </span>
+
 Layers provide additional, optional utility for constructing computation graphs
 that are similar to PyTorch's `nn.module`. A layer helps with several things:
 

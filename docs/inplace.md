@@ -1,5 +1,7 @@
 ## In-place nodes
 
+<span style="position: absolute; top: 20px; right: 20px;"> Defined in <code><a href="https://github.com/ginn-org/ginn/blob/main/ginn/node/inplace.h"> \<ginn/node/inplace.h\> </a></code> </span>
+
 Let us motivate in-place nodes with an example.
 
 Assume we have a simplified `Sigmoid` node defined like so:

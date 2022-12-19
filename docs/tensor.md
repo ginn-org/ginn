@@ -1,5 +1,7 @@
 ## Tensors
 
+<span style="position: absolute; top: 20px; right: 20px;"> Defined in <code><a href="https://github.com/ginn-org/ginn/blob/main/ginn/tensor.h"> \<ginn/tensor.h\> </a></code> </span>
+
 Linear algrebra in Ginn is powered by Eigen. Since `Eigen::Tensor` does not
 manage its memory for GPU devices, a `ginn::Tensor` class wraps around it to
 simplify device and memory management, and provide various views to the
@@ -16,7 +18,7 @@ class Tensor {
 };
 ```
 Tensor is a template on the underlying scalar type which can be `Real` (i.e.
-`double` or `float`), `Half` (`float16`), `bool` etc.
+`double` or `float`), `Half` (`float16`), `Int`, `bool` etc.
 
 - `dev_`: Non-owned device pointer which is responsible for allocation and
 deallocation for the data. This for instance determines if the Tensor is on
