@@ -23,7 +23,7 @@
 #include <curand.h>
 #endif
 
-#include <ginn/except.h>
+#include <ginn/except.h> // this undefines some Eigen errors, needs to be included before Eigen
 #include <unsupported/Eigen/CXX11/Tensor> // Eigen
 
 namespace ginn {
@@ -67,5 +67,9 @@ inline Half operator"" _h(unsigned long long x) { return Half{x}; }
 } // namespace literals
 
 } // namespace ginn
+
+#ifdef GINN_ENABLE_GPU
+#include "cudef.h"
+#endif
 
 #endif

@@ -15,9 +15,9 @@
 #ifndef GINN_NODE_AFFINE_H
 #define GINN_NODE_AFFINE_H
 
-#include <ginn/node.h>
 #include <ginn/node/data.h>
 #include <ginn/nonlin.h>
+#include <ginn/prod.h>
 #include <ginn/util/fmt.h>
 
 namespace ginn {
