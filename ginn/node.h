@@ -22,7 +22,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include <ginn/core.h>
+#include <ginn/tensor.h>
 #include <ginn/util/traits.h>
 
 namespace ginn {
