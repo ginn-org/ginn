@@ -43,6 +43,7 @@ void check_expr(NodeFunc expr,
         x_->move_to(dev);
       } else if (auto x_ = dynamic_ptr_cast<DataNode<Half>>(x)) {
         x_->move_to(dev);
+        if (randomize_inputs and dev == cpu()) { x_->set_random(); }
       } else if (auto x_ = dynamic_ptr_cast<DataNode<bool>>(x)) {
         x_->move_to(dev);
       } else if (auto x_ = dynamic_ptr_cast<WeightNode<Real>>(x)) {
@@ -50,6 +51,7 @@ void check_expr(NodeFunc expr,
         if (randomize_inputs and dev == cpu()) { x_->set_random(); }
       } else if (auto x_ = dynamic_ptr_cast<WeightNode<Half>>(x)) {
         x_->move_to(dev);
+        if (randomize_inputs and dev == cpu()) { x_->set_random(); }
       }
     }
     bool has_grad = expr()->has_grad();

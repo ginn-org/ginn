@@ -562,13 +562,15 @@ TEMPLATE_TEST_CASE("Add subtract", "[arithmetic]", Real, Half, Int) {
   }
 
   SECTION("CwiseProdAdd") {
+    Real eps = std::is_same_v<Scalar, Half> ? 1e-3 : 1e-6;
+
     SECTION("Regular") {
       auto e = Values<2>({{ 0, 12 },
                           {-2, 20},
                           {-6, 30}})->cast<Scalar>();
 
       check(CwiseProdAdd(a, b, c), e);
-      CHECK_(CwiseProdAdd(a, b, c), {a, b, c}, true);
+      CHECK_(CwiseProdAdd(a, b, c), {a, b, c}, true, eps);
     }
 
     SECTION("Regular w/ bias") {
@@ -578,7 +580,7 @@ TEMPLATE_TEST_CASE("Add subtract", "[arithmetic]", Real, Half, Int) {
                           {-3, 36}})->cast<Scalar>();
 
       check(CwiseProdAdd(a, b, c, Scalar(1)), e);
-      CHECK_(CwiseProdAdd(a, b, c, Scalar(1)), {a, b, c}, true);
+      CHECK_(CwiseProdAdd(a, b, c, Scalar(1)), {a, b, c}, true, eps);
     }
 
     SECTION("Broadcast") {
