@@ -21,10 +21,24 @@
 #ifdef GINN_ENABLE_GPU
 
 #include <cuda_fp16.h>
+#include <thrust/functional.h>
+#include <thrust/tabulate.h>
+
 // helper for ginn::Half / Eigen::half to use raw fp16
 inline __device__ auto atomicAdd(ginn::Half* out, ginn::Half val) {
   return atomicAdd(reinterpret_cast<__half*>(out), static_cast<__half>(val));
 }
+
+// helper for UpperTri
+template <typename Scalar>
+struct UpperTriHelper {
+  size_t s;
+  inline __device__ auto operator()(size_t i) {
+    auto col = i / s;
+    auto row = i % s;
+    return Scalar(row <= col);
+  }
+};
 
 #endif
 
@@ -902,14 +916,27 @@ GINN_MAKE_SCALAR_FORWARDING_FACTORY(ColBroadcast);
 
 template <typename Scalar = Real>
 class UpperTriNode : public BaseDataNode<Scalar> {
+ public:
+  using BaseDataNode<Scalar>::value;
+
  private:
   DimPtr size_; // value() is of shape {size_, size_} (i.e. matrix)
 
   void forward_() override {
-    // TODO: directly create on device, get rid of temporary
-    Tensor<Scalar> val(cpu(), {size_->value(), size_->value()}, Scalar(1));
-    val.m() = val.m().template triangularView<Eigen::Upper>();
-    this->value() = val;
+    auto s = size_->value();
+    value().resize({s, s});
+    if (this->dev()->kind() == CPU) {
+      value().set_ones();
+      value().m() = value().m().template triangularView<Eigen::Upper>();
+#ifdef GINN_ENABLE_GPU
+    } else if (this->dev()->kind() == GPU) {
+      auto begin = thrust::device_ptr<Scalar>(value().data());
+      auto end = begin + value().size();
+      thrust::tabulate(begin, end, UpperTriHelper<Scalar>{s});
+#endif
+    } else {
+      GINN_THROW("Unexpected device!");
+    }
   }
 
  public:

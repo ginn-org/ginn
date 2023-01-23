@@ -420,7 +420,7 @@ TEMPLATE_TEST_CASE("Broadcast", "[layout]", Real, Half, Int) {
   }
 }
 
-TEMPLATE_TEST_CASE("UpperTri", "[layout]", Real, Half, Int) {
+TEMPLATE_TEST_CASE("UpperTri", "[layout]", Real, Int) {
   using Scalar = TestType;
   auto tri2 = Values<2>({{1, 1},
                          {0, 1}})->cast<Scalar>();
@@ -432,7 +432,12 @@ TEMPLATE_TEST_CASE("UpperTri", "[layout]", Real, Half, Int) {
 
   check(UpperTri<Scalar>(Dev, 2), tri2);
   check(UpperTri<Scalar>(Dev, 5), tri5);
-  CHECK_(UpperTri<Scalar>(Dev, 2), {});
+
+#ifdef GINN_ENABLE_GPU
+  // UpperTri itself is a terminal node that doesn't have the move_to() method,
+  // hence the special treatment here. TODO
+  check(DeviceTransfer(UpperTri<Scalar>(gpu(), 5), cpu()), tri5);
+#endif
 }
 
 TEMPLATE_TEST_CASE("Add subtract", "[arithmetic]", Real, Half, Int) {

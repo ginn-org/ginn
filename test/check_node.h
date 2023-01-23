@@ -57,6 +57,7 @@ void check_expr(NodeFunc expr,
     bool has_grad = expr()->has_grad();
     auto e = expr() + expr(); // "+" ensures multiple paths for backprop, good
                               // for testing accumulated gradients
+
     auto g = Graph(e);
     g.reset_forwarded();
     g.forward();
