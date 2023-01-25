@@ -32,8 +32,8 @@ inline __device__ auto atomicAdd(ginn::Half* out, ginn::Half val) {
 // helper for UpperTri
 template <typename Scalar>
 struct UpperTriHelper {
-  size_t s;
-  inline __device__ auto operator()(size_t i) {
+  long s;
+  inline __device__ auto operator()(long i) {
     auto col = i / s;
     auto row = i % s;
     return Scalar(row <= col);
