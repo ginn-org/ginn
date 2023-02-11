@@ -629,8 +629,6 @@ int main() {
     std::cout << "  " << timer::toc("iter", timer::HumanReadable) << std::endl;
   }
 
-  timer::print();
-
   // TODO: store the model here after training
 
   return 0;
@@ -657,7 +655,6 @@ int main() {
 TEST_CASE("Gradcheck") {
   using namespace ginn;
   DevPtr dev = cpu();
-  // auto scratch = PreallocCpu(24000000000L);
 
   // Don't forget to enable GINN_DOUBLE_PRECISION
   std::string data = "First Citizen:\n"
