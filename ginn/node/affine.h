@@ -104,7 +104,6 @@ class AffineNode : public BaseDataNode<Scalar> {
     } else if (dev()->kind() == GPU) {
       using namespace internal;
       auto& bias = ins_.back();
-      // Eigen::array<int, 1> red_axis{1};
       if (bias->has_grad()) { bias->grad() += daffine.t().sum(Index<1>{1}); }
       for (size_t i = 0; i < ins_.size() - 1; i += 2) {
         auto &a = ins_[i], &b = ins_[i + 1];

@@ -22,6 +22,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include <cppitertools/imap.hpp>
+
 #include <ginn/tensor.h>
 #include <ginn/util/traits.h>
 
@@ -90,6 +92,28 @@ auto dynamic_ptr_cast(const Ptr<U>& sp) {
 using BaseNodePtr = Ptr<BaseNode>;
 using ConstBaseNodePtr = Ptr<const BaseNode>;
 
+// To pass lists of exprs of different types as arguments
+// Explicitly casts to the base Node class
+template <typename Iterable>
+auto base_cast(Iterable&& v) {
+  // auto it = v | iter::imap([](auto&& x){return BaseNodePtr(x);});
+  // return std::vector<BaseNodePtr>(it.begin(), it.end());
+  return std::vector<BaseNodePtr>(v.begin(), v.end());
+}
+
+template <typename DerivedNode, typename Container>
+auto derived_cast(const Container& v) {
+  std::vector<Ptr<DerivedNode>> rv;
+  for (const auto& x : v) {
+    if (auto x_ = dynamic_ptr_cast<DerivedNode>(x)) {
+      rv.push_back(x_);
+    } else {
+      GINN_THROW("Failed to cast to a derived Node!");
+    }
+  }
+  return rv;
+}
+
 class BaseNode {
  protected:
   std::vector<BaseNodePtr> ins_;
@@ -116,12 +140,15 @@ class BaseNode {
   }
 
   // Construct
-  BaseNode(const std::vector<BaseNodePtr>& ins) : ins_(ins) {}
+  BaseNode(std::vector<BaseNodePtr> ins) : ins_(std::move(ins)) {}
 
-  template <typename Container>
-  BaseNode(const Container& ins) {
-    for (auto& x : ins) { ins_.push_back(x); }
-  }
+  template <typename DerivedNodePtr>
+  BaseNode(std::vector<DerivedNodePtr> ins) : ins_(base_cast(std::move(ins))) {}
+
+  // template <typename Container>
+  // BaseNode(const Container& ins) {
+  //   for (auto& x : ins) { ins_.push_back(x); }
+  // }
 
   virtual ~BaseNode() = default;
 
@@ -210,6 +237,7 @@ class Graph {
     traverse(e);
     visited_.clear();
   }
+
   auto& forward() {
     for (auto e : list_) { e->forward(); }
     return *this;
@@ -252,26 +280,6 @@ class Graph {
   const auto& nodes() const { return list_; }
   BaseNodePtr sink() const { return list_.back(); }
 };
-
-// To pass lists of exprs of different types as arguments
-// Explicitly casts to the base Node class
-template <typename Container>
-auto base_cast(const Container& v) {
-  return std::vector<BaseNodePtr>{v.begin(), v.end()};
-}
-
-template <typename DerivedNode, typename Container>
-auto derived_cast(const Container& v) {
-  std::vector<Ptr<DerivedNode>> rv;
-  for (const auto& x : v) {
-    if (auto x_ = dynamic_ptr_cast<DerivedNode>(x)) {
-      rv.push_back(x_);
-    } else {
-      GINN_THROW("Failed to cast to a derived Node!");
-    }
-  }
-  return rv;
-}
 
 // Given SomeNode, define Some(),
 //  that returns a ref (shared_ptr) and

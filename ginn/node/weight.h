@@ -16,9 +16,11 @@
 #define GINN_WEIGHT_H
 
 #include <atomic>
-#include <ginn/node.h>
 #include <mutex>
 #include <string>
+
+#include <ginn/node.h>
+#include <ginn/util/fmt.h>
 
 namespace ginn {
 
@@ -124,10 +126,7 @@ class WeightNode : public Node<Scalar> {
   Shape shape() const override { return value().shape(); }
 
   std::string name() const override {
-    std::string shp = "{";
-    for (size_t d : this->shape()) { shp += std::to_string(d) + ", "; }
-    return "WeightNode" + std::to_string(id_) +
-           (label.empty() ? "" : (" (" + label + ")")) + shp;
+    return fmt::format("Weight{} ({})", id_, fmt::join(this->shape(), ","));
   }
 };
 

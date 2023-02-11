@@ -40,8 +40,10 @@ class BaseDataNode : public Node<Scalar> {
       : Node<Scalar>(ins), fx_(dev, shape), dfx_(dev) {}
 
   template <typename NodeType>
-  BaseDataNode(const std::vector<NodeType>& ins)
-      : Node<Scalar>(ins), fx_(best_dev(ins)), dfx_(fx_.dev()) {}
+  BaseDataNode(std::vector<NodeType> ins)
+      : Node<Scalar>(std::move(ins)),
+        fx_(best_dev(this->ins_)),
+        dfx_(fx_.dev()) {}
 
   BaseDataNode(DevPtr dev = cpu()) : fx_(dev), dfx_(dev) {}
   BaseDataNode(const Shape& shape) : fx_(cpu(), shape), dfx_(cpu()) {}

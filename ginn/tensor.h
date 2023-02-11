@@ -293,6 +293,16 @@ class Tensor {
     return *this;
   }
 
+  auto& map(const Tensor<Scalar>& other, const Shape& shape) {
+    GINN_ASSERT(size(shape) == size(other.shape()));
+    if (owns_mem_) { free(); }
+    dev_ = other.dev_;
+    data_ = other.data_;
+    shape_ = shape;
+    owns_mem_ = false;
+    return *this;
+  }
+
   // Make this tensor a (possibly reshaped) non-memory-owning shallow copy
   // of the other
   auto& map(Tensor<Scalar>& other) { return map(other, other.shape()); }
@@ -312,6 +322,12 @@ class Tensor {
   // Return a possibly reshaped map (shallow, non-memory-owning copy) to this
   // tensor
   auto reshaped(const Shape& shape) {
+    Tensor<Scalar> t;
+    t.map(*this, shape);
+    return t;
+  }
+
+  auto reshaped(const Shape& shape) const {
     Tensor<Scalar> t;
     t.map(*this, shape);
     return t;

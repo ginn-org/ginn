@@ -33,6 +33,17 @@
 namespace ginn {
 namespace timer {
 
+void barrier() {
+#ifdef GINN_ENABLE_GPU
+  // This is needed for proper timing since cuda calls are async and cpu code
+  // continues execution immediately.
+  for (int i = 0; i < gpus(); i++) {
+    GINN_CUDA_CALL(cudaSetDevice(i));
+    GINN_CUDA_CALL(cudaDeviceSynchronize());
+  }
+#endif
+}
+
 using Duration = std::chrono::microseconds;
 using Rep = decltype(Duration().count());
 using Clock = std::chrono::system_clock;
@@ -230,9 +241,13 @@ void time(const std::string& name, Func f) {
 } // end namespace timer
 } // end namespace ginn
 
-#define GINN_TIME(e)                                                           \
-  ginn::timer::tic(#e);                                                        \
-  e;                                                                           \
-  ginn::timer::toc(#e)
+//#define GINN_TIME(e)                                                           \
+//  ginn::timer::barrier();                                                      \
+//  ginn::timer::tic(#e);                                                        \
+//  e;                                                                           \
+//  ginn::timer::barrier();                                                      \
+//  ginn::timer::toc(#e)
+
+#define GINN_TIME(e) e
 
 #endif

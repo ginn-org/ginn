@@ -24,6 +24,111 @@
 #include <ginn/util/timer.h>
 #include <iostream>
 
+#ifdef GINN_ENABLE_GPU
+#include <cublasLt.h>
+
+void LtSgemm(cublasLtHandle_t ltHandle,
+             cublasOperation_t transa,
+             cublasOperation_t transb,
+             int m,
+             int n,
+             int k,
+             const float* alpha, /* host pointer */
+             const float* A,
+             int lda,
+             const float* B,
+             int ldb,
+             const float* beta, /* host pointer */
+             float* C,
+             int ldc,
+             void* workspace,
+             size_t workspaceSize) {
+  cublasLtMatmulDesc_t operationDesc = NULL;
+  cublasLtMatrixLayout_t Adesc = NULL, Bdesc = NULL, Cdesc = NULL;
+  cublasLtMatmulPreference_t preference = NULL;
+
+  int returnedResults = 0;
+  cublasLtMatmulHeuristicResult_t heuristicResult = {};
+
+  // create operation desciriptor; see cublasLtMatmulDescAttributes_t for
+  // details about defaults; here we just need to set the transforms for A and B
+  GINN_CUBLAS_CALL(
+      cublasLtMatmulDescCreate(&operationDesc, CUBLAS_COMPUTE_32F, CUDA_R_32F));
+  GINN_CUBLAS_CALL(cublasLtMatmulDescSetAttribute(
+      operationDesc, CUBLASLT_MATMUL_DESC_TRANSA, &transa, sizeof(transa)));
+  GINN_CUBLAS_CALL(cublasLtMatmulDescSetAttribute(
+      operationDesc, CUBLASLT_MATMUL_DESC_TRANSB, &transb, sizeof(transa)));
+
+  // create matrix descriptors, we are good with the details here so no need to
+  // set any extra attributes
+  GINN_CUBLAS_CALL(cublasLtMatrixLayoutCreate(&Adesc,
+                                              CUDA_R_32F,
+                                              transa == CUBLAS_OP_N ? m : k,
+                                              transa == CUBLAS_OP_N ? k : m,
+                                              lda));
+  GINN_CUBLAS_CALL(cublasLtMatrixLayoutCreate(&Bdesc,
+                                              CUDA_R_32F,
+                                              transb == CUBLAS_OP_N ? k : n,
+                                              transb == CUBLAS_OP_N ? n : k,
+                                              ldb));
+  GINN_CUBLAS_CALL(cublasLtMatrixLayoutCreate(&Cdesc, CUDA_R_32F, m, n, ldc));
+
+  // create preference handle; here we could use extra attributes to disable
+  // tensor ops or to make sure algo selected will work with badly aligned A, B,
+  // C; here for simplicity we just assume A,B,C are always well aligned (e.g.
+  // directly come from cudaMalloc)
+  GINN_CUBLAS_CALL(cublasLtMatmulPreferenceCreate(&preference));
+  GINN_CUBLAS_CALL(cublasLtMatmulPreferenceSetAttribute(
+      preference,
+      CUBLASLT_MATMUL_PREF_MAX_WORKSPACE_BYTES,
+      &workspaceSize,
+      sizeof(workspaceSize)));
+
+  // we just need the best available heuristic to try and run matmul. There is
+  // no guarantee this will work, e.g. if A is badly aligned, you can request
+  // more (e.g. 32) algos and try to run them one by one until something works
+  GINN_CUBLAS_CALL(cublasLtMatmulAlgoGetHeuristic(ltHandle,
+                                                  operationDesc,
+                                                  Adesc,
+                                                  Bdesc,
+                                                  Cdesc,
+                                                  Cdesc,
+                                                  preference,
+                                                  1,
+                                                  &heuristicResult,
+                                                  &returnedResults));
+
+  if (returnedResults == 0) {
+    // GINN_CUBLAS_CALL(CUBLAS_STATUS_NOT_SUPPORTED);
+    GINN_THROW("cublas status not supported");
+  }
+
+  GINN_CUBLAS_CALL(cublasLtMatmul(ltHandle,
+                                  operationDesc,
+                                  alpha,
+                                  A,
+                                  Adesc,
+                                  B,
+                                  Bdesc,
+                                  beta,
+                                  C,
+                                  Cdesc,
+                                  C,
+                                  Cdesc,
+                                  &heuristicResult.algo,
+                                  workspace,
+                                  workspaceSize,
+                                  0));
+
+  // descriptors are no longer needed as all GPU work was already enqueued
+  if (preference) GINN_CUBLAS_CALL(cublasLtMatmulPreferenceDestroy(preference));
+  if (Cdesc) GINN_CUBLAS_CALL(cublasLtMatrixLayoutDestroy(Cdesc));
+  if (Bdesc) GINN_CUBLAS_CALL(cublasLtMatrixLayoutDestroy(Bdesc));
+  if (Adesc) GINN_CUBLAS_CALL(cublasLtMatrixLayoutDestroy(Adesc));
+  if (operationDesc) GINN_CUBLAS_CALL(cublasLtMatmulDescDestroy(operationDesc));
+}
+#endif
+
 using namespace ginn;
 
 void barrier() {
@@ -95,6 +200,13 @@ void compare_matmuls() {
   sink.set_zero();
   size_t num_repeat = 1e3;
 
+  size_t workspace_size = 1024 * 1024 * 4;
+  void* workspace;
+  GINN_CUDA_CALL(cudaMalloc(&workspace, workspace_size));
+
+  cublasLtHandle_t lt_handle;
+  GINN_CUBLAS_CALL(cublasLtCreate(&lt_handle));
+
   Tensor<Real> dummy(sink);
   internal::gpu_prod(
       sink, dummy, dummy); // first prod is always slow. JIT? Cublas init?
@@ -122,6 +234,31 @@ void compare_matmuls() {
                         ":EigenContraction",
                     [&]() {
                       c = a.t().contract(b.t(), product_dims);
+                      cudaDeviceSynchronize();
+                    });
+        sink = sink.view<0>() + c.t().sum();
+
+        Real one = 1, zero = 0;
+
+        timer::time(std::to_string(inner) + ";" + std::to_string(outer) +
+                        ":LtSgemm",
+                    [&]() {
+                      LtSgemm(lt_handle,
+                              CUBLAS_OP_N,
+                              CUBLAS_OP_N,
+                              /*m*/ outer,
+                              /*n*/ outer,
+                              /*k*/ inner,
+                              &one,
+                              a.data(),
+                              a.rows(),
+                              b.data(),
+                              b.rows(),
+                              &zero,
+                              c.data(),
+                              c.rows(),
+                              workspace,
+                              workspace_size);
                       cudaDeviceSynchronize();
                     });
         sink = sink.view<0>() + c.t().sum();
@@ -228,8 +365,8 @@ void affine() {
     for (Size batches : {1, 10, 100, 250, 500, 1000, 4000, 16000}) {
       for (size_t i = 0; i < num_repeat; i++) {
         auto x = Data<Real>(dev, Shape{hdim, batches});
-        auto W = Data<Real>(dev, Shape{hdim, hdim});
-        auto b = Data<Real>(dev, Shape{hdim});
+        auto W = Data<Real>(dev, Shape{batches, hdim});
+        auto b = Data<Real>(dev, Shape{batches});
         for (auto n : {x, W, b}) { n->value().set_random(); }
         auto y = Affine(W, x, b);
         Graph g(y);

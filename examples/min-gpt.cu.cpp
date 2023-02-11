@@ -45,6 +45,7 @@
 #include <ginn/node/pick.h>
 #include <ginn/node/prod.h>
 #include <ginn/node/reduce.h>
+#include <ginn/nonlin.h>
 #include <ginn/update/update.h>
 #include <ginn/util/amax.h>
 #include <ginn/util/timer.h>
@@ -106,7 +107,7 @@ struct CausalSelfAttentionLayerNode
     /// - $Q: hs \times T \times B \times nh$
     /// - $V: hs \times T \times B \times nh$
     auto rearrange = [&](NodePtr<Real> x, const std::vector<Size>& perm) {
-      return InPlacePermute(Reshape(x, {hs, nh, B, T}), perm);
+      return Permute(Reshape(x, {hs, nh, B, T}), perm);
     };
     auto k = rearrange(key->run(x), {3, 0, 2, 1});   // T, hs, B, nh
     auto q = rearrange(query->run(x), {0, 3, 2, 1}); // hs, T, B, nh
@@ -152,8 +153,9 @@ struct CausalSelfAttentionLayerNode
     /// that (1) first dim is $|h|$ again which matches the expected input
     /// dimensionality for the affine map and (2) resulting `y` is rank three,
     /// similarly to the original input `x`.
-    NodePtr<Real> y = BatchedProd(v, att);                        // hs,T,nh,B
-    y = InPlacePermute(Reshape(y, {hs, T, B, nh}), {0, 3, 2, 1}); // hs,nh,B,T
+    NodePtr<Real> y = BatchedProd(v, att); // hs,T,nh,B
+    y = Permute(Reshape(y, {hs, T, B, nh}),
+                std::vector<Size>{0, 3, 2, 1}); // hs,nh,B,T
     y = proj->run(Reshape(y, {Dim(hidden_dim), B, T}));
     y = resid_drop->run(y);
 
@@ -242,23 +244,16 @@ struct BlockLayerNode : CombinedLayerNode<NodePtr<Real>(NodePtr<Real>)> {
   /// We can define `mlp` within the constructor, since it can be defined purely
   /// as a stacked composition of other layers using the pipe (`|`) operator.
   ///
-  /// We first define `gelu_layer`. Any function can be made into a (weightless)
-  /// layer using `FunctionalLayer<Out(In)>` with the appropriate lambda,
-  /// therefore that's what we do here using a lambda that takes in `x` and
-  /// returns `Gelu(x)`.
-  ///
-  /// Then we compose `mlp` as successive applications of affine, gelu, another
-  /// affine, and dropout layers.
+  /// We compose `mlp` as successive applications of affine (with gelu
+  /// nonlinearity), another affine, and dropout layers.
   BlockLayerNode() = default;
   BlockLayerNode(DevPtr dev, const Config& params)
       : ln1(LayerNormLayer<Real>(dev, params.hidden_dim)),
         ln2(LayerNormLayer<Real>(dev, params.hidden_dim)),
         attn(CausalSelfAttentionLayer(dev, params)),
         hidden_dim(params.hidden_dim) {
-    auto gelu_layer = FunctionalLayer<NodePtr<Real>(NodePtr<Real>)>(
-        [](const NodePtr<Real>& x) { return Gelu(x); });
-    mlp = AffineLayer<Real>(dev, 4 * params.hidden_dim, params.hidden_dim) |
-          gelu_layer |
+    mlp = AffineLayer<Real>(
+              dev, GeluOp<Real>(), 4 * params.hidden_dim, params.hidden_dim) |
           AffineLayer<Real>(dev, params.hidden_dim, 4 * params.hidden_dim) |
           DropoutLayer<Real>(params.resid_drop_p, /*inplace*/ true);
   }
@@ -289,10 +284,7 @@ GINN_MAKE_LAYER_FACTORY(BlockLayer);
 /// `BlockLayer`s on top of that. Finally, there is a `LayerNormLayer` and an
 /// `AffineLayer` which will compute the pre-softmax logits as the output layer.
 struct GptLayerNode : CombinedLayerNode<NodePtr<Real>(NodePtr<Real>)> {
-  // std::shared_ptr<DropoutLayerNode> drop;
   LayerPtr<NodePtr<Real>(NodePtr<Real>)> blocks;
-  // std::shared_ptr<LayerNormLayerNode> ln_f;
-  // std::shared_ptr<AffineLayerNode<>> head;
 
   std::vector<ConstLayerBasePtr> children() const override { return {blocks}; }
 
@@ -333,6 +325,7 @@ struct GptModel {
   IndexMap<char> chars;
   std::unordered_map<char, WeightPtr<Real>> embedding_table;
   std::vector<WeightPtr<Real>> pos_embedding_table;
+  DevPtr scratch_;
   decltype(GptLayer()) l;
 
   /// ---
@@ -341,8 +334,12 @@ struct GptModel {
   /// Weights themselves are initialized using Xavier initialization. Being more
   /// clever about initialization (e.g. zero biases or centering layer-norm
   /// multiplier at one) is left for future work.
-  GptModel(DevPtr dev, Config params, IndexMap<char> cmap, Size len)
-      : chars(std::move(cmap)), pos_embedding_table(len) {
+  GptModel(DevPtr dev,
+           DevPtr scratch,
+           Config params,
+           IndexMap<char> cmap,
+           Size len)
+      : chars(std::move(cmap)), pos_embedding_table(len), scratch_(scratch) {
     for (auto c : chars.keys()) {
       embedding_table[c] = Weight(dev, {params.hidden_dim});
       init::Xavier<Real>().init(embedding_table[c]);
@@ -374,6 +371,9 @@ struct GptModel {
   /// In `run()` method we define the core logic that takes in a batch of raw
   /// text and computes the overall Gpt encoding, all the way up to the logits
   /// for each timestep.
+  std::vector<std::vector<NodePtr<Real>>> embeddings_;
+  std::vector<std::vector<NodePtr<Real>>> pos_embeddings_;
+
   NodePtr<Real> run(const std::vector<std::string_view>& input) {
     Size batch_size = input.size();
     Size len = input.front().size(); // assuming each has the same len
@@ -382,18 +382,22 @@ struct GptModel {
     ///
     /// We loop over each instance within batch and each timestep of the
     /// instance and collect char and positional embeddings to stack them later.
-    std::vector<std::vector<NodePtr<Real>>> embeddings(batch_size);
-    std::vector<std::vector<NodePtr<Real>>> pos_embeddings(batch_size);
+    // std::vector<std::vector<NodePtr<Real>>> embeddings(batch_size);
+    // std::vector<std::vector<NodePtr<Real>>> pos_embeddings(batch_size);
+    embeddings_.resize(batch_size);
+    pos_embeddings_.resize(batch_size);
 
     for (Size b = 0; b < batch_size; b++) {
-      embeddings[b].resize(len);
-      pos_embeddings[b].resize(len);
+      embeddings_[b].resize(len);
+      pos_embeddings_[b].resize(len);
       for (Size t = 0; t < len; t++) {
         char c = input[b][t];
-        embeddings[b][t] = embedding_table[c];
-        pos_embeddings[b][t] = pos_embedding_table[t];
+        embeddings_[b][t] = embedding_table[c];
+        pos_embeddings_[b][t] = pos_embedding_table[t];
       }
     }
+    embeddings_[0][0] = DeviceView(embeddings_[0][0], scratch_);
+    pos_embeddings_[0][0] = DeviceView(pos_embeddings_[0][0], scratch_);
 
     /// ---
     ///
@@ -413,13 +417,13 @@ struct GptModel {
     /// We add the two stacks because positional embeddings are just added to
     /// the regular char embeddings.
     // x: {params.hidden_dim, batch_size, len}
-    auto x = Stack(embeddings) + Stack(pos_embeddings);
+    auto x = Stack(embeddings_) + Stack(pos_embeddings_);
 
     /// ---
     ///
     /// Then we can simply feed this input to the `GptLayer` and get back the
     /// output.
-    auto y = l->run(x);
+    GINN_TIME(auto y = l->run(x));
     return y;
   }
 
@@ -437,7 +441,7 @@ struct GptModel {
     /// ---
     ///
     /// We start by getting the logits predicted by the model:
-    auto y = run(input);
+    GINN_TIME(auto y = run(input));
 
     /// ---
     ///
@@ -524,8 +528,10 @@ int main() {
   using namespace ginn;
 #ifdef GINN_ENABLE_GPU
   DevPtr dev = gpu();
+  auto scratch = PreallocGpu(24000000000L);
 #else
   DevPtr dev = cpu();
+  auto scratch = PreallocCpu(24000000000L);
 #endif
 
   srand(124);
@@ -551,16 +557,16 @@ int main() {
       .n_head = 8,
       .vocab_size = Size(chars.size()),
       .n_layer = 8,
-      .attn_drop_p = 0.5,
-      .resid_drop_p = 0.5,
+      .attn_drop_p = 0.1,
+      .resid_drop_p = 0.1,
       .embd_drop_p = 0.1,
   };
 
   Size len = 128;
   Size batch_size = 128;
-  size_t num_iters = 500;
+  size_t num_iters = 10;
 
-  GptModel model(dev, params, chars, len);
+  GptModel model(dev, scratch, params, chars, len);
   update::Adam<Real> updater(6e-4);
 
   /// ---
@@ -619,8 +625,12 @@ int main() {
     /// After the update, we apply an explicit weight decay step.
     for (auto& w : model.weights()) { w->value() -= 1e-6 * w->value().t(); }
 
-    std::cout << " " << timer::toc("iter", timer::HumanReadable) << std::endl;
+    scratch->clear();
+
+    std::cout << "  " << timer::toc("iter", timer::HumanReadable) << std::endl;
   }
+
+  timer::print();
 
   // TODO: store the model here after training
 
@@ -648,6 +658,7 @@ int main() {
 TEST_CASE("Gradcheck") {
   using namespace ginn;
   DevPtr dev = cpu();
+  // auto scratch = PreallocCpu(24000000000L);
 
   // Don't forget to enable GINN_DOUBLE_PRECISION
   std::string data = "First Citizen:\n"
@@ -672,7 +683,7 @@ TEST_CASE("Gradcheck") {
   Size len = 20;
   Size batch_size = 4;
 
-  GptModel model(dev, params, chars, len);
+  GptModel model(dev, dev, params, chars, len);
   init::Xavier<Real>().init(model.weights());
 
   // construct input and label batch

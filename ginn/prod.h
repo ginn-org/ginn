@@ -134,6 +134,76 @@ inline void gpu_batched_gemm(cublasHandle_t& handle,
   }
 }
 
+// template <typename Scalar>
+// inline void gpu_batched_gemv(cublasHandle_t& handle,
+//                              const Scalar* A,
+//                              const Scalar* x,
+//                              Scalar* y,
+//                              const int lda,
+//                              const int incx,
+//                              const int incy,
+//                              const int sA,
+//                              const int sx,
+//                              const int sy,
+//                              const int m,
+//                              const int n,
+//                              const int batches,
+//                              const Scalar bet = Scalar(0),
+//                              const cublasOperation_t& op = CUBLAS_OP_N) {
+//   const Scalar alf(1);
+//   const Scalar* alpha = &alf;
+//   const Scalar* beta = &bet;
+//   /*
+// cublasStatus_t cublasSgemvStridedBatched(cublasHandle_t handle,
+//                                          cublasOperation_t trans,
+//                                          int m, int n,
+//                                          const float           *alpha,
+//                                          const float           *A, int lda,
+//                                          long long int         strideA,
+//                                          const float           *x, int incx,
+//                                          long long int         stridex,
+//                                          const float           *beta,
+//                                          float                 *y, int incy,
+//                                          long long int         stridey,
+//                                          int batchCount)
+//   */
+//
+//   if constexpr (std::is_same_v<Scalar, float>) {
+//     // clang-format off
+//                      cublasSgemvStridedBatched
+//     GINN_CUBLAS_CALL(cublasSgemvStridedBatched(
+//           handle,
+//           op,
+//           m, n,
+//           alpha,
+//           A, lda, sA,
+//           x, incx, sx,
+//           beta,
+//           y, incy, sy,
+//           batches));
+//     // clang-format on
+//   } else if constexpr (std::is_same_v<Scalar, Half>) {
+//     // TODO: mixed precision versions
+//     auto A_ = reinterpret_cast<const __half*>(A);
+//     auto x_ = reinterpret_cast<const __half*>(x);
+//     auto y_ = reinterpret_cast<__half*>(y);
+//     // clang-format off
+//     GINN_CUBLAS_CALL(cublasHSHgemvStridedBatched(
+//           handle,
+//           op,
+//           m, n,
+//           alpha,
+//           A_, lda, sA,
+//           x_, incx, sx,
+//           beta,
+//           y_, incy, sy,
+//           batches));
+//     // clang-format on
+//   } else {
+//     GINN_THROW("Unexpected Scalar type in gpu_batched_gemv!");
+//   }
+// }
+
 enum class ProdResult { Assign, Add };
 enum class ProdTranspose { None, First, Second, Both };
 
@@ -239,6 +309,52 @@ inline void gpu_batched_prod(Tensor<Scalar>& c,
                            op2);
 }
 
+// This has to be disabled until I upgrade my cudah
+//// y[:,i] = A[:,:,i] * x[:,i] ∀i
+// template <typename Scalar>
+// inline void gpu_batched_mv_prod(Tensor<Scalar>& y,
+//                                 Tensor<Scalar>& a,
+//                                 Tensor<Scalar>& x,
+//                                 ProdResult res = ProdResult::Assign,
+//                                 ProdTranspose tra = ProdTranspose::None) {
+//   auto shape3 = [](const Tensor<Scalar>& t) {
+//     return Tensor<Scalar>::reduce(t.shape(), 3);
+//   };
+//   Shape a_shape = shape3(a), x_shape = x.shape2(), y_shape = y.shape2();
+//   Size a_rows = a_shape[0], a_cols = a_shape[1], batches = a_shape[2];
+//   Size x_size = x_shape[0];
+//   Size y_size = y_shape[0];
+//
+//   auto op = tra == ProdTranspose::First or tra == ProdTranspose::Both
+//                  ? CUBLAS_OP_T
+//                  : CUBLAS_OP_N;
+//
+//   Size a_outer, a_inner;
+//   if (op == CUBLAS_OP_T) {
+//     a_outer = a_cols, a_inner = a_rows;
+//   } else {
+//     a_outer = a_rows, a_inner = a_cols;
+//   }
+//
+//   GINN_ASSERT(a_inner == x_size);
+//   GINN_ASSERT(a_outer == y_size);
+//
+//   gpu_batched_gemv<Scalar>(cublas_handle(y.dev()->id().idx),
+//                            a.data(),
+//                            x.data(),
+//                            y.data(),
+//                            /* lda */ a_rows,
+//                            /* incx */ 1,
+//                            /* incy */ 1,
+//                            /* sA */ a_rows * a_cols,
+//                            /* sx */ x_size,
+//                            /* sy */ y_size,
+//                            /* m */ a_rows,
+//                            /* n */ a_cols,
+//                            batches,
+//                            res == ProdResult::Add ? Scalar(1.) : Scalar(0.),
+//                            op);
+// }
 #endif
 
 } // namespace internal
