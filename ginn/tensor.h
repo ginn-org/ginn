@@ -293,16 +293,6 @@ class Tensor {
     return *this;
   }
 
-  auto& map(const Tensor<Scalar>& other, const Shape& shape) {
-    GINN_ASSERT(size(shape) == size(other.shape()));
-    if (owns_mem_) { free(); }
-    dev_ = other.dev_;
-    data_ = other.data_;
-    shape_ = shape;
-    owns_mem_ = false;
-    return *this;
-  }
-
   // Make this tensor a (possibly reshaped) non-memory-owning shallow copy
   // of the other
   auto& map(Tensor<Scalar>& other) { return map(other, other.shape()); }
@@ -327,9 +317,9 @@ class Tensor {
     return t;
   }
 
-  auto reshaped(const Shape& shape) const {
+  const Tensor<Scalar> reshaped(const Shape& shape) const {
     Tensor<Scalar> t;
-    t.map(*this, shape);
+    t.map(const_cast<Tensor<Scalar>&>(*this), shape);
     return t;
   }
 
@@ -340,7 +330,7 @@ class Tensor {
     auto dims = reduce(shape_, 2);
     return MatrixMap<Scalar>(data_, dims[0], dims[1]);
   }
-  // TODO: should there be a Map type to const?
+  // TODO: should there be a Map type to const? Or const type is sufficient?
   MatrixMap<Scalar> m() const {
     GINN_ASSERT(dev()->kind() == CPU,
                 "m() can only be invoked on Cpu tensors!");

@@ -141,11 +141,6 @@ class BaseNode {
   template <typename DerivedNodePtr>
   BaseNode(std::vector<DerivedNodePtr> ins) : ins_(base_cast(std::move(ins))) {}
 
-  // template <typename Container>
-  // BaseNode(const Container& ins) {
-  //   for (auto& x : ins) { ins_.push_back(x); }
-  // }
-
   virtual ~BaseNode() = default;
 
   virtual DevPtr dev() const = 0;

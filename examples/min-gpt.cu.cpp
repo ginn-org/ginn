@@ -563,7 +563,7 @@ int main() {
 
   Size len = 128;
   Size batch_size = 128;
-  size_t num_iters = 10;
+  size_t num_iters = 500;
 
   GptModel model(dev, scratch, params, chars, len);
   update::Adam<Real> updater(6e-4);

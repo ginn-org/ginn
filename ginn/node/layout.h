@@ -314,9 +314,9 @@ class RowwiseUncatNode : public BaseDataNode<Scalar> {
 
 GINN_MAKE_SCALAR_FORWARDING_FACTORY(RowwiseUncat);
 
-template <typename T>
-auto flatten(const std::vector<std::vector<T>>& mat) {
-  return iter::chain.from_iterable(mat);
+template <typename NestedContainer>
+auto flatten(NestedContainer&& mat) {
+  return iter::chain.from_iterable(std::forward<NestedContainer>(mat));
 }
 
 #ifdef GINN_ENABLE_GPU
