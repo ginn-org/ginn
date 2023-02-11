@@ -22,8 +22,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include <cppitertools/imap.hpp>
-
 #include <ginn/tensor.h>
 #include <ginn/util/traits.h>
 
@@ -96,8 +94,6 @@ using ConstBaseNodePtr = Ptr<const BaseNode>;
 // Explicitly casts to the base Node class
 template <typename Iterable>
 auto base_cast(Iterable&& v) {
-  // auto it = v | iter::imap([](auto&& x){return BaseNodePtr(x);});
-  // return std::vector<BaseNodePtr>(it.begin(), it.end());
   return std::vector<BaseNodePtr>(v.begin(), v.end());
 }
 
