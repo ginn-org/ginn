@@ -45,7 +45,6 @@
 #include <ginn/node/pick.h>
 #include <ginn/node/prod.h>
 #include <ginn/node/reduce.h>
-#include <ginn/nonlin.h>
 #include <ginn/update/update.h>
 #include <ginn/util/amax.h>
 #include <ginn/util/timer.h>

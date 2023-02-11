@@ -241,13 +241,11 @@ void time(const std::string& name, Func f) {
 } // end namespace timer
 } // end namespace ginn
 
-//#define GINN_TIME(e)                                                           \
-//  ginn::timer::barrier();                                                      \
-//  ginn::timer::tic(#e);                                                        \
-//  e;                                                                           \
-//  ginn::timer::barrier();                                                      \
-//  ginn::timer::toc(#e)
-
-#define GINN_TIME(e) e
+#define GINN_TIME(e)                                                           \
+  ginn::timer::barrier();                                                      \
+  ginn::timer::tic(#e);                                                        \
+  e;                                                                           \
+  ginn::timer::barrier();                                                      \
+  ginn::timer::toc(#e)
 
 #endif
