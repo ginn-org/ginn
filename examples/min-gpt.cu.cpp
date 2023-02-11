@@ -422,7 +422,7 @@ struct GptModel {
     ///
     /// Then we can simply feed this input to the `GptLayer` and get back the
     /// output.
-    GINN_TIME(auto y = l->run(x));
+    auto y = l->run(x);
     return y;
   }
 
@@ -440,7 +440,7 @@ struct GptModel {
     /// ---
     ///
     /// We start by getting the logits predicted by the model:
-    GINN_TIME(auto y = run(input));
+    auto y = run(input);
 
     /// ---
     ///
