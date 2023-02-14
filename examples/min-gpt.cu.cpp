@@ -119,6 +119,8 @@ struct CausalSelfAttentionLayerNode
     /// ($B$ and $nh$) are batch dimensions for the sake of the matrix product.
     /// We use `BatchedProd` for this.
     Real scale = 1. / ::sqrt(Real(hs->value()));
+    // TODO: there is -inf in the result. See if putting scale inside
+    //   BatchedProd fixes it.
     NodePtr<Real> att = InPlaceProdScalar(BatchedProd(k, q), scale);
 
     /// Note that `att` is now $T \times T \times B \times nh$.
@@ -583,7 +585,10 @@ int main() {
   for (size_t i = 0; i < num_iters; i++) {
     timer::tic("iter");
 
-    if (i % 100 == 99) { std::cout << model.sample("O", len) << std::endl; }
+    if (i % 100 == 99) {
+      std::cout << model.sample("O", len) << std::endl;
+      scratch->clear();
+    }
 
     /// ---
     ///
@@ -617,6 +622,7 @@ int main() {
     std::cout << loss->value().maybe_copy_to(cpu()).v() << std::flush;
     g.reset_grad();
     g.backward(1.);
+
     updater.update(g);
 
     /// ---
@@ -680,7 +686,6 @@ TEST_CASE("Gradcheck") {
   Size batch_size = 4;
 
   GptModel model(dev, dev, params, chars, len);
-  init::Xavier<Real>().init(model.weights());
 
   // construct input and label batch
   std::vector<std::string_view> input, label;

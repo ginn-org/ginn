@@ -69,6 +69,8 @@ class IdentityOp : public NonlinOp<Scalar> {
  public:
   bool backward_requires_input() const override { return false; }
 
+  bool is_identity() const override { return true; }
+
   void forward(Tensor<Scalar>& y, const Tensor<Scalar>& x) const override {
     y = x.t();
   }
