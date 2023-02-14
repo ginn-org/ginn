@@ -17,6 +17,7 @@
 
 #include <ginn/node.h>
 #include <ginn/node/data.h>
+#include <ginn/prod.h>
 
 namespace ginn {
 
@@ -25,7 +26,7 @@ class LayerNormNode : public BaseDataNode<Scalar> {
  protected:
   NodePtr<Scalar> in_;
   Scalar eps_;
-  Tensor<Scalar> mean_, std_;
+  Tensor<Scalar> std_;
 
   void forward_() override {
     value().resize(in_->shape());
@@ -33,16 +34,15 @@ class LayerNormNode : public BaseDataNode<Scalar> {
     const auto rows = this->shape2()[0];
     const auto cols = this->shape2()[1];
 
-    mean_.resize({1, cols});
+    Tensor<Scalar> mean(dev(), {1, cols});
     std_.resize({1, cols});
 
     auto bc = [=](const auto& e) { return e.broadcast(Index<2>{rows, 1}); };
 
-    mean_ = in_->value().t().mean(Index<1>{0});
-    std_ = (in_->value().t() - bc(mean_.t())).square().mean(Index<1>{0});
-    std_ = (std_.t() + eps_).sqrt();
-
-    value() = (in_->value().t() - bc(mean_.t())) / bc(std_.t());
+    mean = in_->value().t().mean(Index<1>{0});
+    std_ = ((in_->value().t() - bc(mean.t())).square().mean(Index<1>{0}) + eps_)
+               .sqrt();
+    value() = (in_->value().t() - bc(mean.t())) / bc(std_.t());
   }
 
   void backward_() override {
@@ -54,11 +54,22 @@ class LayerNormNode : public BaseDataNode<Scalar> {
 
       Tensor<Scalar> grad_mean(dev(), {1, cols}), dot(dev(), {1, cols});
       grad_mean = grad().t().mean(Index<1>{0});
-      dot = (grad().t() * value().t()).mean(Index<1>{0});
+      if (dev()->kind() == CPU) {
+        dot = (grad().t() * value().t()).sum(Index<1>{0});
+#ifdef GINN_ENABLE_GPU
+      } else if (dev()->kind() == GPU) {
+        auto grad_ = grad().reshaped({1, grad().rows(), grad().cols()});
+        auto value_ = value().reshaped({value().rows(), 1, value().cols()});
+        auto dot_ = dot.reshaped({1, 1, dot.cols()});
+        internal::gpu_batched_prod(dot_, grad_, value_);
+#endif
+      } else {
+        GINN_THROW("Unexpected device in LayerNormNode::backward_()!");
+      }
 
-      in_->grad() +=
-          (grad().t() - bc(grad_mean.t()) - value().t() * bc(dot.t())) /
-          bc(std_.t());
+      in_->grad() += (grad().t() - bc(grad_mean.t()) -
+                      value().t() * bc(dot.t() / Scalar(rows))) /
+                     bc(std_.t());
     }
   }
 
@@ -68,11 +79,7 @@ class LayerNormNode : public BaseDataNode<Scalar> {
   using BaseDataNode<Scalar>::grad;
 
   LayerNormNode(NodePtr<Scalar> in, Scalar eps = Scalar(1e-8))
-      : BaseDataNode<Scalar>({in}),
-        in_(in),
-        eps_(eps),
-        mean_(dev()),
-        std_(dev()) {}
+      : BaseDataNode<Scalar>({in}), in_(in), eps_(eps), std_(dev()) {}
 
   std::string name() const override { return "LayerNorm"; }
 };

@@ -317,6 +317,12 @@ class Tensor {
     return t;
   }
 
+  const Tensor<Scalar> reshaped(const Shape& shape) const {
+    Tensor<Scalar> t;
+    t.map(const_cast<Tensor<Scalar>&>(*this), shape);
+    return t;
+  }
+
   // View as classical (CPU) Eigen matrix
   MatrixMap<Scalar> m() {
     GINN_ASSERT(dev()->kind() == CPU,
@@ -324,7 +330,7 @@ class Tensor {
     auto dims = reduce(shape_, 2);
     return MatrixMap<Scalar>(data_, dims[0], dims[1]);
   }
-  // TODO: should there be a Map type to const?
+  // TODO: should there be a Map type to const? Or const type is sufficient?
   MatrixMap<Scalar> m() const {
     GINN_ASSERT(dev()->kind() == CPU,
                 "m() can only be invoked on Cpu tensors!");

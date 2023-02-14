@@ -314,8 +314,8 @@ auto AffineLayer(DevPtr dev, Size dim, Size xdim) {
   return std::make_shared<AffineLayerNode<Scalar>>(dev, Nonlin(), dim, xdim);
 }
 
-template <typename Scalar>
-auto AffineLayer(DevPtr dev, NonlinOp<Scalar> nonlin, Size dim, Size xdim) {
+template <typename Scalar, typename Nonlin>
+auto AffineLayer(DevPtr dev, Nonlin nonlin, Size dim, Size xdim) {
   return std::make_shared<AffineLayerNode<Scalar>>(dev, nonlin, dim, xdim);
 }
 

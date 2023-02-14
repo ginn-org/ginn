@@ -919,9 +919,9 @@ TEMPLATE_TEST_CASE("LayerNorm", "[layernorm][inplace]", Real, Half) {
   y->value() = y->value().t() * Scalar(2.5) - Scalar(2);
 
   #ifdef GINN_ENABLE_GPU
-  auto eps2 = std::is_same_v<Scalar, Half> ? 1e-2 : 1e-4;
+  auto eps2 = std::is_same_v<Scalar, Half> ? 2e-2 : 1e-4;
   #else
-  auto eps2 = std::is_same_v<Scalar, Half> ? 1e-3 : 1e-4;
+  auto eps2 = 1e-4;
   #endif
 
   CHECK_(LayerNorm(x), {x}, false, eps2);

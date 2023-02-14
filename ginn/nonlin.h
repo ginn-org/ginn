@@ -16,6 +16,7 @@
 #define NONLIN_H
 
 #include <cmath>
+#include <ginn/prod.h>
 #include <ginn/tensor.h>
 
 namespace ginn {
@@ -67,6 +68,8 @@ template <typename Scalar>
 class IdentityOp : public NonlinOp<Scalar> {
  public:
   bool backward_requires_input() const override { return false; }
+
+  bool is_identity() const override { return true; }
 
   void forward(Tensor<Scalar>& y, const Tensor<Scalar>& x) const override {
     y = x.t();
@@ -169,7 +172,19 @@ class SoftmaxOp : public NonlinOp<Scalar> {
                 const Tensor<Scalar>& y,
                 bool accumulate) const override {
     Tensor<Scalar> m(x.dev(), {1, x.cols()});
-    m = (y.t() * dy.t()).sum(Index<1>{0});
+    if (x.dev()->kind() == CPU) {
+      m = (y.t() * dy.t()).eval().sum(Index<1>{0});
+#ifdef GINN_ENABLE_GPU
+    } else if (x.dev()->kind() == GPU) {
+      // Slightly faster on GPU
+      auto y_ = y.reshaped({1, y.rows(), y.cols()});
+      auto dy_ = dy.reshaped({dy.rows(), 1, dy.cols()});
+      auto m_ = m.reshaped({1, 1, m.cols()});
+      internal::gpu_batched_prod(m_, y_, dy_);
+#endif
+    } else {
+      GINN_THROW("Unexpected device in SoftmaxOp!");
+    }
     add_or_assign(dx,
                   accumulate,
                   y.t() * (dy.t() - m.t().broadcast(Index<2>{x.rows(), 1})));

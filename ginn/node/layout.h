@@ -15,6 +15,8 @@
 #ifndef GINN_NODE_LAYOUT_H
 #define GINN_NODE_LAYOUT_H
 
+#include <cppitertools/chain.hpp>
+
 #include <ginn/node.h>
 #include <ginn/node/data.h>
 
@@ -128,6 +130,11 @@ class DeviceViewNode : public Node<Scalar> {
 
   const Tensor<Scalar>& value() const override { return in_->value(); }
   const Tensor<Scalar>& grad() const override { return in_->grad(); }
+
+  bool has_grad() const override { return in_->has_grad(); }
+  void init_grad() override { in_->init_grad(); }
+  void reset_grad() override { in_->reset_grad(); }
+  void reset_forwarded() override { in_->reset_forwarded(); }
 
   std::string name() const override { return "DeviceView"; }
 };
@@ -307,11 +314,9 @@ class RowwiseUncatNode : public BaseDataNode<Scalar> {
 
 GINN_MAKE_SCALAR_FORWARDING_FACTORY(RowwiseUncat);
 
-template <typename T>
-std::vector<T> flatten(const std::vector<std::vector<T>>& mat) {
-  std::vector<T> vec;
-  for (auto& v : mat) { vec += v; }
-  return vec;
+template <typename NestedContainer>
+auto flatten(NestedContainer&& mat) {
+  return iter::chain.from_iterable(std::forward<NestedContainer>(mat));
 }
 
 #ifdef GINN_ENABLE_GPU
