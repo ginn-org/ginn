@@ -331,7 +331,7 @@ class Tensor {
     return MatrixMap<Scalar>(data_, dims[0], dims[1]);
   }
   // TODO: should there be a Map type to const? Or const type is sufficient?
-  MatrixMap<Scalar> m() const {
+  const MatrixMap<Scalar> m() const {
     GINN_ASSERT(dev()->kind() == CPU,
                 "m() can only be invoked on Cpu tensors!");
     auto dims = reduce(shape_, 2);
@@ -344,7 +344,7 @@ class Tensor {
     auto dims = reduce(shape_, 1);
     return VectorMap<Scalar>(data_, dims[0]);
   }
-  VectorMap<Scalar> v() const {
+  const VectorMap<Scalar> v() const {
     GINN_ASSERT(dev()->kind() == CPU,
                 "v() can only be invoked on Cpu tensors!");
     auto dims = reduce(shape_, 1);
