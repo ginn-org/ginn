@@ -34,16 +34,15 @@ class LayerNormNode : public BaseDataNode<Scalar> {
     const auto rows = this->shape2()[0];
     const auto cols = this->shape2()[1];
 
-    Tensor<Scalar> mean_(dev(), {1, cols});
+    Tensor<Scalar> mean(dev(), {1, cols});
     std_.resize({1, cols});
 
     auto bc = [=](const auto& e) { return e.broadcast(Index<2>{rows, 1}); };
 
-    mean_ = in_->value().t().mean(Index<1>{0});
-    std_ =
-        ((in_->value().t() - bc(mean_.t())).square().mean(Index<1>{0}) + eps_)
-            .sqrt();
-    value() = (in_->value().t() - bc(mean_.t())) / bc(std_.t());
+    mean = in_->value().t().mean(Index<1>{0});
+    std_ = ((in_->value().t() - bc(mean.t())).square().mean(Index<1>{0}) + eps_)
+               .sqrt();
+    value() = (in_->value().t() - bc(mean.t())) / bc(std_.t());
   }
 
   void backward_() override {

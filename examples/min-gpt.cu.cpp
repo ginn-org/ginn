@@ -383,8 +383,6 @@ struct GptModel {
     ///
     /// We loop over each instance within batch and each timestep of the
     /// instance and collect char and positional embeddings to stack them later.
-    // std::vector<std::vector<NodePtr<Real>>> embeddings(batch_size);
-    // std::vector<std::vector<NodePtr<Real>>> pos_embeddings(batch_size);
     embeddings_.resize(batch_size);
     pos_embeddings_.resize(batch_size);
 
