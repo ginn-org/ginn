@@ -15,7 +15,7 @@
 #ifndef GINN_TESTUTIL_H
 #define GINN_TESTUTIL_H
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 #include <ginn/node/common.h>
 #include <ginn/node/reduce.h>

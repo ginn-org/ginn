@@ -7,22 +7,21 @@ EXAMPLES_PATH = examples
 TESTS_PATH = test
 
 INCLUDES = -I./ \
-	   -I./extern/eigen/ \
+	   -I./subprojects/eigen/ \
 	   -I./extern/tblr/tblr/ \
-	   -I./extern/fmt/include/ \
-	   -I./extern/cppitertools/ \
-	   -I./extern/Catch2/single_include/catch2/
+	   -I./subprojects/fmt-9.1.0/include/ \
+	   -I./extern/ \
+		 -I./subprojects/Catch2-2.13.8/single_include/
 
 CUDA_INCLUDES = 
 CUDA_LINKS = -lcurand -lcublas
 
-CXXFLAGS = -std=c++17 -Wall -Wno-unused-but-set-parameter
+CXXFLAGS = -std=c++17 -Wall -Wno-unused-but-set-parameter -ftemplate-backtrace-limit=0 -Wno-deprecated-declarations
 
 
 CUDAFLAGS = -std=c++17 -DGINN_ENABLE_GPU --x cu \
 						-gencode arch=compute_70,code=sm_70 \
-						-gencode arch=compute_70,code=compute_70 \
-            -w -ccbin $(CUDA_CXX)
+            -w
 
 OPTFLAGS = -Ofast -march=native -mtune=native -pthread
 CUOPTFLAGS = -O3 -Xptxas -O3 -Xcompiler -O3

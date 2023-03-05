@@ -135,10 +135,10 @@ class PickNode : public BaseDataNode<Scalar> {
   void check_range() {
     // TODO: Gpu
     if (dev()->kind() == CPU) {
-      GINN_ASSERT((index_->value().v().array() >= Scalar(0)).all(),
+      GINN_ASSERT((index_->value().v().array() >= Int(0)).all(),
                   "Picking index is negative!");
       GINN_ASSERT(
-          (index_->value().v().array() < Scalar(in_->value().rows())).all(),
+          (index_->value().v().array() < Int(in_->value().rows())).all(),
           "Picking index out of range!");
     }
   }

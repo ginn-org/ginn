@@ -16,7 +16,7 @@
 
 #define CATCH_CONFIG_MAIN // so that Catch is responsible for main()
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 #include <filesystem>
 #include <optional>
