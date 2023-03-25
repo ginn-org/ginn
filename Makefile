@@ -82,7 +82,7 @@ examples: mnist \
           sum-lstm \
           sstb-treelstm \
           lstm-tag \
-          benchmark \
+          bench \
           min-gpt
 
 cudaexamples: mnist-cu \
@@ -91,7 +91,7 @@ cudaexamples: mnist-cu \
               mnist-dp-cu \
               sum-lstm-cu \
               sstb-treelstm-cu \
-              benchmark-cu \
+              bench-cu \
               min-gpt-cu
 
 % : $(EXAMPLES_PATH)/%.cu.cpp examples_path

@@ -22,8 +22,8 @@ if(GINN_ENABLE_GPU)
   set_source_files_properties(sum-lstm.cu.cpp PROPERTIES LANGUAGE CUDA)
   add_executable(sstb-treelstm-cu sstb-treelstm.cu.cpp)
   set_source_files_properties(sstb-treelstm.cu.cpp PROPERTIES LANGUAGE CUDA)
-  add_executable(benchmark-cu benchmark.cu.cpp)
-  set_source_files_properties(benchmark.cu.cpp PROPERTIES LANGUAGE CUDA)
+  add_executable(bench-cu bench.cu.cpp)
+  set_source_files_properties(bench.cu.cpp PROPERTIES LANGUAGE CUDA)
   add_executable(min-gpt-cu min-gpt.cu.cpp)
   set_source_files_properties(min-gpt.cu.cpp PROPERTIES LANGUAGE CUDA)
 else()
@@ -32,7 +32,7 @@ else()
   add_executable(mnist-layers mnist-layers.cu.cpp)
   add_executable(sum-lstm sum-lstm.cu.cpp)
   add_executable(sstb-treelstm sstb-treelstm.cu.cpp)
-  add_executable(benchmark benchmark.cu.cpp)
+  add_executable(bench bench.cu.cpp)
   add_executable(min-gpt min-gpt.cu.cpp)
 endif()
 add_executable(lstm-tag lstm-tag.cpp)
@@ -44,7 +44,7 @@ if (GINN_ENABLE_GPU)
                    mnist-dp-cu
                    sum-lstm-cu
                    sstb-treelstm-cu
-                   benchmark-cu
+                   bench-cu
                    min-gpt-cu)
   set(CPU_EXAMPLES lstm-tag)
 else()
@@ -54,7 +54,7 @@ else()
                    sum-lstm
                    sstb-treelstm
                    lstm-tag
-                   benchmark
+                   bench
                    min-gpt)
   # Can build min-gpt example in grad checking mode by setting EXAMPLES_GRADCHECK flag
   if (EXAMPLES_GRADCHECK)

@@ -1,4 +1,4 @@
-test_sources = [
+sources = [
   'autobatch.cpp',
   'convnodes.cu.cpp',
   'dev.cu.cpp',
@@ -20,8 +20,8 @@ cuda_test_sources = [
   'tensor.cu.cpp',
 ]
 
-foreach src : test_sources
-  exec_name = src.replace('test/', '').replace('.cu.cpp', '').replace('.cpp', '') + 'test'
+foreach src : sources
+  exec_name = src.replace('.cu.cpp', '').replace('.cpp', '') + 'test'
   executable(exec_name,
              src,
              include_directories : incdir,

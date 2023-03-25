@@ -27,3 +27,4 @@ if gpu
 endif
 
 subdir('test')
+subdir('examples')
