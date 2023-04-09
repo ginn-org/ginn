@@ -8,7 +8,6 @@ endif
 
 # TODO: move these to subprojects. cppitertools needs patch
 incdir = include_directories('./',
-                             './extern/',
                              './extern/tblr/tblr/',
                              './extern/pybind11/include/')
 
@@ -16,8 +15,11 @@ eigen = subproject('eigen').get_variable('eigen_dep')
 catch = subproject('catch2').get_variable('catch2_dep')
 # why do i still observe some build steps from fmt despite using header-only dep?
 fmt = subproject('fmt').get_variable('fmt_header_only_dep')
+cppitertools = subproject('cppitertools').get_variable('cppitertools_dep')
+threads = dependency('threads')
 
-test_deps = [eigen, catch, fmt]
+test_deps = [eigen, catch, fmt, cppitertools]
+example_deps = [eigen, fmt, cppitertools, threads]
 
 
 if gpu

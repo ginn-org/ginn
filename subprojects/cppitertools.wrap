@@ -1,0 +1,7 @@
+[wrap-git]
+url = https://github.com/oir/cppitertools.git
+revision = a589819d505516da034591cb83b36d145e62329a
+patch_directory = cppitertools
+
+[provide]
+cppitertools = cppitertools_dep

@@ -14,5 +14,5 @@ foreach src : sources
   executable(exec_name,
              src,
              include_directories : incdir,
-             dependencies : test_deps)
+             dependencies : example_deps)
 endforeach
