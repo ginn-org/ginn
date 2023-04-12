@@ -203,7 +203,7 @@ inline auto& gpu(int idx = 0) {
   using Ptr = std::shared_ptr<GpuDevice>;
   auto helper = []() {
     std::vector<Ptr> devs;
-    for (size_t i = 0; i < gpus(); i++) { devs.push_back(Gpu(i)); }
+    for (int i = 0; i < gpus(); i++) { devs.push_back(Gpu(i)); }
     return devs;
   };
   static std::vector<Ptr> devs = helper();

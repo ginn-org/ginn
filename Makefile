@@ -8,13 +8,13 @@ TESTS_PATH = test
 
 INCLUDES = -I./ \
 	   -I./subprojects/eigen/ \
-	   -I./extern/tblr/tblr/ \
+	   -I./extern/tblr/ \
 	   -I./subprojects/fmt-9.1.0/include/ \
 	   -I./extern/ \
 		 -I./subprojects/Catch2-2.13.8/single_include/
 
 CUDA_INCLUDES = 
-CUDA_LINKS = -lcurand -lcublas
+CUDA_LINKS = -lcurand -lcublas -lcublasLt
 
 CXXFLAGS = -std=c++17 -Wall -Wno-unused-but-set-parameter -ftemplate-backtrace-limit=0 -Wno-deprecated-declarations
 

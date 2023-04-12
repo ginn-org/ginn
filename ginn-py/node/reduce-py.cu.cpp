@@ -20,7 +20,7 @@
 #include <ginn-py/node-py.h>
 #include <ginn-py/util-py.h>
 
-#include "reduce-py.h"
+#include <ginn-py/node/reduce-py.h>
 
 namespace ginn {
 namespace python {

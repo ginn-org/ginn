@@ -1,0 +1,8 @@
+[wrap-git]
+url = https://github.com/oir/tblr.git
+revision = dcc501ea9113b24cc38858d03a5be7fde2dc76c6
+patch_directory = tblr
+
+[provide]
+tblr = tblr_dep
+

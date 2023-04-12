@@ -21,7 +21,7 @@
 #include <ginn-py/tensor-py.h>
 #include <ginn-py/util-py.h>
 
-#include "nonlin-py.h"
+#include <ginn-py/node/nonlin-py.h>
 
 #define GINN_PY_MAKE_UNARY_NODE_AND_FACTORY(F)                                 \
   py::class_<F##Node<Scalar>, BaseDataNode<Scalar>, Ptr<F##Node<Scalar>>>(     \

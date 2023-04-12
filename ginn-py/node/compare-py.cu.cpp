@@ -20,7 +20,7 @@
 #include <ginn-py/node-py.h>
 #include <ginn-py/util-py.h>
 
-#include "compare-py.h"
+#include <ginn-py/node/compare-py.h>
 
 namespace ginn {
 namespace python {

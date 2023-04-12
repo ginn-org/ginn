@@ -21,7 +21,7 @@
 #include <ginn-py/tensor-py.h>
 #include <ginn-py/util-py.h>
 
-#include "layout-py.h"
+#include <ginn-py/node/layout-py.h>
 
 namespace ginn {
 namespace python {

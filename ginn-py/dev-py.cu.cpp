@@ -19,7 +19,7 @@
 
 #include <ginn/dev.h>
 
-#include "dev-py.h"
+#include <ginn-py/dev-py.h>
 
 namespace ginn {
 namespace python {
