@@ -46,3 +46,4 @@ else
 endif
 
 message('Python target name: ' + tgt.name())
+alias_target('python', tgt)

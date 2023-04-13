@@ -19,12 +19,15 @@ cuda_sources = [
   'sum-lstm.cu.cpp',
 ]
 
+examples = []
+
 foreach src : sources
   exec_name = src.replace('.cu.cpp', '').replace('.cpp', '')
-  executable(exec_name,
-             src,
-             include_directories : incdir,
-             dependencies : example_deps)
+  exe = executable(exec_name,
+                   src,
+                   include_directories : incdir,
+                   dependencies : example_deps)
+  examples += [exe]
 endforeach
 
 if gpu
@@ -34,10 +37,13 @@ if gpu
     copy_name = src.replace('.cu.cpp', '.copy.cu')
     copied_src = fs.copyfile(src, copy_name)
 
-    executable(exec_name,
-               copied_src,
-               include_directories : incdir,
-               dependencies : example_deps + [cuda_dep],
-               cuda_args : cuda_args + ['-DGINN_ENABLE_GPU'])
+    exe = executable(exec_name,
+                     copied_src,
+                     include_directories : incdir,
+                     dependencies : example_deps + [cuda_dep],
+                     cuda_args : cuda_args + ['-DGINN_ENABLE_GPU'])
+    examples += [exe]
   endforeach
 endif
+
+alias_target('examples', examples)
