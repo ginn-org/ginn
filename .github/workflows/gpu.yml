@@ -16,7 +16,7 @@ jobs:
       - name: Bootstrap and configure
         uses: ./.github/actions/configure-gpu
       - name: Build tests
-        run: make -C build -j2 cudatests
+        run: meson compile -C build/ tests
 
   build-examples:
     runs-on: ubuntu-latest
@@ -28,7 +28,7 @@ jobs:
       - name: Bootstrap and configure
         uses: ./.github/actions/configure-gpu
       - name: Build examples
-        run: make -C build -j2 cudaexamples
+        run: meson compile -C build/ examples
 
   build-python:
     runs-on: ubuntu-latest
@@ -40,4 +40,4 @@ jobs:
       - name: Bootstrap and configure
         uses: ./.github/actions/configure-gpu
       - name: Build python bindings
-        run: make -C build -j2 ginn
+        run: meson compile -C build/ python
