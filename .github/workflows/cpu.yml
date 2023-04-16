@@ -17,25 +17,15 @@ jobs:
           submodules: recursive
       - name: Print environment
         run: |
-          cmake --version
+          pip install meson
+          meson --version
           g++ --version
       - name: Configure
-        run: cmake -B build
+        run: meson setup build/ --buildtype=plain --warnlevel=2
       - name: Build tests
-        run: make -C build -j2 tests
+        run: meson compile -C build/ tests
       - name: Run tests
-        run: |
-          ./build/test/autobatch
-          ./build/test/convnodes
-          ./build/test/dev
-          ./build/test/dropoutnodes
-          ./build/test/graph
-          ./build/test/include
-          ./build/test/model
-          ./build/test/nodes
-          ./build/test/sample
-          ./build/test/tensor
-          ./build/test/util
+        run: meson test -C build/
 
   build-examples:
     runs-on: ubuntu-latest
@@ -46,12 +36,13 @@ jobs:
           submodules: recursive
       - name: Print environment
         run: |
-          cmake --version
+          pip install meson
+          meson --version
           g++ --version
       - name: Configure
-        run: cmake -B build
+        run: meson setup build/ --buildtype=plain --warnlevel=2
       - name: Build examples
-        run: make -C build -j2 examples
+        run: meson compile -C build/ examples
 
   build-and-test-python:
     runs-on: ubuntu-latest
@@ -62,12 +53,13 @@ jobs:
           submodules: recursive
       - name: Print environment
         run: |
-          cmake --version
+          pip install meson
+          meson --version
           g++ --version
       - name: Configure
-        run: cmake -B build
+        run: meson setup build/ --buildtype=plain --warnlevel=2
       - name: Build python bindings
-        run: make -C build -j2 ginn
+        run: meson compile -C build/ python
       - name: Run python tests
         run: |
           pip install pytest numpy
