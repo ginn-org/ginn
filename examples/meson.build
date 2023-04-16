@@ -19,14 +19,24 @@ cuda_sources = [
   'sum-lstm.cu.cpp',
 ]
 
+examples_gradcheck = get_option('examples-gradcheck')
+
 examples = []
 
 foreach src : sources
   exec_name = src.replace('.cu.cpp', '').replace('.cpp', '')
-  exe = executable(exec_name,
-                   src,
-                   include_directories : incdir,
-                   dependencies : example_deps)
+  if examples_gradcheck and exec_name == 'min-gpt'
+    exe = executable(exec_name,
+                     src,
+                     include_directories : incdir,
+                     dependencies : test_deps,
+                     cpp_args: ['-DGRADCHECK'])
+  else
+    exe = executable(exec_name,
+                     src,
+                     include_directories : incdir,
+                     dependencies : example_deps)
+  endif
   examples += [exe]
 endforeach
 

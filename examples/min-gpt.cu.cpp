@@ -694,7 +694,7 @@ TEST_CASE("Gradcheck") {
 
   auto loss = model.loss(input, label);
 
-  check_grad(loss, model.weights());
+  check_grad(loss, model.weights(), false, 1e-4, 1e-5);
 }
 
 #endif

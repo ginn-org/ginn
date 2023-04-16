@@ -1,1 +1,2 @@
 option('gpu', type : 'boolean', value : false)
+option('examples-gradcheck', type : 'boolean', value : false)

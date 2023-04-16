@@ -135,7 +135,8 @@ template <typename NodeFunc, typename NodeContainer>
 inline void check_grad(NodeFunc f_e,
                        const NodeContainer& ins,
                        bool randomize_inputs = false,
-                       Real eps = 1e-4) {
+                       Real eps = 1e-4,
+                       Real delta = 1e-4) {
   static_assert(ginn::is_node_ptr_v<typename NodeContainer::value_type>,
                 "ins should contain derived Node pointer types!");
 
@@ -162,7 +163,7 @@ inline void check_grad(NodeFunc f_e,
       w->reset_grad();
       auto wr = dynamic_ptr_cast<Node<Real>>(w);
       auto mask = FixedRandom(e->dev(), e->value().shape());
-      auto ng = numeric_grad(e, wr, mask, eps);
+      auto ng = numeric_grad(e, wr, mask, delta);
       auto ag = analytic_grad(e, wr, mask);
       CHECK(ag == Close(ng).scale(eps));
     }
@@ -173,8 +174,9 @@ template <typename NodeContainer>
 inline void check_grad(NodePtr<Real> e,
                        const NodeContainer& ins,
                        bool randomize_inputs = false,
-                       Real eps = 1e-4) {
-  check_grad([e]() { return e; }, ins, randomize_inputs, eps);
+                       Real eps = 1e-4,
+                       Real delta = 1e-4) {
+  check_grad([e]() { return e; }, ins, randomize_inputs, eps, delta);
 }
 
 } // namespace ginn
