@@ -27,7 +27,7 @@ jobs:
       - name: Build tests
         run: meson compile -C build/ tests
       - name: Run tests
-        run: meson test -C build/
+        run: meson test -C build/ -t 0
 
   build-examples:
     runs-on: ubuntu-latest
