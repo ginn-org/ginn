@@ -57,8 +57,8 @@ jobs:
           submodules: recursive
       - name: Environment
         run: |
-          pip install meson numpy pytest
-          sudo apt install ninja-build
+          sudo apt install ninja-build python3.9
+          python3.9 -m pip install meson numpy pytest
           meson --version
           ninja --version
           g++ --version
@@ -68,4 +68,4 @@ jobs:
         run: meson compile -C build/ python
       - name: Run python tests
         run: |
-          PYTHONPATH=./build/ginn-py/ pytest -s --color=yes ./ginn-py/test/
+          PYTHONPATH=./build/ginn-py/ python3.9 -m pytest -s --color=yes ./ginn-py/test/
