@@ -18,7 +18,9 @@ jobs:
       - name: Print environment
         run: |
           pip install meson
+          apt install ninja-build
           meson --version
+          ninja --version
           g++ --version
       - name: Configure
         run: meson setup build/ --buildtype=plain --warnlevel=2
