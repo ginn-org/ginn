@@ -12,8 +12,10 @@ runs:
         echo "${{ steps.cuda-toolkit.outputs.cuda }}"
         echo "${{ steps.cuda-toolkit.outputs.CUDA_PATH }}"
         nvcc -V
+        sudo apt install ninja-build
         pip install meson
         meson --version
+        ninja --version
         g++ --version
       shell: bash
     - name: Configure
