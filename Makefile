@@ -7,11 +7,11 @@ EXAMPLES_PATH = examples
 TESTS_PATH = test
 
 INCLUDES = -I./ \
-	   -I./subprojects/eigen/ \
+	   -I./extern/eigen/ \
 	   -I./extern/tblr/ \
-	   -I./subprojects/fmt-9.1.0/include/ \
-	   -I./extern/ \
-		 -I./subprojects/Catch2-2.13.8/single_include/
+	   -I./extern/fmt/include/ \
+	   -I./extern/cppitertools/ \
+		 -I./extern/Catch2/single_include/
 
 CUDA_INCLUDES = 
 CUDA_LINKS = -lcurand -lcublas -lcublasLt
@@ -43,37 +43,35 @@ py_build_path:
 
 # _____________________ Tests _____________________________
 
-tests: includetest \
-       nodestest \
-       convnodestest \
+tests: autobatchtest \
+	     convnodestest \
+       devtest \
        dropoutnodestest \
-       tensortest \
-       autobatchtest \
        graphtest \
+       includetest \
        modeltest \
+       nodestest \
        sampletest \
+       tensortest \
        utiltest
 
-cudatests: cudanodestest cudaconvnodestest cudadropoutnodestest cudatensortest
-
+cudatests: cudaconvnodestest \
+           cudadevtest \
+           cudadropoutnodestest \
+           cudanodestest \
+           cudatensortest
 
 %test : $(TESTS_PATH)/%.cu.cpp tests_path
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $< $(DEBUGFLAGS) -o $(BUILD_PATH)/$(TESTS_PATH)/$*
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $< $(DEBUGFLAGS) -o $(BUILD_PATH)/$(TESTS_PATH)/$@
 
 %test : $(TESTS_PATH)/%.cpp tests_path
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $< $(DEBUGFLAGS) -o $(BUILD_PATH)/$(TESTS_PATH)/$*
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $< $(DEBUGFLAGS) -o $(BUILD_PATH)/$(TESTS_PATH)/$@
 
 cuda%test : $(TESTS_PATH)/%.cu.cpp tests_path
-	$(NVCC) $(CUDAFLAGS) $(INCLUDES) $(CUDA_INCLUDES) $(CUDA_LINKS) $< $(CUDEBUGFLAGS) \
-		-o $(BUILD_PATH)/$(TESTS_PATH)/cuda$*
+	$(NVCC) $(CUDAFLAGS) $(INCLUDES) $(CUDA_INCLUDES) $(CUDA_LINKS) $< $(CUDEBUGFLAGS) -o $(BUILD_PATH)/$(TESTS_PATH)/$@
 
 cuda%test : $(TESTS_PATH)/%.cpp tests_path
-	$(NVCC) $(CUDAFLAGS) $(INCLUDES) $(CUDA_INCLUDES) $(CUDA_LINKS) $< $(CUDEBUGFLAGS) \
-		-o $(BUILD_PATH)/$(TESTS_PATH)/cuda$*
-
-%test : $(TESTS_PATH)/%.cu tests_path
-	$(NVCC) $(CUDAFLAGS) $(INCLUDES) $(CUDA_INCLUDES) $(CUDA_LINKS) $< $(CUDEBUGFLAGS) \
-		-o $(BUILD_PATH)/$(TESTS_PATH)/$*
+	$(NVCC) $(CUDAFLAGS) $(INCLUDES) $(CUDA_INCLUDES) $(CUDA_LINKS) $< $(CUDEBUGFLAGS) -o $(BUILD_PATH)/$(TESTS_PATH)/$@
 
 # _____________________ Examples __________________________
 examples: mnist \
@@ -101,17 +99,10 @@ cudaexamples: mnist-cu \
 	$(CXX) $< $(CXXFLAGS) $(OPTFLAGS) $(INCLUDES) -o $(BUILD_PATH)/$(EXAMPLES_PATH)/$@
 
 %-cu : $(EXAMPLES_PATH)/%.cu.cpp examples_path
-	$(NVCC) $< $(CUDAFLAGS) $(CUOPTFLAGS) $(INCLUDES) $(CUDA_INCLUDES) $(CUDA_LINKS) \
-		-o $(BUILD_PATH)/$(EXAMPLES_PATH)/$@
+	$(NVCC) $< $(CUDAFLAGS) $(CUOPTFLAGS) $(INCLUDES) $(CUDA_INCLUDES) $(CUDA_LINKS) -o $(BUILD_PATH)/$(EXAMPLES_PATH)/$@
 
 %-cu : $(EXAMPLES_PATH)/%.cu examples_path
-	$(NVCC) $< $(CUDAFLAGS) $(CUOPTFLAGS) $(INCLUDES) $(CUDA_INCLUDES) $(CUDA_LINKS) \
-		-o $(BUILD_PATH)/$(EXAMPLES_PATH)/$@
-
-python: $(PY_PATH)/*.i py_build_path
-	$(SWIG) -c++ -python -py3 -I../ -outdir $(BUILD_PATH)/$(PY_PATH) -o $(BUILD_PATH)/$(PY_PATH)/ginn_wrap.cxx $(PY_PATH)/ginn.i
-	$(CXX) $(CXXFLAGS) $(PYTHON_CXXFLAGS) $(OPTFLAGS) -c -fpic $(BUILD_PATH)/$(PY_PATH)/ginn_wrap.cxx $(INCLUDES) $(PYTHON_INCLUDES) -o $(BUILD_PATH)/$(PY_PATH)/ginn_wrap.o
-	$(CXX) $(CXXFLAGS) $(PYTHON_CXXFLAGS) $(OPTFLAGS) -shared $(BUILD_PATH)/$(PY_PATH)/ginn_wrap.o $(INCLUDES) -o $(BUILD_PATH)/$(PY_PATH)/_ginn.so
+	$(NVCC) $< $(CUDAFLAGS) $(CUOPTFLAGS) $(INCLUDES) $(CUDA_INCLUDES) $(CUDA_LINKS) -o $(BUILD_PATH)/$(EXAMPLES_PATH)/$@
 
 clean:
 	rm -rf $(BUILD_PATH) *.gcda *.gcno
