@@ -11,17 +11,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Environment
-        run: |
-          pip install meson
-          sudo apt install ninja-build
-          meson --version
-          ninja --version
-          g++ --version
-      - name: Configure
-        run: meson setup build/ --buildtype=plain --warnlevel=2
+      - name: Bootstrap and configure
+        uses: ./.github/actions/configure-cpu
       - name: Build tests
         run: meson compile -C build/ tests
       - name: Run tests
@@ -32,17 +23,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Environment
-        run: |
-          pip install meson
-          sudo apt install ninja-build
-          meson --version
-          ninja --version
-          g++ --version
-      - name: Configure
-        run: meson setup build/ --buildtype=plain --warnlevel=2
+      - name: Bootstrap and configure
+        uses: ./.github/actions/configure-cpu
       - name: Build examples
         run: meson compile -C build/ examples
 
@@ -51,21 +33,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.9' 
-      - name: Environment
-        run: |
-          sudo apt install ninja-build
-          python --version
-          pip install meson numpy pytest
-          meson --version
-          ninja --version
-          g++ --version
-      - name: Configure
-        run: meson setup build/ --buildtype=plain --warnlevel=2
+      - name: Bootstrap and configure
+        uses: ./.github/actions/configure-cpu
       - name: Build python bindings
         run: meson compile -C build/ python
       - name: Run python tests
