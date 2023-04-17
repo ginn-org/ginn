@@ -37,7 +37,7 @@
 #include <ginn-py/tensor-py.h>
 #include <ginn-py/util-py.h>
 
-#include "node-py.h"
+#include <ginn-py/node-py.h>
 
 namespace ginn {
 namespace python {

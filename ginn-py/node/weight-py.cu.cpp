@@ -21,7 +21,7 @@
 #include <ginn-py/tensor-py.h>
 #include <ginn-py/util-py.h>
 
-#include "weight-py.h"
+#include <ginn-py/node/weight-py.h>
 
 namespace ginn {
 namespace python {

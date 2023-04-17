@@ -21,16 +21,25 @@
 
 namespace ginn {
 
+namespace internal {
+  template <typename Scalar>
+  std::string format_scalar(Scalar x, unsigned short width=0) {
+    std::string s;
+    std::string w = width == 0 ? "" : std::to_string(width);
+    if constexpr (ginn::is_floating_point_v<Scalar>) {
+      s = fmt::format("{: "+w+".6}", x);
+    } else {
+      s = fmt::format("{: "+w+"}", x);
+    }
+    return s;
+  }
+}
+
 template <typename Scalar>
 unsigned short max_width(const Tensor<Scalar>& t) {
   unsigned short w = 0;
   for (Scalar x : t) {
-    std::string s;
-    if constexpr (ginn::is_floating_point_v<Scalar>) {
-      s = fmt::format("{: .6}", x);
-    } else {
-      s = fmt::format("{: }", x);
-    }
+    std::string s = internal::format_scalar(x);
     w = std::max<unsigned short>(w, s.size());
   }
   return w;
@@ -50,11 +59,7 @@ void print_helper(std::ostream& os,
     Size j = start + i * stride;
     if (i > 0) { os << (remaining_rank < rank or rank == 1 ? ", " : ",\n "); }
     if (remaining_rank == 1) {
-      if constexpr (ginn::is_floating_point_v<Scalar>) {
-        os << fmt::format("{: " + w + ".6}", t.v()[j]);
-      } else {
-        os << fmt::format("{: " + w + "}", t.v()[j]);
-      }
+      os << internal::format_scalar(t.v()[j], width);
     } else {
       print_helper(os,
                    t,

@@ -20,7 +20,7 @@
 #include <ginn-py/node-py.h>
 #include <ginn-py/util-py.h>
 
-#include "select-py.h"
+#include <ginn-py/node/select-py.h>
 
 namespace ginn {
 namespace python {

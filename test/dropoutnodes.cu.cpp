@@ -17,7 +17,7 @@
 #define GINN_DOUBLE_PRECISION // grad checks require double precision
 #endif
 
-#include <catch.hpp>
+#include <catch2/catch.hpp>
 
 #include <ginn/node/common.h>
 #include <ginn/node/inplace.h>

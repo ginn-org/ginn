@@ -20,7 +20,7 @@
 #include <ginn-py/node-py.h>
 #include <ginn-py/util-py.h>
 
-#include "affine-py.h"
+#include <ginn-py/node/affine-py.h>
 
 namespace ginn {
 namespace python {

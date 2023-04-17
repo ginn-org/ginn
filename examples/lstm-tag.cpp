@@ -15,7 +15,7 @@
 #include <iostream>
 #include <unordered_set>
 
-#include <tblr.h>
+#include <tblr/tblr.h>
 
 #include <ginn/init/init.h>
 #include <ginn/update/update.h>

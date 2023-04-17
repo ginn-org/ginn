@@ -20,7 +20,7 @@
 #include <ginn-py/node-py.h>
 #include <ginn-py/util-py.h>
 
-#include "prod-py.h"
+#include <ginn-py/node/prod-py.h>
 
 namespace ginn {
 namespace python {

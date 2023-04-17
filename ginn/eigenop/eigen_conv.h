@@ -37,7 +37,7 @@ EIGEN_STRONG_INLINE auto Conv2d(const Input& input,
   auto in_dims = dims(input);
   auto k_dims = dims(kernel);
 
-  DenseIndex out_rows, out_cols;
+  DenseIndex out_rows{}, out_cols{};
   if (padding_type == PADDING_SAME) {
     out_rows = divup(in_dims[1], row_stride);
     out_cols = divup(in_dims[2], col_stride);
@@ -88,7 +88,7 @@ Conv2dBackwardKernel(const Input& input,
   auto in_dims = dims(input);
   auto k_dims = dims(kernel);
 
-  DenseIndex out_rows, out_cols;
+  DenseIndex out_rows{}, out_cols{};
   if (padding_type == PADDING_SAME) {
     out_rows = divup(in_dims[1], row_stride);
     out_cols = divup(in_dims[2], col_stride);

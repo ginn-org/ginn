@@ -137,7 +137,7 @@ void check_expr(NodeFunc f_e,
 
 template <typename NodeFunc>
 void check_expr(NodeFunc e,
-                const std::initializer_list<BaseNodePtr> ins,
+                const std::initializer_list<BaseNodePtr>& ins,
                 bool randomize_inputs = false,
                 Real eps = 1e-4) {
   check_expr(e, std::vector<BaseNodePtr>(ins), randomize_inputs, eps);

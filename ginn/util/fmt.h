@@ -23,7 +23,9 @@ static_assert(false,
 #endif
 #endif
 
+#ifndef FMT_HEADER_ONLY
 #define FMT_HEADER_ONLY
+#endif
 
 #include <fmt/color.h>
 #include <fmt/format.h>

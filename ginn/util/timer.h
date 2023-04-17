@@ -26,7 +26,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include <tblr.h>
+#include <tblr/tblr.h>
 
 #include <ginn/except.h>
 

@@ -7,7 +7,7 @@
 	url = ../../fmtlib/fmt.git
 [submodule "cppitertools"]
 	path = extern/cppitertools
-	url = ../../ryanhaining/cppitertools.git
+	url = ../../oir/cppitertools.git
 [submodule "Catch2"]
 	path = extern/Catch2
 	url = ../../catchorg/Catch2.git

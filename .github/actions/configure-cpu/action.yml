@@ -1,0 +1,21 @@
+name: configure cpu
+runs:
+  using: "composite"
+  steps:
+    - name: Setup python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9' 
+    - name: Environment
+      run: |
+        python --version
+        pip install meson numpy pytest
+        sudo apt install ninja-build
+        meson --version
+        ninja --version
+        g++ --version
+      shell: bash
+    - name: Configure
+      run: meson setup build/ --buildtype=plain --warnlevel=2
+      shell: bash
+

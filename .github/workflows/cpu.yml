@@ -5,70 +5,38 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-env:
-  MAKEFLAGS: --no-print-directory
 jobs:
   build-and-run-tests:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Print environment
-        run: |
-          cmake --version
-          g++ --version
-      - name: Configure
-        run: cmake -B build
+      - name: Bootstrap and configure
+        uses: ./.github/actions/configure-cpu
       - name: Build tests
-        run: make -C build -j2 tests
+        run: meson compile -C build/ tests
       - name: Run tests
-        run: |
-          ./build/test/autobatch
-          ./build/test/convnodes
-          ./build/test/dev
-          ./build/test/dropoutnodes
-          ./build/test/graph
-          ./build/test/include
-          ./build/test/model
-          ./build/test/nodes
-          ./build/test/sample
-          ./build/test/tensor
-          ./build/test/util
+        run: meson test -C build/ -t 0
 
   build-examples:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Print environment
-        run: |
-          cmake --version
-          g++ --version
-      - name: Configure
-        run: cmake -B build
+      - name: Bootstrap and configure
+        uses: ./.github/actions/configure-cpu
       - name: Build examples
-        run: make -C build -j2 examples
+        run: meson compile -C build/ examples
 
   build-and-test-python:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Print environment
-        run: |
-          cmake --version
-          g++ --version
-      - name: Configure
-        run: cmake -B build
+      - name: Bootstrap and configure
+        uses: ./.github/actions/configure-cpu
       - name: Build python bindings
-        run: make -C build -j2 ginn
+        run: meson compile -C build/ python
       - name: Run python tests
         run: |
-          pip install pytest numpy
           PYTHONPATH=./build/ginn-py/ pytest -s --color=yes ./ginn-py/test/
