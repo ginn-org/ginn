@@ -14,6 +14,7 @@ runs:
         meson --version
         ninja --version
         g++ --version
+      shell: bash
     - name: Configure
       run: meson setup build/ --buildtype=plain --warnlevel=2
       shell: bash
