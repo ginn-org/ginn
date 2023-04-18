@@ -30,7 +30,7 @@ namespace py = pybind11;
 void bind_compare_nodes(py::module_& m) {
   using namespace py::literals;
 
-  for_each<Real, Half, Int, bool>([&](auto scalar) {
+  for_each<Real, Half, Int>([&](auto scalar) {
     using Scalar = decltype(scalar);
     using Np = NodePtr<Scalar>;
 

@@ -21,7 +21,7 @@ CXXFLAGS = -std=c++17 -Wall -Wno-unused-but-set-parameter -ftemplate-backtrace-l
 
 CUDAFLAGS = -std=c++17 -DGINN_ENABLE_GPU --x cu \
 						-gencode arch=compute_70,code=sm_70 \
-            -w
+            -w -ftemplate-backtrace-limit=0
 
 OPTFLAGS = -Ofast -march=native -mtune=native -pthread
 CUOPTFLAGS = -O3 -Xptxas -O3 -Xcompiler -O3
