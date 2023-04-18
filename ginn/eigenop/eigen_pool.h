@@ -78,7 +78,7 @@ MaxPool2dBackward(const Input& input,
   using namespace internal;
   using Scalar = typename Eigen::internal::traits<Input>::Scalar;
 
-  //Eigen::internal::array_prod(Eigen::array<Eigen::DenseIndex, 4UL>());
+  // Eigen::internal::array_prod(Eigen::array<Eigen::DenseIndex, 4UL>());
 
   static_assert_col_major<Input>();
   static_assert_col_major<Output>();
