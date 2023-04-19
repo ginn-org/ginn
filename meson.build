@@ -20,10 +20,12 @@ deps         = [eigen, fmt, cppitertools, tblr]
 test_deps    = deps + [catch]
 example_deps = deps + [threads]
 
+cpp_args = ['-ftemplate-backtrace-limit=0']
+
 
 if gpu
   cuda = import('unstable-cuda')
-  cuda_args = cuda.nvcc_arch_flags('11.1', ['7.0'])
+  cuda_args = cuda.nvcc_arch_flags('11.1', ['7.0']) + ['-ftemplate-backtrace-limit=0']
   cuda_dep = dependency('cuda',
                         version : '>=11.1',
                         modules : ['curand', 'cublas', 'cublasLt'])

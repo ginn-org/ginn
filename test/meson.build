@@ -43,6 +43,7 @@ if gpu
                      copied_src,
                      include_directories : incdir,
                      dependencies : test_deps + [cuda_dep],
+                     cpp_args : cpp_args,
                      cuda_args : cuda_args + ['-DGINN_ENABLE_GPU'])
     tests += [exe]
     test(exec_name, exe)

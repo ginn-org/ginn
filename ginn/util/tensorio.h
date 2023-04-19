@@ -22,18 +22,18 @@
 namespace ginn {
 
 namespace internal {
-  template <typename Scalar>
-  std::string format_scalar(Scalar x, unsigned short width=0) {
-    std::string s;
-    std::string w = width == 0 ? "" : std::to_string(width);
-    if constexpr (ginn::is_floating_point_v<Scalar>) {
-      s = fmt::format("{: "+w+".6}", x);
-    } else {
-      s = fmt::format("{: "+w+"}", x);
-    }
-    return s;
+template <typename Scalar>
+std::string format_scalar(Scalar x, unsigned short width = 0) {
+  std::string s;
+  std::string w = width == 0 ? "" : std::to_string(width);
+  if constexpr (ginn::is_floating_point_v<Scalar>) {
+    s = fmt::format("{: " + w + ".6}", x);
+  } else {
+    s = fmt::format("{: " + w + "}", x);
   }
+  return s;
 }
+} // namespace internal
 
 template <typename Scalar>
 unsigned short max_width(const Tensor<Scalar>& t) {

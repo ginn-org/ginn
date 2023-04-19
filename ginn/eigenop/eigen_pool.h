@@ -15,7 +15,6 @@
 #ifndef GINN_EIGEN_POOL_H
 #define GINN_EIGEN_POOL_H
 
-#include <unsupported/Eigen/CXX11/Tensor>
 #include "helpers.h"
 
 namespace ginn {
@@ -79,11 +78,13 @@ MaxPool2dBackward(const Input& input,
   using namespace internal;
   using Scalar = typename Eigen::internal::traits<Input>::Scalar;
 
+  // Eigen::internal::array_prod(Eigen::array<Eigen::DenseIndex, 4UL>());
+
   static_assert_col_major<Input>();
   static_assert_col_major<Output>();
   static_assert_col_major<DOutput>();
 
-  auto in_dims = dims(input);
+  auto in_dims = dsizes(input);
   auto out_dims = dims(d_output);
 
   auto channels = in_dims[0];
@@ -140,7 +141,7 @@ MaxPool2dBackward(const Input& input,
                                                          pad_left,
                                                          pad_right,
                                                          Scalar(0.));
-  return (d_output_patches * is_max).sum(Indices<1, 2>()).reshape(in_dims);
+  return (d_output_patches * is_max).sum(Index<2>({1, 2})).reshape(in_dims);
 }
 #endif
 

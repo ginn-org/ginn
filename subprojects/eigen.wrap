@@ -1,6 +1,6 @@
 [wrap-git]
 url = https://gitlab.com/libeigen/eigen.git
-revision = dceb779ecd822f55b4ae78f760371b0e08a889f2
+revision = 87300c93cae6a8afd9a4f8aa8d9d5c5324cf02e1
 patch_directory = eigen
 
 [provide]

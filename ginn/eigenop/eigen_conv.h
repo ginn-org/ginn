@@ -86,7 +86,7 @@ Conv2dBackwardKernel(const Input& input,
   static_assert_col_major<Input, Kernel, DOutput>();
 
   auto in_dims = dims(input);
-  auto k_dims = dims(kernel);
+  auto k_dims = dsizes(kernel);
 
   DenseIndex out_rows{}, out_cols{};
   if (padding_type == PADDING_SAME) {
