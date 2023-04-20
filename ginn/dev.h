@@ -242,8 +242,8 @@ class PreallocGpuDevice : public Device {
     offset_ = offset_ + size;
     return rval;
   }
-  void* realloc(void* data, size_t size) override { return nullptr; }
-  void free(void* data) override {}
+  void* realloc(void* /*data*/, size_t /*size*/) override { return nullptr; }
+  void free(void* /*data*/) override {}
   DeviceKind kind() const override { return GPU; }
   DeviceId id() const override { return {GPU, id_}; }
   short precedence() const override { return 1; }

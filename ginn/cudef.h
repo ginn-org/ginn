@@ -40,7 +40,7 @@
     if (err != CURAND_STATUS_SUCCESS) {                                        \
       GINN_CUDA_THROW(fmt::format("CURAND failure in {}\n{}\nat {}:{}\n",      \
                                   #statement,                                  \
-                                  err,                                         \
+                                  int(err),                                         \
                                   __FILE__,                                    \
                                   __LINE__));                                  \
     }                                                                          \
@@ -52,7 +52,7 @@
     if (err != CUBLAS_STATUS_SUCCESS) {                                        \
       GINN_CUDA_THROW(fmt::format("CUBLAS failure in {}\n{}\nat {}:{}\n",      \
                                   #statement,                                  \
-                                  err,                                         \
+                                  int(err),                                         \
                                   __FILE__,                                    \
                                   __LINE__));                                  \
     }                                                                          \
@@ -83,7 +83,7 @@ class CurandGenerator {
     set_device();
     GINN_CURAND_CALL(curandGenerateUniform(*gen, data, size));
   }
-  void uniform(Int* data, size_t size) {
+  void uniform(Int* /*data*/, size_t /*size*/) {
     GINN_THROW("Random generation for Int GPU tensors is not implemented yet!");
   }
 };
