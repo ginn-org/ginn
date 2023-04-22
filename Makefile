@@ -18,10 +18,15 @@ CUDA_LINKS = -lcurand -lcublas -lcublasLt
 
 CXXFLAGS = -std=c++17 -Wall -Wno-unused-but-set-parameter -ftemplate-backtrace-limit=0 -Wno-deprecated-declarations
 
-
-CUDAFLAGS = -std=c++17 -DGINN_ENABLE_GPU --x cu \
-						-gencode arch=compute_70,code=sm_70 \
-            -w -ftemplate-backtrace-limit=0
+CUDAFLAGS = -std=c++17 -Xcompiler=-Wall,-Winvalid-pch,-Wextra -DGINN_ENABLE_GPU --x cu \
+            -gencode arch=compute_70,code=sm_70 \
+            -ftemplate-backtrace-limit=0 \
+            -Xcudafe --display_error_number \
+            -Xcudafe --diag_suppress=3123 \
+            -Xcudafe --diag_suppress=3124 \
+            -Xcudafe --diag_suppress=3125 \
+            -Xcudafe --diag_suppress=3126 \
+            -Xcudafe --diag_suppress=3127
 
 OPTFLAGS = -Ofast -march=native -mtune=native -pthread
 CUOPTFLAGS = -O3 -Xptxas -O3 -Xcompiler -O3

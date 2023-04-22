@@ -20,7 +20,7 @@
 #include <iostream>
 #include <tuple>
 
-#include <ginn/eigenop/helpers.h>
+//#include <ginn/eigenop/helpers.h>
 #include <ginn/tensor.h>
 #ifdef GINN_ENABLE_GPU
 #include <thrust/device_ptr.h>

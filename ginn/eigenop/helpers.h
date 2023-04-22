@@ -20,8 +20,6 @@
 
 #include <ginn/def.h>
 
-#include <unsupported/Eigen/CXX11/Tensor>
-
 namespace ginn {
 namespace eigen {
 

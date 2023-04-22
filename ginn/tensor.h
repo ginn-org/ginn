@@ -570,10 +570,10 @@ auto view_impl(Scalar* data,
                std::index_sequence<Indices...>) {
   if constexpr (sizeof...(Indices) == 0) {
     return TensorMap<Scalar, 0>(data);
-  } else {
+  } /*else {*/
     auto dims = Tensor<Scalar>::reduce(shape, sizeof...(Indices));
     return TensorMap<Scalar, sizeof...(Indices)>(data, (dims[Indices])...);
-  }
+  //}
 }
 
 template <typename Scalar>
