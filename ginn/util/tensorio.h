@@ -27,7 +27,7 @@ std::string format_scalar(Scalar x, unsigned short width = 0) {
   std::string s;
   std::string w = width == 0 ? "" : std::to_string(width);
   if constexpr (ginn::is_floating_point_v<Scalar>) {
-    s = fmt::format("{: " + w + ".6}", x);
+    s = fmt::format("{: " + w + ".6}", Real(x));
   } else {
     s = fmt::format("{: " + w + "}", x);
   }

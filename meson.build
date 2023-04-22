@@ -25,7 +25,27 @@ cpp_args = ['-ftemplate-backtrace-limit=0']
 
 if gpu
   cuda = import('unstable-cuda')
-  cuda_args = cuda.nvcc_arch_flags('11.1', ['7.0']) + ['-ftemplate-backtrace-limit=0']
+  cuda_args = cuda.nvcc_arch_flags('11.1', ['7.0']) + [
+                '-ftemplate-backtrace-limit=0',
+                '-Xcudafe', '--display_error_number',
+                # the following disabled warnings are similar to:
+                #   warning: __host__ annotation is ignored on a function that is explicitly defaulted on its first declaration
+                #   warning: calling a __host__ function from a __host__ __device__ function is not allowed
+                # which also appear in eigen unit tests, so i assume they are benign
+                '-Xcudafe', '--diag_suppress=3123',
+                '-Xcudafe', '--diag_suppress=3124',
+                '-Xcudafe', '--diag_suppress=3125',
+                '-Xcudafe', '--diag_suppress=3126',
+                '-Xcudafe', '--diag_suppress=3127',
+                '-Xcudafe', '--diag_suppress=20013',
+                '-Xcudafe', '--diag_suppress=20014',
+                '-Xcudafe', '--diag_suppress=20015',
+                # 445 appears as:
+                #   ./ginn/tensor.h(178): warning #445-D: constant "Rank" is not used in declaring the parameter types of function template "ginn::Tensor<ScalarType>::Tensor<Rank>(ginn::DevPtr, ginn::NestedInitList<Rank, ScalarType>)"
+                #   ./ginn/tensor.h(184): warning #445-D: constant "Rank" is not used in declaring the parameter types of function template "ginn::Tensor<ScalarType>::Tensor<Rank>(ginn::NestedInitList<Rank, ScalarType>)"
+                # which looks clearly wrong? is it a nvcc issue?
+                '-Xcudafe', '--diag_suppress=445',
+              ]
   cuda_dep = dependency('cuda',
                         version : '>=11.1',
                         modules : ['curand', 'cublas', 'cublasLt'])

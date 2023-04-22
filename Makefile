@@ -7,11 +7,11 @@ EXAMPLES_PATH = examples
 TESTS_PATH = test
 
 INCLUDES = -I./ \
-	   -I./extern/eigen/ \
-	   -I./extern/tblr/ \
-	   -I./extern/fmt/include/ \
-	   -I./extern/cppitertools/ \
-		 -I./extern/Catch2/single_include/
+     -I./extern/eigen/ \
+     -I./extern/tblr/ \
+     -I./extern/fmt/include/ \
+     -I./extern/cppitertools/ \
+     -I./extern/Catch2/single_include/
 
 CUDA_INCLUDES = 
 CUDA_LINKS = -lcurand -lcublas -lcublasLt
@@ -26,15 +26,25 @@ CUDAFLAGS = -std=c++17 -Xcompiler=-Wall,-Winvalid-pch,-Wextra -DGINN_ENABLE_GPU 
             -Xcudafe --diag_suppress=3124 \
             -Xcudafe --diag_suppress=3125 \
             -Xcudafe --diag_suppress=3126 \
-            -Xcudafe --diag_suppress=3127
+            -Xcudafe --diag_suppress=3127 \
+            -Xcudafe --diag_suppress=20013 \
+            -Xcudafe --diag_suppress=20014 \
+            -Xcudafe --diag_suppress=20015 \
+						-Xcudafe --diag_suppress=445
+
+# disabling 445 for now because the following _must_ be a nvcc bug? "Rank" _is_ used?
+#
+# ./ginn/tensor.h(178): warning #445-D: constant "Rank" is not used in declaring the parameter types of function template "ginn::Tensor<ScalarType>::Tensor<Rank>(ginn::DevPtr, ginn::NestedInitList<Rank, ScalarType>)"
+#
+# ./ginn/tensor.h(184): warning #445-D: constant "Rank" is not used in declaring the parameter types of function template "ginn::Tensor<ScalarType>::Tensor<Rank>(ginn::NestedInitList<Rank, ScalarType>)"
+#
+
 
 OPTFLAGS = -Ofast -march=native -mtune=native -pthread
 CUOPTFLAGS = -O3 -Xptxas -O3 -Xcompiler -O3
 
 DEBUGFLAGS = -g -O0 -fprofile-arcs -ftest-coverage
 CUDEBUGFLAGS = -g -O0
-
-PYTHON_CXXFLAGS = -Wno-unused-parameter -Wno-missing-field-initializers
 
 # ______________ Create paths for builds __________________
 tests_path:

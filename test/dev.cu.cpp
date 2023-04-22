@@ -58,7 +58,7 @@ TEMPLATE_TEST_CASE("Cpu nodes", "", Real, Int, Half) {
 
   auto x = Values<2>({{1, 2, 3}, {4, 5, 6}})->cast<Scalar>();
   auto y = Values<2>({{1, 2, 3}, {4, 5, 6}})->cast<Scalar>();
-  x->has_grad(false);
+  x->set_has_grad(false);
 
   CHECK(dev->used() == 0);
 
@@ -156,7 +156,7 @@ TEMPLATE_TEST_CASE("Gpu nodes", "", Real, Int, Half) {
 
   auto x = Values<2>({{1, 2, 3}, {4, 5, 6}})->cast<Scalar>();
   auto y = Values<2>({{1, 2, 3}, {4, 5, 6}})->cast<Scalar>();
-  x->has_grad(false);
+  x->set_has_grad(false);
 
   CHECK(dev->used() == 0);
 

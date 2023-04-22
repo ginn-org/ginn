@@ -64,7 +64,7 @@ class BaseDataNode : public Node<Scalar> {
   using Node<Scalar>::grad;
 
   bool has_grad() const override { return has_grad_; }
-  virtual void has_grad(bool hg) { has_grad_ = hg; }
+  virtual void set_has_grad(bool hg) { has_grad_ = hg; }
 
   // Do not override to keep the class abstract
   std::string name() const override = 0;
@@ -101,7 +101,7 @@ class DataNode : public BaseDataNode<Scalar> {
   template <typename OtherScalar>
   auto cast() const {
     auto other = make_ptr<DataNode<OtherScalar>>(this->dev(), this->shape());
-    other->has_grad(this->has_grad());
+    other->set_has_grad(this->has_grad());
     other->forwarded = this->forwarded;
     other->value() = this->value().template cast<OtherScalar>();
     other->grad() = this->grad().template cast<OtherScalar>();
