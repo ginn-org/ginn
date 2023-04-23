@@ -21,6 +21,7 @@ cuda_sources = [
 ]
 
 tests = []
+cudatests = []
 
 foreach src : sources
   exec_name = src.replace('.cu.cpp', '').replace('.cpp', '') + 'test'
@@ -46,8 +47,12 @@ if gpu
                      cpp_args : cpp_args,
                      cuda_args : cuda_args + ['-DGINN_ENABLE_GPU'])
     tests += [exe]
+    cudatests += [exe]
     test(exec_name, exe)
   endforeach
 endif
 
 alias_target('tests', tests)
+if gpu
+  alias_target('cudatests', cudatests)
+endif

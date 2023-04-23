@@ -768,7 +768,7 @@ TEMPLATE_TEST_CASE("Pickles", "[pick][nlnode]", Real, Half) {
 
   auto iv = std::vector<Int>{3, 0, 1};
   auto it = Values<1>({3, 0, 1})->cast<Int>();
-  it->has_grad(false);
+  it->set_has_grad(false);
 
   SECTION("Pick") {
     check(Pick(W, iv), p);
@@ -812,7 +812,7 @@ TEMPLATE_TEST_CASE("PickNegLogSigmoid", "[pick][nlnode]", Real, Half) {
                       {1, 0, 1},
                       {0, 1, 0},
                       {1, 0, 1}})->cast<Int>();
-  p->has_grad(false);
+  p->set_has_grad(false);
   auto pnls = Values<2>({{0.47407698, 0.45549248, 0.49324895},
                          {0.31326169, 2.12692801, 1.31326169},
                          {0.69314718, 0.69314718, 0.69314718},
@@ -827,7 +827,7 @@ TEMPLATE_TEST_CASE("Select", "[select]", Real, Half, Int) {
   auto if_ = Values<2>({{1., 0.},
                         {0., 1.},
                         {1., 0.}})->cast<bool>();
-  if_->has_grad(false); // TODO: maybe integral nodes should have this default?
+  if_->set_has_grad(false); // TODO: maybe integral nodes should have this default?
   auto a = Values<2>({{1., 2.},
                       {3., 4.},
                       {5., 6.}})->cast<Scalar>();
@@ -864,11 +864,11 @@ TEMPLATE_TEST_CASE("Mask", "[select]", Real, Half, Int) {
   auto mask = Values<2>({{1., 0.},
                          {0., 1.},
                          {1., 0.}})->cast<Scalar>();
-  mask->has_grad(false);
+  mask->set_has_grad(false);
   auto mask2 = Values<2>({{1.},
                           {0.},
                           {1.}})->cast<Scalar>();
-  mask2->has_grad(false);
+  mask2->set_has_grad(false);
   auto a = Values<2>({{1., 2.},
                       {3., 4.},
                       {5., 6.}})->cast<Scalar>();
@@ -897,7 +897,7 @@ TEMPLATE_TEST_CASE("Mask", "[select]", Real, Half, Int) {
     auto set_mask = [](auto& m) {
       m->set_random();
       m->value() = (m->value().t() > Scalar(0)).template cast<Scalar>();
-      m->has_grad(false);
+      m->set_has_grad(false);
     };
 
     set_mask(m1);
@@ -1271,7 +1271,7 @@ TEMPLATE_TEST_CASE("InPlaceMask", "[inplace]", Real, Half) {
   auto set_mask = [](auto& m) {
     m->set_random();
     m->value() = (m->value().t() > Scalar(0)).template cast<Scalar>();
-    m->has_grad(false);
+    m->set_has_grad(false);
   };
 
   set_mask(m1);

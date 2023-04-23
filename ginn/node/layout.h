@@ -655,7 +655,7 @@ class ChipNode : public BaseDataNode<Scalar> {
     value().resize(s);
 
     switch (in_->shape().size()) {
-    case 1: forward_helper<1>(); break;
+    //case 1: forward_helper<1>(); break;
     case 2: forward_helper<2>(); break;
     case 3: forward_helper<3>(); break;
     case 4: forward_helper<4>(); break;
@@ -670,7 +670,7 @@ class ChipNode : public BaseDataNode<Scalar> {
   void backward_() override {
     if (in_->has_grad()) {
       switch (in_->shape().size()) {
-      case 1: backward_helper<1>(); break;
+      //case 1: backward_helper<1>(); break;
       case 2: backward_helper<2>(); break;
       case 3: backward_helper<3>(); break;
       case 4: backward_helper<4>(); break;

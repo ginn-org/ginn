@@ -56,7 +56,7 @@ class WeightNode : public Node<Scalar> {
   using Node<Scalar>::grad;
 
   bool has_grad() const override { return has_grad_; }
-  virtual void has_grad(bool hg) { has_grad_ = hg; }
+  virtual void set_has_grad(bool hg) { has_grad_ = hg; }
 
   size_t id() const { return id_; }
   std::mutex& access() { return *access_; }
@@ -159,7 +159,7 @@ auto FixedWeight(DevPtr dev = cpu(), const Shape& s = {0}) {
 template <typename Scalar = Real>
 auto FixedWeight(DevPtr dev, std::initializer_list<Size> shape) {
   auto w = Weight<Scalar>(dev, Shape(shape));
-  w->has_grad(false);
+  w->set_has_grad(false);
   return w;
 }
 

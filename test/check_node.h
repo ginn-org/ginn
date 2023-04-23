@@ -102,7 +102,7 @@ void check_expr(NodeFunc expr,
   }
 
   using namespace Catch::Matchers;
-  for (size_t i = 0; i < values[CPU].size(); i++) {
+  for (Size i = 0; i < values[CPU].size(); i++) {
     CHECK_THAT(
         values[GPU][i],
         WithinRel(values[CPU][i], eps) or
@@ -110,7 +110,7 @@ void check_expr(NodeFunc expr,
   }
   if constexpr (ginn::is_floating_point_v<Scalar>) {
     for (size_t i = 0; i < grads[CPU].size(); i++) {
-      for (size_t j = 0; j < grads[CPU][i].size(); j++) {
+      for (Size j = 0; j < grads[CPU][i].size(); j++) {
         CHECK_THAT(grads[GPU][i][j],
                    WithinRel(grads[CPU][i][j], eps) or
                        (WithinAbs(0., 2e-3) and

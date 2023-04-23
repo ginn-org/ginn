@@ -192,8 +192,9 @@ class GpuDevice : public Device {
   }
   GpuDevice(GpuDevice&&) = default;
   ~GpuDevice() {
-    if (handle_) { GINN_CUBLAS_CALL(cublasDestroy(*handle_)); }
-    if (stream_) { GINN_CUDA_CALL(cudaStreamDestroy(*stream_)); }
+    // TODO: add nonthrowing errors here, maybe asserts
+    if (handle_) { cublasDestroy(*handle_); }
+    if (stream_) { cudaStreamDestroy(*stream_); }
   }
 };
 
@@ -242,8 +243,8 @@ class PreallocGpuDevice : public Device {
     offset_ = offset_ + size;
     return rval;
   }
-  void* realloc(void* data, size_t size) override { return nullptr; }
-  void free(void* data) override {}
+  void* realloc(void* /*data*/, size_t /*size*/) override { return nullptr; }
+  void free(void* /*data*/) override {}
   DeviceKind kind() const override { return GPU; }
   DeviceId id() const override { return {GPU, id_}; }
   short precedence() const override { return 1; }

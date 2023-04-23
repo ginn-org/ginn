@@ -62,7 +62,7 @@ auto declare_node_of(py::module_& m) {
       .def_property(
           "has_grad",
           py::overload_cast<>(&BaseDataNode<Scalar>::has_grad, py::const_),
-          py::overload_cast<bool>(&BaseDataNode<Scalar>::has_grad));
+          py::overload_cast<bool>(&BaseDataNode<Scalar>::set_has_grad));
   auto data =
       py::class_<DataNode<Scalar>, BaseDataNode<Scalar>, Ptr<DataNode<Scalar>>>(
           m, name<Scalar>("DataNode"));
