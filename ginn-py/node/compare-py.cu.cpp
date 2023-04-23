@@ -37,7 +37,7 @@ void bind_compare_nodes(py::module_& m) {
     py::class_<LessThanNode<Scalar>,
                BaseDataNode<bool>,
                Ptr<LessThanNode<Scalar>>>(m, name<Scalar>("LessThanNode"));
-    m.def("LessThan", FP((&LessThan<const Np&, const Np&>)));
+    m.def("LessThan", &LessThan<const Np&, const Np&>);
   });
 }
 

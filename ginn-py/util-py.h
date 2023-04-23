@@ -97,15 +97,6 @@ template <typename Scalar, template <class> typename Node>
 using PyNode =
     py::class_<Node<Scalar>, BaseDataNode<Scalar>, Ptr<Node<Scalar>>>;
 
-// I use this useless indirection to help nvcc 11.1 not bork during template
-// deduction -- for some reason assigning to a temporary helps. Should be
-// unnecessary once I upgrade nvcc.
-#define FP(F)                                                                  \
-  [&]() {                                                                      \
-    auto fp = F;                                                               \
-    return fp;                                                                 \
-  }()
-
 } // namespace python
 } // namespace ginn
 #endif

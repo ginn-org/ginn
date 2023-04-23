@@ -36,40 +36,40 @@ void bind_common_nodes(py::module_& m) {
     using Np = NodePtr<Scalar>;
 
     PyNode<Scalar, AddNode>(m, name<Scalar>("AddNode"));
-    m.def("Add", FP((&Add<const Np&, const Np&>)));
-    m.def("Add", FP((&Add<const std::vector<Np>&>)));
+    m.def("Add", &Add<const Np&, const Np&>);
+    m.def("Add", &Add<const std::vector<Np>&>);
 
     PyNode<Scalar, AddScalarNode>(m, name<Scalar>("AddScalarNode"));
-    m.def("AddScalar", FP((&AddScalar<const Np&, const Real&>)));
-    m.def("AddScalar", FP((&AddScalar<const Np&, const Int&>)));
+    m.def("AddScalar", &AddScalar<const Np&, const Real&>);
+    m.def("AddScalar", &AddScalar<const Np&, const Int&>);
 
     PyNode<Scalar, SubtractScalarNode>(m, name<Scalar>("SubtractScalarNode"));
-    m.def("SubtractScalar", FP((&SubtractScalar<Real, Np>)));
-    m.def("SubtractScalar", FP((&SubtractScalar<Int, Np>)));
+    m.def("SubtractScalar", &SubtractScalar<Real, Np>);
+    m.def("SubtractScalar", &SubtractScalar<Int, Np>);
 
     PyNode<Scalar, ProdScalarNode>(m, name<Scalar>("ProdScalarNode"));
-    m.def("ProdScalar", FP((&ProdScalar<const Np&, const Real&>)));
-    m.def("ProdScalar", FP((&ProdScalar<const Np&, const Int&>)));
+    m.def("ProdScalar", &ProdScalar<const Np&, const Real&>);
+    m.def("ProdScalar", &ProdScalar<const Np&, const Int&>);
 
     PyNode<Scalar, CwiseProdNode>(m, name<Scalar>("CwiseProdNode"));
-    m.def("CwiseProd", FP((&CwiseProd<const Np&, const Np&>)));
+    m.def("CwiseProd", &CwiseProd<const Np&, const Np&>);
 
     PyNode<Scalar, CwiseProdAddNode>(m, name<Scalar>("CwiseProdAddNode"));
     m.def("CwiseProdAdd",
-          FP((&CwiseProdAdd<const Np&, const Np&, const Np&, const Real&>)),
+          &CwiseProdAdd<const Np&, const Np&, const Np&, const Real&>,
           "in"_a,
           "multiplicand"_a,
           "addend"_a,
           "multiplicand_bias"_a = 0.);
     m.def("CwiseProdAdd",
-          FP((&CwiseProdAdd<const Np&, const Np&, const Np&, const Int&>)),
+          &CwiseProdAdd<const Np&, const Np&, const Np&, const Int&>,
           "in"_a,
           "multiplicand"_a,
           "addend"_a,
           "multiplicand_bias"_a);
 
     PyNode<Scalar, CwiseMaxNode>(m, name<Scalar>("CwiseMaxNode"));
-    m.def("CwiseMax", FP((&CwiseMax<const std::vector<Np>&>)));
+    m.def("CwiseMax", &CwiseMax<const std::vector<Np>&>);
   });
 }
 

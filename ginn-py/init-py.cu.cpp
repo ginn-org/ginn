@@ -56,13 +56,15 @@ void bind_init(py::module_& m) {
   bind_init_of<Real>(m);
   bind_init_of<Half>(m);
 
-  m.def("Xavier", FP(&Xavier_<>), "scalar"_a = Scalar_::Real);
+  m.def("Xavier",
+        static_cast<py::object (*)(Scalar_)>(&Xavier_<>),
+        "scalar"_a = Scalar_::Real);
   m.def("Uniform",
-        FP(&Uniform_<Real>),
+        &Uniform_<Real>,
         "range"_a = Real(1),
         "scalar"_a = Scalar_::Real);
   m.def("Uniform",
-        FP(&Uniform_<Int>),
+        &Uniform_<Int>,
         "range"_a = Int(1),
         "scalar"_a = Scalar_::Real);
 }

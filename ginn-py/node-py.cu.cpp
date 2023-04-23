@@ -182,7 +182,7 @@ void bind_node(py::module_& m) {
     using Scalar = decltype(scalar);
     // nvcc 11.1 forces me to use an explicit static cast here.
     m.def(name<Scalar>("Data"),
-          FP((&Data<Scalar, const DevPtr&, const Shape&>)),
+          &Data<Scalar, const DevPtr&, const Shape&>,
           "dev"_a,
           "shape"_a);
   });
@@ -211,12 +211,10 @@ void bind_node(py::module_& m) {
   for_range<5>([&](auto arr) {
     constexpr size_t N = arr.size();
     m.def("Values",
-          static_cast<DataPtr<Real> (*)(NestedInitList<N, Real>)>(
-              &Values<N, Real>),
+          py::overload_cast<NestedInitList<N, Real>>(&Values<N, Real>),
           "values"_a);
     m.def("Values",
-          static_cast<DataPtr<Real> (*)(DevPtr, NestedInitList<N, Real>)>(
-              &Values<N, Real>),
+          py::overload_cast<DevPtr, NestedInitList<N, Real>>(&Values<N, Real>),
           "dev"_a,
           "values"_a);
   });

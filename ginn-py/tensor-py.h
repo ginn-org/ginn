@@ -37,11 +37,15 @@ enum class Scalar_ { Real, Half, Int, Bool };
 
 template <typename Scalar>
 Scalar_ scalar_() {
-  if constexpr (std::is_same_v<Scalar, Real>) { return Scalar_::Real; }
-  else if constexpr (std::is_same_v<Scalar, Half>) { return Scalar_::Half; }
-  else if constexpr (std::is_same_v<Scalar, Int>) { return Scalar_::Int; }
-  else if constexpr (std::is_same_v<Scalar, bool>) { return Scalar_::Bool; }
-  else { 
+  if constexpr (std::is_same_v<Scalar, Real>) {
+    return Scalar_::Real;
+  } else if constexpr (std::is_same_v<Scalar, Half>) {
+    return Scalar_::Half;
+  } else if constexpr (std::is_same_v<Scalar, Int>) {
+    return Scalar_::Int;
+  } else if constexpr (std::is_same_v<Scalar, bool>) {
+    return Scalar_::Bool;
+  } else {
     GINN_THROW("Unexpected scalar type!");
     return {};
   }
