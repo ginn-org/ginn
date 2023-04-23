@@ -284,7 +284,7 @@ class Graph {
   template <typename... Args>                                                  \
   auto Fixed##f(Args&&... args) {                                              \
     auto n = make_ptr<f##Node>(std::forward<Args>(args)...);                   \
-    n->set_has_grad(false);                                                        \
+    n->set_has_grad(false);                                                    \
     return n;                                                                  \
   }                                                                            \
   static_assert(true, "Factory maker requires a semicolon")
@@ -299,7 +299,7 @@ class Graph {
   template <typename Scalar, typename... Args>                                 \
   auto Fixed##f(Args&&... args) {                                              \
     auto n = make_ptr<f##Node<Scalar>>(std::forward<Args>(args)...);           \
-    n->set_has_grad(false);                                                        \
+    n->set_has_grad(false);                                                    \
     return n;                                                                  \
   }                                                                            \
   static_assert(true, "Factory maker requires a semicolon")

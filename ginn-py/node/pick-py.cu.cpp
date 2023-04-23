@@ -49,8 +49,7 @@ void bind_pick_nodes(py::module_& m) {
                Ptr<PickSoftmaxNode<Scalar>>>(m,
                                              name<Scalar>("PickSoftmaxNode"));
     m.def("PickSoftmax", &PickSoftmax<const Np&, const DataPtr<Int>&>);
-    m.def("PickSoftmax",
-          &PickSoftmax<const Np&, const std::vector<Int>&>);
+    m.def("PickSoftmax", &PickSoftmax<const Np&, const std::vector<Int>&>);
     m.def("PickSoftmax", &PickSoftmax<const Np&, const Int&>);
 
     py::class_<PickNegLogSoftmaxNode<Scalar>,

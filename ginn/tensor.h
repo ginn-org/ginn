@@ -571,8 +571,8 @@ auto view_impl(Scalar* data,
   if constexpr (sizeof...(Indices) == 0) {
     return TensorMap<Scalar, 0>(data);
   } /*else {*/
-    auto dims = Tensor<Scalar>::reduce(shape, sizeof...(Indices));
-    return TensorMap<Scalar, sizeof...(Indices)>(data, (dims[Indices])...);
+  auto dims = Tensor<Scalar>::reduce(shape, sizeof...(Indices));
+  return TensorMap<Scalar, sizeof...(Indices)>(data, (dims[Indices])...);
   //}
 }
 

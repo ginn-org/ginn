@@ -66,14 +66,11 @@ void bind_layout_nodes(py::module_& m) {
 
     PyNode<Scalar, ReshapeNode>(m, name<Scalar>("ReshapeNode"));
     m.def("Reshape",
-          &Reshape<const Np&,
-                       const typename ReshapeNode<Scalar>::LazyShape&>);
-    m.def(
-        "Reshape", &Reshape<const Np&, const Shape&>, "in"_a, "shape"_a);
+          &Reshape<const Np&, const typename ReshapeNode<Scalar>::LazyShape&>);
+    m.def("Reshape", &Reshape<const Np&, const Shape&>, "in"_a, "shape"_a);
 
     PyNode<Scalar, RankViewNode>(m, name<Scalar>("RankViewNode"));
-    m.def(
-        "RankView", &RankView<const Np&, const Size&>, "in"_a, "rank"_a);
+    m.def("RankView", &RankView<const Np&, const Size&>, "in"_a, "rank"_a);
 
     PyNode<Scalar, SliceNode>(m, name<Scalar>("SliceNode"));
     m.def("Slice",
@@ -90,10 +87,7 @@ void bind_layout_nodes(py::module_& m) {
           "dim"_a);
 
     PyNode<Scalar, PermuteNode>(m, name<Scalar>("PermuteNode"));
-    m.def("Permute",
-          &Permute<const Np&, const Shape&>,
-          "in"_a,
-          "indices"_a);
+    m.def("Permute", &Permute<const Np&, const Shape&>, "in"_a, "indices"_a);
     m.def("Transpose", &Transpose<const Np&>, "in"_a, "i"_a, "j"_a);
 
     PyNode<Scalar, RowBroadcastNode>(m, name<Scalar>("RowBroadcastNode"));
@@ -134,8 +128,7 @@ void bind_layout_nodes(py::module_& m) {
   py::class_<DimNode, BaseNode, DimPtr>(m, "DimNode")
       .def_property_readonly("value", &DimNode::value);
   m.def("Dim", &Dim<const Size&>, "dims"_a);
-  m.def(
-      "Dim", &Dim<const BaseNodePtr&, const Size&>, "in"_a, "dim_idx"_a);
+  m.def("Dim", &Dim<const BaseNodePtr&, const Size&>, "in"_a, "dim_idx"_a);
 }
 
 } // namespace python

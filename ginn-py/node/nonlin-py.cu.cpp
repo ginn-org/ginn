@@ -27,8 +27,7 @@
   py::class_<F##Node<Scalar>, BaseDataNode<Scalar>, Ptr<F##Node<Scalar>>>(     \
       m, name<Scalar>(#F "Node"));                                             \
   m.def(#F,                                                                    \
-        py::overload_cast<const NodePtr<Scalar>&>(         \
-            &F<const NodePtr<Scalar>&>))
+        py::overload_cast<const NodePtr<Scalar>&>(&F<const NodePtr<Scalar>&>))
 
 namespace ginn {
 namespace python {
