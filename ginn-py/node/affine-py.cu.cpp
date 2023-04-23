@@ -36,7 +36,7 @@ void bind_affine_nodes(py::module_& m) {
 
     PyNode<Scalar, AffineNode>(m, name<Scalar>("AffineNode"));
     m.def("Affine",
-          static_cast<Ptr<AffineNode<Scalar>> (*)(const std::vector<Np>&)>(
+          py::overload_cast<const std::vector<Np>&>(
               &Affine<Scalar>));
   });
 }

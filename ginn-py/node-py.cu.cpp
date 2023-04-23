@@ -211,11 +211,11 @@ void bind_node(py::module_& m) {
   for_range<5>([&](auto arr) {
     constexpr size_t N = arr.size();
     m.def("Values",
-          static_cast<DataPtr<Real> (*)(NestedInitList<N, Real>)>(
+          py::overload_cast<NestedInitList<N, Real>>(
               &Values<N, Real>),
           "values"_a);
     m.def("Values",
-          static_cast<DataPtr<Real> (*)(DevPtr, NestedInitList<N, Real>)>(
+          py::overload_cast<DevPtr, NestedInitList<N, Real>>(
               &Values<N, Real>),
           "dev"_a,
           "values"_a);
