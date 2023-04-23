@@ -35,16 +35,16 @@ void bind_reduce_nodes(py::module_& m) {
     using Np = NodePtr<Scalar>;
 
     PyNode<Scalar, SumNode>(m, name<Scalar>("SumNode"));
-    m.def("Sum", FP(&Sum<const Np&>));
+    m.def("Sum", &Sum<const Np&>);
 
     PyNode<Scalar, AxisSumNode>(m, name<Scalar>("AxisSumNode"));
-    m.def("AxisSum", FP((&AxisSum<const Np&, const Shape&>)));
+    m.def("AxisSum", &AxisSum<const Np&, const Shape&>);
 
     PyNode<Scalar, MeanNode>(m, name<Scalar>("MeanNode"));
-    m.def("Mean", FP(&Mean<const Np&>));
+    m.def("Mean", &Mean<const Np&>);
 
     PyNode<Scalar, VarianceNode>(m, name<Scalar>("VarianceNode"));
-    m.def("Variance", FP(&Variance<const Np&>));
+    m.def("Variance", &Variance<const Np&>);
   });
 }
 

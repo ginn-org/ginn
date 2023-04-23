@@ -35,10 +35,10 @@ void bind_prod_nodes(py::module_& m) {
     using Np = NodePtr<Scalar>;
 
     PyNode<Scalar, ProdNode>(m, name<Scalar>("ProdNode"));
-    m.def("Prod", FP((&Prod<const Np&, const Np&>)));
+    m.def("Prod", &Prod<const Np&, const Np&>);
 
     PyNode<Scalar, BatchedProdNode>(m, name<Scalar>("BatchedProdNode"));
-    m.def("BatchedProd", FP((&BatchedProd<const Np&, const Np&>)));
+    m.def("BatchedProd", &BatchedProd<const Np&, const Np&>);
   });
 }
 

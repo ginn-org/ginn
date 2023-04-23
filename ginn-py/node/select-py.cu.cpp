@@ -35,14 +35,14 @@ void bind_select_nodes(py::module_& m) {
     using Np = NodePtr<Scalar>;
 
     PyNode<Scalar, SelectNode>(m, name<Scalar>("SelectNode"));
-    m.def("Select", FP((&Select<const Np&, const Np&>)));
-    m.def("Select", FP((&Select<const Np&, const Scalar&>)));
-    m.def("Select", FP((&Select<const Scalar&, const Np&>)));
-    m.def("Select", FP((&Select<const Scalar&, const Scalar&>)));
+    m.def("Select", &Select<const Np&, const Np&>);
+    m.def("Select", &Select<const Np&, const Scalar&>);
+    m.def("Select", &Select<const Scalar&, const Np&>);
+    m.def("Select", &Select<const Scalar&, const Scalar&>);
 
     PyNode<Scalar, MaskNode>(m, name<Scalar>("MaskNode"));
-    m.def("Mask", FP((&Mask<const Np&, const Np&, const Real&>)));
-    m.def("Mask", FP((&Mask<const Np&, const Np&, const Int&>)));
+    m.def("Mask", &Mask<const Np&, const Np&, const Real&>);
+    m.def("Mask", &Mask<const Np&, const Np&, const Int&>);
   });
 }
 
