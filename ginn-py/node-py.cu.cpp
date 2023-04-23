@@ -182,7 +182,7 @@ void bind_node(py::module_& m) {
     using Scalar = decltype(scalar);
     // nvcc 11.1 forces me to use an explicit static cast here.
     m.def(name<Scalar>("Data"),
-          FP((&Data<Scalar, const DevPtr&, const Shape&>)),
+          &Data<Scalar, const DevPtr&, const Shape&>,
           "dev"_a,
           "shape"_a);
   });
