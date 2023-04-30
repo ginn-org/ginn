@@ -124,7 +124,9 @@ class Validator {
   std::vector<T> choices_;
 
   std::string str() const {
-    if (is_range_) { return fmt::format("[{}, {}]", choices_[0], choices_[1]); }
+    if (is_range_) {
+      return fmt::format("[{}, {}]", T(choices_[0]), T(choices_[1]));
+    }
     return fmt::format("{{{}}}", fmt::join(choices_, ", "));
   }
 
