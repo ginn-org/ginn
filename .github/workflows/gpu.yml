@@ -18,6 +18,7 @@ jobs:
         run: |
           echo "${{ steps.cuda-toolkit.outputs.cuda }}"
           echo "${{ steps.cuda-toolkit.outputs.CUDA_PATH }}"
+          which nvcc
           nvcc -V
       - name: Cache CUDA
         uses: actions/cache@v4
