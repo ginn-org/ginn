@@ -21,7 +21,7 @@ jobs:
           which nvcc
           nvcc -V
       - name: Cache CUDA
-        uses: actions/cache@v4
+        uses: actions/cache/save@v4
         with:
           path: /usr/local/cuda-11.7
           key: cuda-11.7
@@ -35,7 +35,7 @@ jobs:
         with:
           submodules: recursive
       - name: Cache CUDA
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: /usr/local/cuda-11.7
           key: cuda-11.7
@@ -53,7 +53,7 @@ jobs:
         with:
           submodules: recursive
       - name: Cache CUDA
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: /usr/local/cuda-11.7
           key: cuda-11.7
@@ -71,7 +71,7 @@ jobs:
         with:
           submodules: recursive
       - name: Cache CUDA
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: /usr/local/cuda-11.7
           key: cuda-11.7
