@@ -67,8 +67,7 @@ $\delta y$ (`grad()`), $x_1,...,x_d$ (`ins_[i]->value()`) and $y$
 (`value()`), and assigns it to input gradients `ins_[i]->grad()`.
 
 Crucial part of automatic differentiation is the job of `backward()`. Observe
-that $\partial L / \partial x = \sum_y \partial L / \partial y
-\cdot \partial y / \partial x = \delta y \cdot \partial y / \partial x$.
+that $\partial L / \partial x = \sum_y \partial L / \partial y \cdot \partial y / \partial x = \delta y \cdot \partial y / \partial x$.
 Assuming `grad()` (which is $\delta y$) appropriately populated by the nodes
 downstream, the remaning work is $\partial y / \partial x$ which is simply
 the derivative of my function, $f'$. `backward()` computes this derivative
@@ -95,8 +94,7 @@ class MultiplyByTwoNode : public Node<Real> {
 };
 ```
 
-In this case $y = f(x) = 2x$ and $\delta x = \delta y \cdot \partial y /
- \partial x = \delta y \cdot 2$ which is implemented by
+In this case $y = f(x) = 2x$ and $\delta x = \delta y \cdot \partial y / \partial x = \delta y \cdot 2$ which is implemented by
 `grad().t() * 2.`.
 
 _Nodes as building blocks that contain pairs of `value()` and `grad()`
@@ -314,8 +312,8 @@ In general, automatic differentiation allows us to do the following:
 Let's say we are node $f(x_1, \mathellipsis, x_n)$ somewhere in any computation
 graph. Then, if we have access to
 
-- $\delta f = \partial L / \partial f$ --- comes from a `backward()` call from
-  downstream
+- $\delta f = \partial L / \partial f$
+  --- comes from a `backward()` call from downstream
 - Value of $f$ (i.e. evaluation of $f(...)$ at its current inputs
   $x_1, \mathellipsis, x_n$ --- comes from our own `forward()` call
 - All inputs to $f$, i.e. $x_1, \mathellipsis, x_n$ --- available to even call `forward()`
