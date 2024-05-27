@@ -6,6 +6,7 @@ runs:
       run: |
         echo "${{ steps.cuda-toolkit.outputs.cuda }}"
         echo "${{ steps.cuda-toolkit.outputs.CUDA_PATH }}"
+        echo "PATH=$PATH:/usr/local/cuda-11.7/bin/" >> $GITHUB_ENV
         nvcc -V
         sudo apt install ninja-build
         pip install meson
