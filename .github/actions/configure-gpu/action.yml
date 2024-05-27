@@ -2,11 +2,6 @@ name: configure gpu
 runs:
   using: "composite"
   steps:
-    - name: Get cuda toolkit
-      uses: Jimver/cuda-toolkit@v0.2.15
-      id: cuda-toolkit
-      with:
-        cuda: '11.7.0'
     - name: Print environment
       run: |
         echo "${{ steps.cuda-toolkit.outputs.cuda }}"

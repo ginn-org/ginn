@@ -6,37 +6,69 @@ on:
   pull_request:
     branches: [ main ]
 jobs:
+  setup-cuda:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get cuda toolkit
+        uses: Jimver/cuda-toolkit@v0.2.15
+        id: cuda-toolkit
+        with:
+          cuda: '11.7.0'
+      - name: Cache CUDA
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/cuda
+          key: cuda-11.7
+          
   build-tests:
+    needs: setup-cuda
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           submodules: recursive
+      - name: Cache CUDA
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/cuda
+          key: cuda-11.7
       - name: Bootstrap and configure
         uses: ./.github/actions/configure-gpu
       - name: Build tests
         run: meson compile -C build/ tests
 
   build-examples:
+    needs: setup-cuda
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           submodules: recursive
+      - name: Cache CUDA
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/cuda
+          key: cuda-11.7
       - name: Bootstrap and configure
         uses: ./.github/actions/configure-gpu
       - name: Build examples
         run: meson compile -C build/ examples
 
   build-python:
+    needs: setup-cuda
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           submodules: recursive
+      - name: Cache CUDA
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/cuda
+          key: cuda-11.7
       - uses: actions/setup-python@v4
         with:
           python-version: '3.9' 
