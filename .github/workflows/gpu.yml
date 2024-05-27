@@ -13,6 +13,9 @@ jobs:
         uses: actions/checkout@v3
         with:
           submodules: recursive
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9' 
 
       - name: Bootstrap and configure
         uses: ./.github/actions/configure-gpu
@@ -23,8 +26,5 @@ jobs:
       - name: Build examples
         run: meson compile -C build/ examples
 
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.9' 
       - name: Build python bindings
         run: meson compile -C build/ python
