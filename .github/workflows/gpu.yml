@@ -22,7 +22,7 @@ jobs:
       - name: Cache CUDA
         uses: actions/cache@v4
         with:
-          path: /usr/local/cuda
+          path: /usr/local/cuda-11.7
           key: cuda-11.7
           
   build-tests:
@@ -36,7 +36,7 @@ jobs:
       - name: Cache CUDA
         uses: actions/cache@v4
         with:
-          path: /usr/local/cuda
+          path: /usr/local/cuda-11.7
           key: cuda-11.7
       - name: Bootstrap and configure
         uses: ./.github/actions/configure-gpu
@@ -54,7 +54,7 @@ jobs:
       - name: Cache CUDA
         uses: actions/cache@v4
         with:
-          path: /usr/local/cuda
+          path: /usr/local/cuda-11.7
           key: cuda-11.7
       - name: Bootstrap and configure
         uses: ./.github/actions/configure-gpu
@@ -72,7 +72,7 @@ jobs:
       - name: Cache CUDA
         uses: actions/cache@v4
         with:
-          path: /usr/local/cuda
+          path: /usr/local/cuda-11.7
           key: cuda-11.7
       - uses: actions/setup-python@v4
         with:
