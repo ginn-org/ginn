@@ -6,31 +6,7 @@ on:
   pull_request:
     branches: [ main ]
 jobs:
-  build-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Bootstrap and configure
-        uses: ./.github/actions/configure-gpu
-      - name: Build tests
-        run: meson compile -C build/ tests
-
-  build-examples:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Bootstrap and configure
-        uses: ./.github/actions/configure-gpu
-      - name: Build examples
-        run: meson compile -C build/ examples
-
-  build-python:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -40,7 +16,15 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.9' 
+
       - name: Bootstrap and configure
         uses: ./.github/actions/configure-gpu
+
+      - name: Build tests
+        run: meson compile -C build/ tests
+
+      - name: Build examples
+        run: meson compile -C build/ examples
+
       - name: Build python bindings
         run: meson compile -C build/ python
